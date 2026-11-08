@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useData, newId } from "@/lib/data";
-import { AREAS, type Area } from "@/lib/types";
-import { TaskRow, openTasks } from "@/components/ui";
+import { today } from "@/lib/dates";
+import { DueChoice, TaskRow, splitTasks } from "@/components/ui";
 
 export default function Tareas() {
   const { tareas, save } = useData();
-  const [f, setF] = useState({ title: "", step: "", area: "trabajo" as Area, due: "" });
-  const open = openTasks(tareas);
+  const [f, setF] = useState({ title: "", step: "", due: today() });
+  const { hoy, luego } = splitTasks(tareas);
   const done = tareas.filter((x) => x.done);
 
   return (
@@ -24,25 +24,22 @@ export default function Tareas() {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!f.title.trim()) return;
-                save("tareas", { id: newId(), title: f.title.trim(), step: f.step.trim(), area: f.area, due: f.due, done: false, created: new Date().toISOString() });
-                setF({ ...f, title: "", step: "", due: "" });
+                save("tareas", { id: newId(), title: f.title.trim(), step: f.step.trim(), due: f.due, done: false, created: new Date().toISOString() });
+                setF({ ...f, title: "", step: "" });
               }}
             >
-              <input id="t-title" placeholder="Tarea (ej. Enviar candidatura)" required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-              <input id="t-step" placeholder="Primer paso (ej. Abrir la oferta y leer requisitos)" value={f.step} onChange={(e) => setF({ ...f, step: e.target.value })} />
-              <div className="row">
-                <select id="t-area" value={f.area} onChange={(e) => setF({ ...f, area: e.target.value as Area })}>
-                  {Object.entries(AREAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-                <input id="t-due" type="date" aria-label="Fecha" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} />
-              </div>
+              <input id="t-title" placeholder="Qué hay que hacer" required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+              <input id="t-step" placeholder="Primer paso de 2 minutos (opcional)" value={f.step} onChange={(e) => setF({ ...f, step: e.target.value })} />
+              <DueChoice id="t-due" value={f.due} onChange={(due) => setF({ ...f, due })} />
               <div><button className="btn" type="submit">Añadir tarea</button></div>
             </form>
           </div>
         </div>
         <div>
-          <h2>Pendientes · {open.length}</h2>
-          <div className="card">{open.length ? open.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada pendiente.</div>}</div>
+          <h2>Para hoy · {hoy.length}</h2>
+          <div className="card">{hoy.length ? hoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. ¡Bien!</div>}</div>
+          <h2>Te faltan · {luego.length}</h2>
+          <div className="card">{luego.length ? luego.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}</div>
           {done.length > 0 && (
             <>
               <h2>Hechas · {done.length}</h2>

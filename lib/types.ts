@@ -5,7 +5,7 @@ export interface Tarea {
   id: string;
   title: string;
   step: string;
-  area: Area;
+  area?: Area | ""; // tareas antiguas; las nuevas no llevan categoría
   due: string; // AAAA-MM-DD o ""
   done: boolean;
   created: string;

@@ -330,3 +330,15 @@ html,body{margin:0}
   .fab{bottom:max(24px,env(safe-area-inset-bottom,0px));right:max(32px,env(safe-area-inset-right,0px))}
   .focus{bottom:max(90px,env(safe-area-inset-bottom,0px))}
 }
+
+/* Fecha rápida de una tarea */
+.duechoice{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.duechoice button{font:inherit;font-size:15px;font-weight:700;min-height:var(--tap);padding:8px 16px;border-radius:12px;border:1px solid var(--field);background:var(--surface);color:var(--ink);cursor:pointer;transition:background .15s}
+.duechoice button:hover{background:var(--pine-soft)}
+.duechoice button[aria-pressed="true"]{background:var(--sage);border-color:var(--pine);box-shadow:inset 0 0 0 1px var(--pine)}
+.duechoice input{flex:1 1 150px;width:auto}
+.duechoice input.on{border-color:var(--pine);box-shadow:inset 0 0 0 1px var(--pine)}
+.chip.late{background:var(--warn-soft);color:var(--warn)}
+.chip.late::before{content:"⚠ "}
+.more{display:block;padding:12px 0;border-top:1px solid var(--line);font-weight:700;color:var(--pine);text-decoration:none;min-height:var(--tap)}
+.more:hover{text-decoration:underline}

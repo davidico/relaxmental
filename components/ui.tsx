@@ -1,7 +1,7 @@
 "use client";
 
 import { useData } from "@/lib/data";
-import { fdate } from "@/lib/dates";
+import { addD, fdate, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
 import { AREAS, areaColor, type Habito, type Tarea } from "@/lib/types";
 import { sortHabits } from "@/lib/habits";
@@ -64,6 +64,29 @@ export function HabitChips({ date }: { date: string }) {
 }
 
 export const openTasks = (t: Tarea[]) => t.filter((x) => !x.done).sort((a, b) => ((a.due || "9") < (b.due || "9") ? -1 : 1));
+/** Pendientes para hoy (incluye las atrasadas) y el resto */
+export function splitTasks(t: Tarea[], day = today()) {
+  const open = openTasks(t);
+  return {
+    hoy: open.filter((x) => x.due && x.due <= day),
+    luego: open.filter((x) => !x.due || x.due > day),
+  };
+}
+
+/** Elegir fecha rápido: Hoy / Mañana / Sin fecha / otra */
+export function DueChoice({ value, onChange, id }: { value: string; onChange: (v: string) => void; id: string }) {
+  const t = today();
+  const m = addD(t, 1);
+  const opts: [string, string][] = [[t, "Hoy"], [m, "Mañana"], ["", "Sin fecha"]];
+  return (
+    <div className="duechoice" role="group" aria-label="Cuándo">
+      {opts.map(([v, l]) => (
+        <button key={l} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>{l}</button>
+      ))}
+      <input id={id} type="date" aria-label="Otra fecha" value={value} onChange={(e) => onChange(e.target.value)} className={value && value !== t && value !== m ? "on" : ""} />
+    </div>
+  );
+}
 
 export function TaskRow({ x }: { x: Tarea }) {
   const { save, remove } = useData();
@@ -75,8 +98,12 @@ export function TaskRow({ x }: { x: Tarea }) {
         <b>{x.title}</b>
         {x.step && <div className="step">{x.step}</div>}
         <div className="meta">
-          <span className="chip" style={cssC(areaColor(x.area))}>{AREAS[x.area as keyof typeof AREAS] ?? "Casa"}</span>
-          {x.due && <span className="chip" style={cssC("var(--stone)")}>{fdate(x.due)}</span>}
+          {x.due && !x.done && x.due < today() ? (
+            <span className="chip late">Atrasada · {fdate(x.due)}</span>
+          ) : x.due ? (
+            <span className="chip" style={cssC(x.due === today() ? "var(--sage)" : "var(--stone)")}>{x.due === today() ? "Hoy" : fdate(x.due)}</span>
+          ) : null}
+          {x.area && x.area in AREAS && <span className="chip" style={cssC(areaColor(x.area))}>{AREAS[x.area as keyof typeof AREAS]}</span>}
           {!x.done && (
             <button className="btn ghost sm" onClick={() => startFocus(x)}>
               Empezar 10 min

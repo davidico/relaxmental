@@ -5,7 +5,8 @@ import { useData, newId } from "@/lib/data";
 import { DOW, MES, ds, toMin } from "@/lib/dates";
 import { nowInfo, preachesOn, rolesOn } from "@/lib/schedule";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
-import { HabitChips, TaskRow, Timeline, openTasks } from "@/components/ui";
+import { HabitChips, TaskRow, Timeline, splitTasks } from "@/components/ui";
+import Link from "next/link";
 import DayEditor from "@/components/DayEditor";
 
 export default function Hoy() {
@@ -15,7 +16,7 @@ export default function Hoy() {
   const minute = now.getHours() * 60 + now.getMinutes();
   const { cur, nxt } = nowInfo(planFor(t), minute);
   const r = rolesOn(labores, t);
-  const pend = openTasks(tareas).slice(0, 3);
+  const { hoy: paraHoy, luego } = splitTasks(tareas, t);
   const [folder, setFolder] = useState("ideas");
   const [text, setText] = useState("");
   const [editing, setEditing] = useState(false);
@@ -61,8 +62,15 @@ export default function Hoy() {
             <HabitChips date={t} />
           </div>
           <div className="a-tasks">
-            <h2>Tareas pendientes</h2>
-            <div className="card">{pend.length ? pend.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No tienes tareas pendientes.</div>}</div>
+            <h2>Para hoy · {paraHoy.length}</h2>
+            <div className="card">
+              {paraHoy.length ? paraHoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. Añade una con «+ Nueva tarea».</div>}
+            </div>
+            <h2>Te faltan · {luego.length}</h2>
+            <div className="card">
+              {luego.length ? luego.slice(0, 4).map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}
+              {luego.length > 4 && <Link className="more" href="/tareas">Ver las {luego.length} tareas →</Link>}
+            </div>
           </div>
           <div className="a-quick">
             <h2>Captura rápida</h2>
