@@ -1,0 +1,38 @@
+import type { Metadata, Viewport } from "next";
+import Shell from "@/components/Shell";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Mi Semana",
+  description: "Tu día hora por hora, hábitos, segundo cerebro y tareas.",
+  appleWebApp: { capable: true, title: "Mi Semana", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eef2ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1512" },
+  ],
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="es">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap"
+        />
+      </head>
+      <body>
+        <Shell>{children}</Shell>
+      </body>
+    </html>
+  );
+}
