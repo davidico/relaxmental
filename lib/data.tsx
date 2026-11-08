@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "./supabase";
 import type { Habito, Labores, Nota, Tarea } from "./types";
+import { scheduleFor, type Bloque } from "./schedule";
 import laboresBase from "@/data/labores.json";
 
 type Mode = "loading" | "local" | "cloud" | "login";
@@ -17,6 +18,12 @@ interface DataCtx {
   tareas: Tarea[];
   notas: Nota[];
   habitos: Habito[];
+  /** Días que editaste a mano: fecha -> bloques */
+  dias: Record<string, Bloque[]>;
+  /** Horario de un día: el que editaste, o el automático */
+  planFor: (date: string) => Bloque[];
+  /** Guarda tu versión de un día; null vuelve al horario automático */
+  saveDia: (fecha: string, bloques: Bloque[] | null) => void;
   save: <T extends Table>(table: T, item: Row[T]) => void;
   remove: (table: Table, id: string) => void;
   signIn: (email: string) => Promise<string | null>;
@@ -55,6 +62,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [notas, setNotas] = useState<Nota[]>([]);
   const [habitos, setHabitos] = useState<Habito[]>([]);
+  const [dias, setDias] = useState<Record<string, Bloque[]>>({});
 
   const setters = useMemo(() => ({ tareas: setTareas, notas: setNotas, habitos: setHabitos }) as const, []);
 
@@ -67,22 +75,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTareas((st.tareas as Tarea[]) ?? []);
     setNotas((st.notas as Nota[]) ?? []);
     setHabitos((st.habitos as Habito[]) ?? seedHabits());
+    setDias(((st as { dias?: Record<string, Bloque[]> }).dias) ?? {});
     setMode("local");
   }, []);
 
   /* Modo nube: Supabase, cada usuario solo ve sus filas (RLS) */
   const loadCloud = useCallback(async (userId: string) => {
     if (!supabase) return;
-    const [t, n, h, l] = await Promise.all([
+    const [t, n, h, l, d] = await Promise.all([
       supabase.from("tareas").select("*"),
       supabase.from("notas").select("*"),
       supabase.from("habitos").select("*"),
       supabase.from("labores").select("fecha, roles"),
+      supabase.from("dias").select("fecha, bloques"),
     ]);
-    const err = t.error || n.error || h.error || l.error;
+    const err = t.error || n.error || h.error || l.error || d.error;
     if (err) setError(`No se pudieron cargar tus datos: ${err.message}`);
     setTareas((t.data ?? []).map((r) => fromRow("tareas", r)));
     setNotas((n.data ?? []).map((r) => fromRow("notas", r)));
+    const ds: Record<string, Bloque[]> = {};
+    for (const r of (d.data ?? []) as { fecha: string; bloques: Bloque[] }[]) ds[r.fecha] = r.bloques;
+    setDias(ds);
     let hab: Habito[] = (h.data ?? []).map((r) => fromRow("habitos", r));
     const flag = `mi-semana-seeded-${userId}`;
     if (!h.error && hab.length === 0 && !localStorage.getItem(flag)) {
@@ -127,9 +140,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (mode !== "local") return;
     try {
-      localStorage.setItem(LS, JSON.stringify({ tareas, notas, habitos }));
+      localStorage.setItem(LS, JSON.stringify({ tareas, notas, habitos, dias }));
     } catch {}
-  }, [mode, tareas, notas, habitos]);
+  }, [mode, tareas, notas, habitos, dias]);
+
+  const saveDia = useCallback(
+    (fecha: string, bloques: Bloque[] | null) => {
+      setDias((all) => {
+        const next = { ...all };
+        if (bloques) next[fecha] = bloques;
+        else delete next[fecha];
+        return next;
+      });
+      if (mode === "cloud" && supabase) {
+        const q = bloques
+          ? supabase.from("dias").upsert({ fecha, bloques })
+          : supabase.from("dias").delete().eq("fecha", fecha);
+        q.then(({ error: e }) => e && setError(`No se guardó el día: ${e.message}`));
+      }
+    },
+    [mode],
+  );
+
+  const planFor = useCallback((date: string) => dias[date] ?? scheduleFor(labores, date), [dias, labores]);
 
   const save = useCallback(
     <T extends Table>(table: T, item: Row[T]) => {
@@ -171,7 +204,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabase?.auth.signOut();
   }, []);
 
-  const value: DataCtx = { mode, email, error, labores, tareas, notas, habitos, save, remove, signIn, signOut };
+  const value: DataCtx = { mode, email, error, labores, tareas, notas, habitos, dias, planFor, saveDia, save, remove, signIn, signOut };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

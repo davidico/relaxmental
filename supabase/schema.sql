@@ -57,3 +57,15 @@ begin
          using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
   end loop;
 end $$;
+
+-- Días que editas a mano (sustituyen al horario automático de esa fecha)
+create table if not exists public.dias (
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  fecha date not null,
+  bloques jsonb not null default '[]'::jsonb,
+  primary key (user_id, fecha)
+);
+alter table public.dias enable row level security;
+drop policy if exists "solo_mis_filas" on public.dias;
+create policy "solo_mis_filas" on public.dias for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());

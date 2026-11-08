@@ -2,7 +2,7 @@
 
 import { useData } from "@/lib/data";
 import { fdate } from "@/lib/dates";
-import { scheduleFor, type Bloque } from "@/lib/schedule";
+import type { Bloque } from "@/lib/schedule";
 import { AREAS, areaColor, type Habito, type Tarea } from "@/lib/types";
 import { sortHabits } from "@/lib/habits";
 import { toMin } from "@/lib/dates";
@@ -12,11 +12,11 @@ import type { CSSProperties } from "react";
 export const cssC = (c: string) => ({ "--c": c }) as CSSProperties;
 
 export function Timeline({ date, minute }: { date: string; minute?: number }) {
-  const { labores } = useData();
+  const { planFor } = useData();
   return (
     <div className="card">
       <div className="tl">
-        {scheduleFor(labores, date).map((b: Bloque) => {
+        {planFor(date).map((b: Bloque) => {
           const live = minute !== undefined;
           const past = live && toMin(b.e) <= minute;
           const cur = live && minute >= toMin(b.s) && minute < toMin(b.e);

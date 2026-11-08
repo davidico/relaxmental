@@ -7,17 +7,19 @@ import { nowInfo, preachesOn, rolesOn } from "@/lib/schedule";
 import { KINDS, type Kind } from "@/lib/types";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { HabitChips, TaskRow, Timeline, openTasks } from "@/components/ui";
+import DayEditor from "@/components/DayEditor";
 
 export default function Hoy() {
-  const { labores, tareas, save } = useData();
+  const { labores, tareas, save, planFor } = useData();
   const now = useNow();
   const t = ds(now);
   const minute = now.getHours() * 60 + now.getMinutes();
-  const { cur, nxt } = nowInfo(labores, t, minute);
+  const { cur, nxt } = nowInfo(planFor(t), minute);
   const r = rolesOn(labores, t);
   const pend = openTasks(tareas).slice(0, 3);
   const [kind, setKind] = useState<Kind>("idea");
   const [text, setText] = useState("");
+  const [editing, setEditing] = useState(false);
 
   let nowCard;
   if (cur) {
@@ -88,10 +90,14 @@ export default function Hoy() {
           </div>
         </div>
         <div className="a-tl">
-          <h2>Tu día hora por hora</h2>
+          <div className="top" style={{ alignItems: "center" }}>
+            <h2>Tu día hora por hora</h2>
+            <button className="btn ghost sm" onClick={() => setEditing(true)}>Editar hoy</button>
+          </div>
           <Timeline date={t} minute={minute} />
         </div>
       </div>
+      {editing && <DayEditor date={t} onClose={() => setEditing(false)} />}
     </>
   );
 }

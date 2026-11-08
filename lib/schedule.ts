@@ -101,8 +101,7 @@ export function scheduleFor(lab: Labores, date: string): Bloque[] {
 }
 
 /** Bloque actual y siguiente para un minuto del día */
-export function nowInfo(lab: Labores, date: string, minute: number) {
-  const s = scheduleFor(lab, date);
+export function nowInfo(s: Bloque[], minute: number) {
   const cur = s.find((b) => minute >= toMin(b.s) && minute < toMin(b.e));
   const nxt = s.find((b) => toMin(b.s) > minute);
   return { s, cur, nxt };
