@@ -7,50 +7,50 @@
  */
 :root{
   /* Neutros (paleta) */
-  --bg:#f7f4ef;          /* Calma: fondo de la app */
+  --bg:#f4f5fb;          /* Calma: fondo de la app */
   --surface:#ffffff;     /* papel: tarjetas */
   --side:#ffffff;        /* Roble pálido: menú lateral y barra de pestañas */
-  --rocio:#f2ede5;       /* Rocío de la mañana */
-  --ink:#2a241d;         /* texto principal (contraste ~13:1) */
-  --muted:#655c51;       /* texto secundario (≥ 4.8:1 en todos los fondos) */
-  --line:#ebe5dc;        /* Roble pálido: separadores */
-  --field:#968c80;       /* Coventry Gray oscurecido: borde de campos (3.3:1) */
-  --cell:#f1ece4;        /* casillas vacías */
-  --stone:#ddd5c9;       /* Coventry Gray */
+  --rocio:#eef0f8;       /* Rocío de la mañana */
+  --ink:#15173a;         /* texto principal (contraste ~13:1) */
+  --muted:#5a5e7b;       /* texto secundario (≥ 4.8:1 en todos los fondos) */
+  --line:#e8e9f3;        /* Roble pálido: separadores */
+  --field:#8a8ea8;       /* Coventry Gray oscurecido: borde de campos (3.3:1) */
+  --cell:#eef0f7;        /* casillas vacías */
+  --stone:#dfe1ee;       /* Coventry Gray */
   --sand:#d9cbb5;        /* Pashmina */
   /* Principal: "Momentos de tranquilidad" como relleno, con texto oscuro (8.6:1) */
-  --primary:#efe6d8; --primary-hover:#e6dac7; --on-primary:#2a241d; --primary-edge:#cdbca3;
+  --primary:#4f46e5; --primary-hover:#4338ca; --on-primary:#ffffff; --primary-edge:#4f46e5;
   /* Salvia profunda solo para texto, enlaces y foco */
-  --pine:#6e5536; --pine-soft:#f4eee5; --sage:#efe6d8;
+  --pine:#4338ca; --pine-soft:#eef0ff; --sage:#e3e6ff;
   /* Estados */
   --warn:#a3412c; --warn-soft:#f6e1d9; --on-warn:#ffffff;
   --ok:#3f6b4f; --ok-soft:#dcebdf;
-  --ochre:#6e5536; --ochre-soft:#f1e6d3; /* Pashmina para lo de la iglesia */
+  --ochre:#7a5a2e; --ochre-soft:#f6ecdc; /* Pashmina para lo de la iglesia */
   /* Áreas: pasteles vivos */
   --a-iglesia:#f2c879; --a-trabajo:#8fb8f0; --a-tukuna:#c3a6ef; --a-aleman:#f4a38c;
   --a-familia:#f2a7c6; --a-salud:#8fd4ac; --a-casa:#cbbfa9; --a-rutina:#c9ccc6;
   --on-area:#23262a;     /* texto sobre un pastel */
-  --deep:#2a241d; --deepen:45%; /* oscurece los pasteles en gráficos pequeños para que se vean */
+  --deep:#15173a; --deepen:45%; /* oscurece los pasteles en gráficos pequeños para que se vean */
   --chip-mix:48%;
-  --shadow:0 1px 2px rgb(42 36 29 / .04), 0 6px 20px rgb(42 36 29 / .05);
-  --display:"Schibsted Grotesk","Avenir Next",system-ui,sans-serif;
-  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --shadow:0 1px 2px rgb(21 23 58 / .04), 0 8px 24px rgb(21 23 58 / .06);
+  --display:"Plus Jakarta Sans","Avenir Next",system-ui,sans-serif;
+  --body:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --tap:44px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1b1916; --surface:#24211d; --ink:#efe9e0; --muted:#b5ab9e; --line:#38332c; --field:#7a7064; --cell:#302b25; --stone:#5c554b; --sand:#7a6b55;
-  --side:#211e1a; --rocio:#2b2722;
-  --primary:#d9c7ab; --primary-hover:#e6d6bd; --on-primary:#1f1a14; --primary-edge:#d9c7ab;
-  --pine:#d9c7ab; --pine-soft:#3a3329; --sage:#4a4134;
+  --bg:#0f1020; --surface:#17182b; --ink:#ecebff; --muted:#a3a6c2; --line:#2a2c45; --field:#6e7193; --cell:#23253c; --stone:#3a3d5c; --sand:#7a6b55;
+  --side:#14152a; --rocio:#1d1e35;
+  --primary:#a5b4fc; --primary-hover:#c7d2fe; --on-primary:#0f1020; --primary-edge:#a5b4fc;
+  --pine:#a5b4fc; --pine-soft:#24264a; --sage:#2f3260;
   --warn:#f0a08a; --warn-soft:#3d241c; --on-warn:#1a1c1a; --ok:#9fd3b0; --ok-soft:#21352a; --ochre:#efc98a; --ochre-soft:#3d3220;
   --deepen:0%; --chip-mix:30%;
   --shadow:0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#1b1916; --surface:#24211d; --ink:#efe9e0; --muted:#b5ab9e; --line:#38332c; --field:#7a7064; --cell:#302b25; --stone:#5c554b; --sand:#7a6b55;
-  --side:#211e1a; --rocio:#2b2722;
-  --primary:#d9c7ab; --primary-hover:#e6d6bd; --on-primary:#1f1a14; --primary-edge:#d9c7ab;
-  --pine:#d9c7ab; --pine-soft:#3a3329; --sage:#4a4134;
+  --bg:#0f1020; --surface:#17182b; --ink:#ecebff; --muted:#a3a6c2; --line:#2a2c45; --field:#6e7193; --cell:#23253c; --stone:#3a3d5c; --sand:#7a6b55;
+  --side:#14152a; --rocio:#1d1e35;
+  --primary:#a5b4fc; --primary-hover:#c7d2fe; --on-primary:#0f1020; --primary-edge:#a5b4fc;
+  --pine:#a5b4fc; --pine-soft:#24264a; --sage:#2f3260;
   --warn:#f0a08a; --warn-soft:#3d241c; --on-warn:#1a1c1a; --ok:#9fd3b0; --ok-soft:#21352a; --ochre:#efc98a; --ochre-soft:#3d3220;
   --deepen:0%; --chip-mix:30%;
   --shadow:0 1px 2px rgb(0 0 0 / .3), 0 4px 14px rgb(0 0 0 / .25);
@@ -462,3 +462,47 @@ form.add.sheet-form{padding:12px max(16px,env(safe-area-inset-right,0px)) max(16
 .hdot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--c-deep)}
 .hlabel{flex:1;min-width:0;font-weight:600}
 .hstreak{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ===== Estilo índigo (tarjetas blancas, lavanda suave, menú de iconos) ===== */
+h1{font-weight:800;letter-spacing:-.025em}
+h2{letter-spacing:.06em}
+.card{border-radius:22px;border-color:var(--line);box-shadow:var(--shadow)}
+.btn{border-radius:14px}
+.btn.ghost{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.btn.ghost:hover{background:var(--pine-soft);border-color:var(--sage);color:var(--pine)}
+.now{background:linear-gradient(135deg,#4338ca 0%,#4f46e5 55%,#554cec 100%);color:#fff;border:none;border-radius:24px;box-shadow:0 10px 30px rgb(79 70 229 / .25)}
+.now .bar{background:rgb(255 255 255 / .25)}
+.now .bar i{background:#fff}
+.chip{border-radius:8px;font-weight:700}
+.seg button{border-color:var(--line);background:var(--surface);color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--pine-soft);border-color:var(--sage);color:var(--pine)}
+.hrow[aria-pressed="true"] .hcheck{background:var(--primary);border-color:var(--primary);color:#fff}
+.hprog .pbar i{background:var(--primary)}
+.duechoice button[aria-pressed="true"]{background:var(--pine-soft);border-color:var(--primary);color:var(--pine);box-shadow:inset 0 0 0 1px var(--primary)}
+.blk.cur{background:var(--pine-soft)}
+.brandmark{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:14px}
+.tabs a[aria-current="page"]{color:var(--primary);box-shadow:none;background:transparent}
+.tabs a[aria-current="page"] svg{stroke:var(--primary)}
+.fab{border:none}
+.fab:not(.round){box-shadow:0 10px 24px rgb(79 70 229 / .3)}
+.fab.round{box-shadow:0 10px 24px rgb(79 70 229 / .35)}
+.dial-ico{background:var(--primary);color:#fff}
+.frow.on{background:var(--pine-soft);color:var(--pine)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .now{background:linear-gradient(135deg,#3730a3,#4338ca);}}
+/* Escritorio: menú lateral estrecho con iconos */
+@media (min-width:900px){
+  .tabs{top:0;bottom:0;left:0;width:104px;border:none;border-right:1px solid var(--line);border-radius:0;box-shadow:none;padding:20px 12px;align-items:center;gap:6px}
+  .side-brand{justify-content:center;border-bottom:none;padding:0 0 18px;margin:0}
+  .side-brand>span:not(.brandmark){display:none}
+  .navitem{width:100%}
+  .tabs a{flex-direction:column;justify-content:center;gap:4px;width:100%;min-height:64px;padding:8px 4px;font-size:12px;font-weight:700;border-radius:16px;color:var(--muted)}
+  .tabs a svg{width:24px;height:24px}
+  .tabs a:hover{background:var(--pine-soft);color:var(--pine)}
+  .tabs a[aria-current="page"],.tabs a.in{background:var(--pine-soft);color:var(--primary);box-shadow:none}
+  .subnav{display:none}
+  .side-foot{display:none}
+  .wrap,.wrap.wide{margin-left:104px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:max(40px,env(safe-area-inset-right,0px))}
+  .focus{left:104px}
+  .fchips:not(.sub){display:flex}
+  h1{font-size:40px}
+}
