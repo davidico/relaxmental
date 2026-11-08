@@ -202,3 +202,5 @@ html,body{margin:0}
 .linkbtn{font:inherit;background:none;border:none;padding:0;color:var(--pine);font-weight:700;cursor:pointer;text-decoration:underline}
 .btn:disabled{opacity:.6;cursor:default}
 @media (min-width:900px){.side-foot{display:block;word-break:break-all}}
+.hhead .row{flex-wrap:nowrap}
+.hhead .row>*{flex:none}
