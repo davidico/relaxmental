@@ -6,6 +6,7 @@ import { today } from "@/lib/dates";
 import { useWide } from "@/lib/hooks";
 import type { Carpeta } from "@/lib/types";
 import { DueChoice } from "./ui";
+import RichEditor from "./RichEditor";
 
 /** Carpetas en orden de árbol, con su nombre completo ("Notas › Ideas") */
 export function folderOptions(carpetas: Carpeta[]) {
@@ -31,7 +32,7 @@ export default function QuickTask() {
   const [mode, setMode] = useState<Mode>(null);
   const [done, setDone] = useState(false);
   const [f, setF] = useState({ title: "", step: "", due: today() });
-  const [n, setN] = useState({ folder: "ideas", title: "", text: "" });
+  const [n, setN] = useState({ folder: "ideas", title: "", html: "", text: "" });
 
   useEffect(() => {
     if (!mode && !menu) return;
@@ -109,8 +110,8 @@ export default function QuickTask() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!n.text.trim()) return;
-                  save("notas", { id: newId(), folder: n.folder, kind: "nota", title: n.title.trim(), text: n.text.trim(), ref: "", created: new Date().toISOString() });
-                  setN({ ...n, title: "", text: "" });
+                  save("notas", { id: newId(), folder: n.folder, kind: "nota", title: n.title.trim(), html: n.html, text: n.text.trim(), ref: "", created: new Date().toISOString() });
+                  setN({ ...n, title: "", html: "", text: "" });
                   setDone(true);
                 }}
               >
@@ -118,9 +119,9 @@ export default function QuickTask() {
                   {folderOptions(carpetas).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                 </select>
                 <input id="qn-title" placeholder="Título (opcional)" value={n.title} onChange={(e) => setN({ ...n, title: e.target.value })} />
-                <textarea id="qn-text" autoFocus required className="big" placeholder="Una idea, una profecía, un sueño…" value={n.text} onChange={(e) => { setN({ ...n, text: e.target.value }); setDone(false); }} />
+                <RichEditor id="qn-text" big autoFocus value={n.html} placeholder="Una idea, una profecía, un sueño… (# título, - lista, [] casilla)" onChange={(html, text) => { setN((x) => ({ ...x, html, text })); setDone(false); }} />
                 <div className="row" style={{ alignItems: "center" }}>
-                  <button className="btn" type="submit" style={{ flex: "none" }}>Guardar nota</button>
+                  <button className="btn" type="submit" style={{ flex: "none" }} disabled={!n.text.trim()}>Guardar nota</button>
                   {done && <span className="saved" role="status">Guardada ✓</span>}
                 </div>
               </form>

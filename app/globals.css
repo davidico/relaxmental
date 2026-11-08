@@ -273,12 +273,11 @@ html,body{margin:0}
 .sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
 .sheet-title{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:0;text-transform:none;color:var(--ink);margin:0 0 2px}
 .ed-list{overflow-y:auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px}
-.ed-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,42%);grid-template-areas:"times x" "name name" "sub area";gap:6px 8px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:10px}
+.ed-row{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"times x" "name name" "sub sub";gap:6px 8px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:10px}
 .ed-times{grid-area:times;display:flex;align-items:center;gap:6px;color:var(--muted)}
 .ed-times input{width:auto;min-width:0;padding:7px 8px;font-variant-numeric:tabular-nums}
 .ed-row .ed-name{grid-area:name;font-weight:700}
-.ed-row .ed-sub{grid-area:sub}
-.ed-row select{grid-area:area;width:100%;min-width:0}
+.ed-row .ed-sub{grid-area:sub;min-height:72px;resize:vertical}
 .ed-row .x{grid-area:x;align-self:start;justify-self:end}
 .sheet-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px max(16px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));border-top:1px solid var(--line)}
 .ed-warn{font-size:15px;color:var(--warn);font-weight:700;display:inline-flex;gap:6px}
@@ -289,7 +288,7 @@ html,body{margin:0}
 @media (min-width:900px){
   .modal{align-items:center;padding:32px}
   .sheet{border-radius:18px;max-height:88vh}
-  .ed-row{grid-template-columns:auto minmax(0,1.3fr) minmax(0,1fr) 170px auto;grid-template-areas:"times name sub area x";align-items:center;padding:8px 10px}
+  .ed-row{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"times name x" "sub sub sub";align-items:center;padding:10px 12px}
   .modal{left:224px}
 }
 @media (min-width:1280px){.weekgrid .dayhead .edit{align-self:flex-start}}
@@ -375,3 +374,52 @@ form.add.sheet-form{padding:12px max(16px,env(safe-area-inset-right,0px)) max(16
 .dial-ico{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--primary);color:var(--on-primary);font-size:16px}
 /* En móvil la captura rápida vive en el botón +, no en el panel */
 @media (max-width:899px){.hoy .a-quick{display:none}}
+
+/* Cerebro: sin árbol duplicado (el menú lateral ya lo tiene) */
+.brain{display:block}
+@media (min-width:900px){.fchips:not(.sub){display:none}.fchips.sub{display:flex}}
+.hint{color:var(--muted);background:var(--surface);border:1px dashed var(--field);border-radius:14px;padding:16px;margin:0}
+@media (min-width:900px){.only-mobile{display:none}}
+.tabs .subnav a[aria-current="page"]{color:var(--ink);background:var(--primary)}
+.tabs a.in{color:var(--ink)}
+
+/* Editor de texto enriquecido */
+.rich{border:1px solid var(--field);border-radius:12px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.rich:focus-within{border-color:var(--pine);box-shadow:0 0 0 3px color-mix(in srgb,var(--pine) 25%,transparent)}
+.toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);border-radius:12px 12px 0 0;z-index:1}
+.tb{font:inherit;font-size:15px;min-width:38px;min-height:38px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;font-weight:700}
+.tb:hover{background:var(--pine-soft)}
+.tb.on{background:var(--primary);box-shadow:inset 0 0 0 1px var(--primary-edge)}
+.tsep{width:1px;background:var(--line);margin:6px 4px}
+.rich-body{outline:none;padding:12px 14px;min-height:140px;font-size:16px;line-height:1.6}
+.rich-body.big{min-height:38vh}
+.rich-body>*:first-child{margin-top:0}
+.rich-body p{margin:0 0 .6em}
+.rich-body h1{font-family:var(--display);font-size:26px;line-height:1.2;margin:.6em 0 .3em}
+.rich-body h2{font-family:var(--display);font-size:21px;line-height:1.25;margin:.6em 0 .3em;text-transform:none;letter-spacing:0;color:var(--ink)}
+.rich-body h3{font-family:var(--display);font-size:18px;margin:.6em 0 .3em}
+.rich-body ul,.rich-body ol{padding-left:1.4em;margin:0 0 .6em}
+.rich-body li p{margin:0}
+.rich-body blockquote{margin:.4em 0 .8em;padding:2px 0 2px 14px;border-left:3px solid var(--sand);color:var(--muted)}
+.rich-body hr{border:none;border-top:1px solid var(--line);margin:1em 0}
+.rich-body a{color:var(--pine);text-decoration:underline;text-underline-offset:3px}
+.rich-body ul[data-type="taskList"]{list-style:none;padding-left:2px}
+.rich-body ul[data-type="taskList"] li{display:flex;gap:10px;align-items:flex-start}
+.rich-body ul[data-type="taskList"] li>label{margin-top:3px;flex:none}
+.rich-body ul[data-type="taskList"] li>label input{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--pine)}
+.rich-body ul[data-type="taskList"] li>div{flex:1;min-width:0}
+.rich-body ul[data-type="taskList"] li[data-checked="true"]>div{color:var(--muted);text-decoration:line-through}
+.rich-body p.is-editor-empty:first-child::before{content:attr(data-placeholder);color:var(--muted);opacity:.85;float:left;height:0;pointer-events:none}
+/* Vista de una entrada en la lista */
+.rich-body.view{padding:0;min-height:0}
+.nbody{font:inherit;display:block;width:100%;text-align:left;background:none;border:none;padding:0;color:inherit;cursor:pointer;margin-top:6px}
+.clamp{max-height:9.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.note p.plain{margin:0;white-space:pre-wrap}
+/* Ventana de una entrada */
+.notesheet{max-width:860px}
+.ns-title{font-family:var(--display);font-size:24px;font-weight:800;border:none;background:transparent;padding:4px 0;min-height:0;box-shadow:none!important}
+.sheet-body{overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:12px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+
+.rich-body.view h1{font-size:19px}
+.rich-body.view h2{font-size:17px}
+.rich-body.view h3{font-size:16px}

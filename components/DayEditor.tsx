@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, MES, pd, toMin } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
-import { AREAS, areaColor, type Area } from "@/lib/types";
+import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
 
-const AREA_OPTS: [Area, string][] = [...(Object.entries(AREAS) as [Area, string][]), ["rutina", "Rutina (comida, pausa…)"]];
 
 /** Editor de un día: cambiar horas, títulos, borrar o añadir bloques */
 export default function DayEditor({ date, onClose }: { date: string; onClose: () => void }) {
@@ -54,10 +53,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
                   <input type="time" id={`ed-e-${i}`} aria-label="Termina" value={b.e} onChange={(e) => set(i, { e: e.target.value })} className={bad ? "bad" : ""} aria-invalid={bad ? true : undefined} />
                 </div>
                 <input id={`ed-t-${i}`} className="ed-name" placeholder="Qué haces" value={b.t} onChange={(e) => set(i, { t: e.target.value })} />
-                <input id={`ed-sub-${i}`} className="ed-sub" placeholder="Detalle (opcional)" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />
-                <select id={`ed-a-${i}`} aria-label="Área" value={b.a} onChange={(e) => set(i, { a: e.target.value as Area })}>
-                  {AREA_OPTS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
+                <textarea id={`ed-sub-${i}`} className="ed-sub" rows={2} placeholder="Detalle (opcional): qué vas a hacer exactamente, notas…" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />
                 <button className="x" aria-label="Quitar bloque" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
               </div>
             );

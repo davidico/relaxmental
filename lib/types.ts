@@ -24,6 +24,8 @@ export interface Nota {
   id: string;
   /** Carpeta donde está (id de Carpeta) */
   folder?: string;
+  /** Contenido con formato (HTML del editor); "text" guarda la versión sin formato para buscar */
+  html?: string;
   /** Tipo antiguo, solo para notas anteriores a las carpetas */
   kind: Kind;
   title: string;

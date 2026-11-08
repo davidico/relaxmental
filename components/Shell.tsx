@@ -50,6 +50,18 @@ function Frame({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { mode, email, error, carpetas } = useData();
   const tops = carpetas.filter((c) => !c.parent).sort((a, b) => a.orden - b.orden);
+  const [hash, setHash] = useState("");
+  useEffect(() => {
+    const read = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      setHash(h === "todo" ? "" : h);
+    };
+    read();
+    addEventListener("hashchange", read);
+    return () => removeEventListener("hashchange", read);
+  }, [path]);
+  const hc = carpetas.find((c) => c.id === hash);
+  const topOfHash = hc ? (hc.parent ?? hc.id) : "";
   const [focus, setFocus] = useState<Tarea | null>(null);
   const wide = path === "/semana";
   const status = mode === "cloud" ? "Guardado en la nube" : mode === "local" ? "Guardado en este navegador" : "Cargando…";
@@ -72,14 +84,21 @@ function Frame({ children }: { children: ReactNode }) {
         </div>
         {NAV.map((n) => (
           <div key={n.href} className="navitem">
-            <Link href={n.href} aria-current={path === n.href ? "page" : undefined}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
-              {n.label}
-            </Link>
+            {n.href === "/cerebro" ? (
+              <a href="/cerebro#todo" aria-current={path === n.href && !hash ? "page" : undefined} className={path === n.href ? "in" : undefined}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
+                {n.label}
+              </a>
+            ) : (
+              <Link href={n.href} aria-current={path === n.href ? "page" : undefined}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
+                {n.label}
+              </Link>
+            )}
             {n.href === "/cerebro" && tops.length > 0 && (
               <div className="subnav">
                 {tops.map((c) => (
-                  <a key={c.id} href={`/cerebro#${c.id}`}>{c.name}</a>
+                  <a key={c.id} href={`/cerebro#${c.id}`} aria-current={path === "/cerebro" && topOfHash === c.id ? "page" : undefined}>{c.name}</a>
                 ))}
               </div>
             )}

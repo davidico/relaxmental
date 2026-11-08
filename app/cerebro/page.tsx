@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { fdate } from "@/lib/dates";
-import { submitOnCtrlEnter } from "@/lib/hooks";
 import { areaColor, type Area, type Carpeta, type Nota } from "@/lib/types";
 import { cssC } from "@/components/ui";
+import RichEditor, { RichView } from "@/components/RichEditor";
+import NoteSheet from "@/components/NoteSheet";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
@@ -14,7 +15,10 @@ const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCo
 function useHashFolder() {
   const [sel, setSel] = useState("");
   useEffect(() => {
-    const read = () => setSel(decodeURIComponent(location.hash.slice(1)));
+    const read = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      setSel(h === "todo" ? "" : h);
+    };
     read();
     addEventListener("hashchange", read);
     return () => removeEventListener("hashchange", read);
@@ -32,7 +36,8 @@ export default function Cerebro() {
   const [sel, go] = useHashFolder();
   const [q, setQ] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null);
-  const [f, setF] = useState({ title: "", text: "", ref: "" });
+  const [f, setF] = useState({ title: "", html: "", text: "", ref: "" });
+  const [opened, setOpened] = useState<Nota | null>(null);
   const [folderForm, setFolderForm] = useState<{ mode: "new" | "sub" | "rename"; name: string } | null>(null);
 
   const byId = useMemo(() => Object.fromEntries(carpetas.map((c) => [c.id, c])), [carpetas]);
@@ -48,7 +53,7 @@ export default function Cerebro() {
   };
   const path = (c?: Carpeta) => (c ? (c.parent && byId[c.parent] ? `${byId[c.parent].name} › ${c.name}` : c.name) : "Todo");
   /* Dónde se guarda una entrada nueva: la carpeta abierta; si es una principal con subcarpetas, su primera subcarpeta; si no hay ninguna, General */
-  const target = current ? current.id : byId.general ? "general" : tops[0]?.id ?? "";
+  const target = current?.id ?? "";
 
   const ql = q.toLowerCase();
   const list = notas
@@ -82,18 +87,14 @@ export default function Cerebro() {
     setFolderForm(null);
   };
 
-  const canDelete = current && count(current.id) === 0 && kids(current.id).length === 0;
+  const addEntry = () => {
+    if (!f.text.trim() || !target) return;
+    const n: Nota = { id: newId(), folder: target, kind: "nota", title: f.title.trim(), html: f.html, text: f.text.trim(), ref: f.ref.trim(), created: new Date().toISOString() };
+    save("notas", n);
+    setF({ title: "", html: "", text: "", ref: "" });
+  };
 
-  const FolderRow = ({ c, depth }: { c: Carpeta; depth: number }) => (
-    <>
-      <button className={`frow${sel === c.id ? " on" : ""}`} style={{ ...cssC(areaColor(colorOf(c.id))), paddingLeft: 10 + depth * 16 }} onClick={() => go(c.id)}>
-        <span className="fdot" />
-        <span className="fname">{c.name}</span>
-        <span className="fcount">{count(c.id)}</span>
-      </button>
-      {kids(c.id).map((k) => <FolderRow key={k.id} c={k} depth={depth + 1} />)}
-    </>
-  );
+  const canDelete = current && count(current.id) === 0 && kids(current.id).length === 0;
 
   return (
     <>
@@ -106,7 +107,6 @@ export default function Cerebro() {
         {tops.map((c) => (
           <button key={c.id} aria-pressed={top?.id === c.id} onClick={() => go(c.id)}>{c.name} · {count(c.id)}</button>
         ))}
-        <button onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Carpeta</button>
       </div>
       {top && kids(top.id).length > 0 && (
         <div className="seg fchips sub">
@@ -118,29 +118,20 @@ export default function Cerebro() {
       )}
 
       <div className="brain">
-        {/* Escritorio: árbol de carpetas */}
-        <aside className="tree">
-          <div className="card">
-            <button className={`frow${!sel ? " on" : ""}`} style={{ ...cssC("var(--ink)"), paddingLeft: 10 }} onClick={() => go("")}>
-              <span className="fdot" />
-              <span className="fname">Todo</span>
-              <span className="fcount">{notas.length}</span>
-            </button>
-            {tops.map((c) => <FolderRow key={c.id} c={c} depth={0} />)}
-          </div>
-          <button className="btn ghost sm" style={{ marginTop: 10 }} onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Nueva carpeta</button>
-        </aside>
 
         <div className="bmain">
           <div className="fhead">
             <h2 className="fpath" style={cssC(areaColor(colorOf(current?.id)))}>{path(current)}</h2>
+            <div className="factions">
+              <button className="linkbtn" onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Nueva carpeta</button>
             {current && (
-              <div className="factions">
+              <>
                 <button className="linkbtn" onClick={() => setFolderForm({ mode: "sub", name: "" })}>+ Subcarpeta</button>
                 <button className="linkbtn" onClick={() => setFolderForm({ mode: "rename", name: current.name })}>Renombrar</button>
                 <button className="linkbtn" onClick={() => setConfirm(canDelete ? `folder:${current.id}` : "folder-busy")}>Borrar</button>
-              </div>
+              </>
             )}
+            </div>
           </div>
 
           {folderForm && (
@@ -171,26 +162,27 @@ export default function Cerebro() {
             </div>
           )}
 
-          <div className="card">
-            <form
-              className="add"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!f.text.trim() || !target) return;
-                const n: Nota = { id: newId(), folder: target, kind: "nota", title: f.title.trim(), text: f.text.trim(), ref: f.ref.trim(), created: new Date().toISOString() };
-                save("notas", n);
-                setF({ title: "", text: "", ref: "" });
-              }}
-            >
-              <input id="n-title" placeholder="Título (opcional)" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-              <textarea id="n-text" placeholder={`Nueva entrada en ${path(byId[target])}…`} required value={f.text} onChange={(e) => setF({ ...f, text: e.target.value })} onKeyDown={submitOnCtrlEnter} />
-              <input id="n-ref" placeholder="Pasaje o referencia (opcional, ej. Juan 3:16)" value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} />
-              <div>
-                <button className="btn" type="submit">Guardar en {byId[target]?.name ?? "General"}</button>
-                <span className="kbd">Ctrl + Enter</span>
-              </div>
-            </form>
-          </div>
+          {current ? (
+            <div className="card">
+              <form
+                className="add"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addEntry();
+                }}
+              >
+                <input id="n-title" placeholder="Título (opcional)" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+                <RichEditor id="n-text" value={f.html} placeholder={`Nueva entrada en ${path(current)}… (# título, - lista, [] casilla)`} onChange={(html, text) => setF((x) => ({ ...x, html, text }))} onSubmit={addEntry} />
+                <input id="n-ref" placeholder="Pasaje o referencia (opcional, ej. Juan 3:16)" value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} />
+                <div>
+                  <button className="btn" type="submit" disabled={!f.text.trim()}>Guardar en {current.name}</button>
+                  <span className="kbd">Ctrl + Enter</span>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <p className="hint">Para escribir, entra en una carpeta desde el menú{" "}<span className="only-mobile">de arriba</span>.</p>
+          )}
 
           <div className="row" style={{ alignItems: "center", margin: "18px 0 10px" }}>
             <h2 style={{ margin: 0, flex: "1 1 auto" }}>{list.length} entrada{list.length === 1 ? "" : "s"}</h2>
@@ -210,8 +202,11 @@ export default function Cerebro() {
                       </div>
                       {n.title && <div className="nt">{n.title}</div>}
                       {n.ref && <div className="ref">{n.ref}</div>}
-                      <p>{n.text}</p>
+                      <button className="nbody" onClick={() => setOpened(n)} aria-label={`Abrir ${n.title || "entrada"}`}>
+                        <RichView html={n.html} text={n.text} className="clamp" />
+                      </button>
                       <div className="nmove">
+                        <button className="btn ghost sm" onClick={() => setOpened(n)}>Abrir</button>
                         <label htmlFor={`mv-${n.id}`}>Mover a</label>
                         <select id={`mv-${n.id}`} value={n.folder ?? ""} onChange={(e) => save("notas", { ...n, folder: e.target.value })}>
                           {tops.flatMap((t) => [t, ...kids(t.id)]).map((c) => (
@@ -232,11 +227,12 @@ export default function Cerebro() {
                 );
               })
             ) : (
-              <div className="card empty">{q ? "Nada coincide con tu búsqueda." : "Esta carpeta está vacía. Escribe la primera entrada arriba."}</div>
+              <div className="card empty">{q ? "Nada coincide con tu búsqueda." : current ? "Esta carpeta está vacía. Escribe la primera entrada arriba." : "Todavía no hay entradas."}</div>
             )}
           </div>
         </div>
       </div>
+      {opened && <NoteSheet key={opened.id} note={opened} onClose={() => setOpened(null)} />}
     </>
   );
 }
