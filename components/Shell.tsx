@@ -61,7 +61,7 @@ function Frame({ children }: { children: ReactNode }) {
           <span className="brand">MI SEMANA</span>
           <span className="sync">{status}</span>
         </div>
-        {error && <div className="banner">{error}</div>}
+        {error && <div className="banner" role="alert">{error}</div>}
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
       {mode !== "loading" && <QuickTask />}

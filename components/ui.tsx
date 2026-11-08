@@ -76,7 +76,7 @@ export function TaskRow({ x }: { x: Tarea }) {
         {x.step && <div className="step">{x.step}</div>}
         <div className="meta">
           <span className="chip" style={cssC(areaColor(x.area))}>{AREAS[x.area as keyof typeof AREAS] ?? "Casa"}</span>
-          {x.due && <span className="chip" style={cssC("var(--muted)")}>{fdate(x.due)}</span>}
+          {x.due && <span className="chip" style={cssC("var(--stone)")}>{fdate(x.due)}</span>}
           {!x.done && (
             <button className="btn ghost sm" onClick={() => startFocus(x)}>
               Empezar 10 min

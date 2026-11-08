@@ -51,7 +51,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
                 <div className="ed-times">
                   <input type="time" id={`ed-s-${i}`} aria-label="Empieza" value={b.s} onChange={(e) => set(i, { s: e.target.value })} />
                   <span aria-hidden="true">–</span>
-                  <input type="time" id={`ed-e-${i}`} aria-label="Termina" value={b.e} onChange={(e) => set(i, { e: e.target.value })} className={bad ? "bad" : ""} />
+                  <input type="time" id={`ed-e-${i}`} aria-label="Termina" value={b.e} onChange={(e) => set(i, { e: e.target.value })} className={bad ? "bad" : ""} aria-invalid={bad ? true : undefined} />
                 </div>
                 <input id={`ed-t-${i}`} className="ed-name" placeholder="Qué haces" value={b.t} onChange={(e) => set(i, { t: e.target.value })} />
                 <input id={`ed-sub-${i}`} className="ed-sub" placeholder="Detalle (opcional)" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />
@@ -72,7 +72,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
             </button>
           )}
           <span style={{ flex: 1 }} />
-          {!valid && <span className="ed-warn">Revisa las horas y que cada bloque tenga nombre.</span>}
+          {!valid && <span className="ed-warn" role="status">Revisa: cada bloque necesita nombre y terminar después de empezar.</span>}
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
           <button
             className="btn"
