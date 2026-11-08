@@ -13,12 +13,17 @@ function Heat({ h, weeks }: { h: Habito; weeks: number }) {
   const start = addD(mondayOf(t), -(weeks - 1) * 7);
   return (
     <div className="heat">
-      <div className="hm" style={cssC(areaColor(h.area))}>
+      <div className="hm" style={{ ...cssC(areaColor(h.area)), ["--w" as string]: weeks }}>
         {Array.from({ length: weeks * 7 }, (_, i) => {
           const d = addD(start, i);
           const cls = [d > t ? "fut" : h.hechos[d] ? "on" : "", d === t ? "tdy" : ""].filter(Boolean).join(" ");
           return <i key={d} className={cls} title={fdate(d)} />;
         })}
+      </div>
+      <div className="hlegend">
+        <span>hace {Math.round(weeks / 4.3)} meses</span>
+        <span>lunes arriba · domingo abajo</span>
+        <span>hoy</span>
       </div>
     </div>
   );
@@ -37,7 +42,7 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Marca cada día. Cada cuadrito es un día de las últimas {weeks} semanas.</p>
+      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, con borde el de hoy. Cada columna es una semana.</p>
       <div className="habgrid">
         {list.length ? (
           list.map((h) => {
