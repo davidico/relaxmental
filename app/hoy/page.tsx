@@ -56,21 +56,21 @@ export default function Hoy() {
       <p className="sub">{preachesOn(labores, t) ? "Hoy predicas." : r.length ? `Culto hoy: ${r.join(", ")}.` : "Hoy no tienes labor en la iglesia."}</p>
       <div className="hoy">
         <div className="a-now">{nowCard}</div>
+        <div className="a-tasks">
+          <h2>Para hoy · {paraHoy.length}</h2>
+          <div className="card">
+            {paraHoy.length ? paraHoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. Añade una con «+ Nueva tarea».</div>}
+          </div>
+          <h2>Te faltan · {luego.length}</h2>
+          <div className="card">
+            {luego.length ? luego.slice(0, 4).map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}
+            {luego.length > 4 && <Link className="more" href="/tareas">Ver las {luego.length} tareas →</Link>}
+          </div>
+        </div>
         <div className="side">
           <div className="a-hab">
             <h2>Hábitos de hoy</h2>
             <HabitChips date={t} />
-          </div>
-          <div className="a-tasks">
-            <h2>Para hoy · {paraHoy.length}</h2>
-            <div className="card">
-              {paraHoy.length ? paraHoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. Añade una con «+ Nueva tarea».</div>}
-            </div>
-            <h2>Te faltan · {luego.length}</h2>
-            <div className="card">
-              {luego.length ? luego.slice(0, 4).map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}
-              {luego.length > 4 && <Link className="more" href="/tareas">Ver las {luego.length} tareas →</Link>}
-            </div>
           </div>
           <div className="a-quick">
             <h2>Captura rápida</h2>

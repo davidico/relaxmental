@@ -200,8 +200,8 @@ button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--p
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* Estructuras de cada vista: en el móvil una columna; en escritorio se abren */
-.hoy{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"now" "hab" "tl" "tasks" "quick"}
-.hoy>.a-now{grid-area:now}.hoy .a-hab{grid-area:hab}.hoy>.a-tl{grid-area:tl}.hoy .a-tasks{grid-area:tasks}.hoy .a-quick{grid-area:quick}
+.hoy{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"now" "hab" "tasks" "tl" "quick"}
+.hoy>.a-now{grid-area:now}.hoy .a-hab{grid-area:hab}.hoy>.a-tl{grid-area:tl}.hoy>.a-tasks{grid-area:tasks}.hoy .a-quick{grid-area:quick}
 .hoy>.side{display:contents}
 .split{display:grid;grid-template-columns:minmax(0,1fr);gap:0 32px}
 .habgrid{display:grid;gap:12px}
@@ -225,7 +225,7 @@ button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--p
   .top .brand{visibility:hidden}
   h1{font-size:38px}
   .focus{left:224px;bottom:max(24px,env(safe-area-inset-bottom,0px))}
-  .hoy{grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);grid-template-areas:"now side" "tl side";grid-template-rows:auto 1fr;column-gap:32px;align-items:start}
+  .hoy{grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);grid-template-areas:"now side" "tasks side" "tl side";grid-template-rows:auto auto 1fr;column-gap:32px;align-items:start}
   .hoy>.side{display:block;grid-area:side;position:sticky;top:24px}
   .hoy .side>:first-child h2{margin-top:0}
   .hoy>.a-tl h2{margin-top:28px}
