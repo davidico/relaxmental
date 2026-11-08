@@ -21,6 +21,6 @@
   // Valores de Cloudflare Access (no son secretos). Se rellenan al activar Access; ver README.
   "vars": {
     "ACCESS_TEAM_DOMAIN": "aged-pine-ba2b.cloudflareaccess.com",
-    "ACCESS_AUD": ""
+    "ACCESS_AUD": "ddd172ffe2adb4f4539181f739c10d59ce21f6e18fb230ab22193abf8ffc70d8"
   }
 }
