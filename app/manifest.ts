@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-static";
+
 /** Permite instalar la app en Android ("Añadir a pantalla de inicio") */
 export default function manifest(): MetadataRoute.Manifest {
   return {

@@ -29,14 +29,22 @@ npm run dev
 # abre http://localhost:3000
 ```
 
-## Publicarla (Vercel + Supabase)
+## Publicarla (Cloudflare Pages + Supabase)
+
+La app se exporta como web estática (`next build` → carpeta `out/`), así que Cloudflare Pages la sirve sin servidor.
 
 1. **Supabase**: crea un proyecto en supabase.com → SQL Editor → pega `supabase/schema.sql` → Run.
-   En *Authentication → URL Configuration* pon la dirección de tu web como *Site URL*.
-2. **Vercel**: entra con tu cuenta de GitHub → *Add New Project* → elige este repo.
-   En *Environment Variables* añade `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   (Supabase → Project Settings → API) → *Deploy*.
+   En *Authentication → URL Configuration* pon la dirección de tu web (por ejemplo `https://relaxmental.pages.dev`) como *Site URL*.
+2. **Cloudflare**: dash.cloudflare.com → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → elige `relaxmental`.
+   - Framework preset: **Next.js (Static HTML Export)**
+   - Build command: `npx next build`
+   - Build output directory: `out`
+   - Variables de entorno: `NODE_VERSION` = `22`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+     (Supabase → Project Settings → API)
+   - *Save and Deploy*.
 3. Cada `git push` a `main` publica la nueva versión sola.
+
+Sin las variables de Supabase la app también funciona: guarda en el navegador.
 
 ## Instalar en Android
 
