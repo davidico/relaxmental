@@ -93,7 +93,7 @@ export default function Hoy() {
                       <option key={c.id} value={c.id}>{c.parent ? `${carpetas.find((p) => p.id === c.parent)?.name} › ${c.name}` : c.name}</option>
                     ))}
                 </select>
-                <textarea id="k-text" required style={{ minHeight: 70 }} placeholder="Una idea, una profecía, algo que no quieres olvidar…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={submitOnCtrlEnter} />
+                <textarea id="k-text" required placeholder="Una idea, una profecía, algo que no quieres olvidar…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={submitOnCtrlEnter} />
                 <div>
                   <button className="btn" type="submit">Guardar en el cerebro</button>
                   <span className="kbd">Ctrl + Enter</span>
