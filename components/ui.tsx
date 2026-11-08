@@ -4,7 +4,7 @@ import { useData } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
 import { AREAS, areaColor, type Habito, type Tarea } from "@/lib/types";
-import { habitColor, sortHabits } from "@/lib/habits";
+import { habitColor, sortHabits, streak } from "@/lib/habits";
 import { toMin } from "@/lib/dates";
 import { useFocus } from "./Shell";
 import type { CSSProperties } from "react";
@@ -51,14 +51,27 @@ export function toggleHecho(h: Habito, date: string): Habito {
 
 export function HabitChips({ date }: { date: string }) {
   const { habitos, save } = useData();
-  if (!habitos.length) return <div className="empty">Añade tus hábitos en la sección Hábitos.</div>;
+  if (!habitos.length) return <div className="card empty">Añade tus hábitos en la sección Hábitos.</div>;
+  const list = sortHabits(habitos);
+  const done = list.filter((h) => h.hechos[date]).length;
   return (
-    <div className="hchips">
-      {sortHabits(habitos).map((h) => (
-        <button key={h.id} className="hc" style={cssC(habitColor(h, habitos))} aria-pressed={!!h.hechos[date]} onClick={() => save("habitos", toggleHecho(h, date))}>
-          {h.name}
-        </button>
-      ))}
+    <div className="card hlist">
+      <div className="hprog">
+        <span><b>{done}</b> de {list.length}</span>
+        <span className="pbar" aria-hidden="true"><i style={{ width: `${(done / list.length) * 100}%` }} /></span>
+      </div>
+      {list.map((h) => {
+        const on = !!h.hechos[date];
+        const s = streak(h, date);
+        return (
+          <button key={h.id} className="hrow" style={cssC(habitColor(h, habitos))} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, date))}>
+            <span className="hcheck" aria-hidden="true">✓</span>
+            <span className="hdot" aria-hidden="true" />
+            <span className="hlabel">{h.name}</span>
+            {s > 0 && <span className="hstreak">{s} {s === 1 ? "día" : "días"}</span>}
+          </button>
+        );
+      })}
     </div>
   );
 }
