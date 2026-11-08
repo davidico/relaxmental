@@ -29,7 +29,7 @@ interface D1Database {
   batch(stmts: D1Prepared[]): Promise<unknown>;
 }
 
-const TABLAS = new Set(["tareas", "notas", "habitos", "dias"]);
+const TABLAS = new Set(["tareas", "notas", "habitos", "dias", "carpetas"]);
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 
@@ -76,7 +76,7 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
 
   if (url.pathname === "/api/data" && req.method === "GET") {
     const { results } = await env.DB.prepare("SELECT tabla, id, data FROM items WHERE user_email = ?").bind(email).all<{ tabla: string; id: string; data: string }>();
-    const out: Record<string, unknown> = { tareas: [], notas: [], habitos: [], dias: {} };
+    const out: Record<string, unknown> = { tareas: [], notas: [], habitos: [], carpetas: [], dias: {} };
     for (const r of results) {
       const v = JSON.parse(r.data);
       if (r.tabla === "dias") (out.dias as Record<string, unknown>)[r.id] = v;

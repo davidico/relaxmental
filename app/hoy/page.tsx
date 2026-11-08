@@ -4,20 +4,19 @@ import { useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, ds, toMin } from "@/lib/dates";
 import { nowInfo, preachesOn, rolesOn } from "@/lib/schedule";
-import { KINDS, type Kind } from "@/lib/types";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { HabitChips, TaskRow, Timeline, openTasks } from "@/components/ui";
 import DayEditor from "@/components/DayEditor";
 
 export default function Hoy() {
-  const { labores, tareas, save, planFor } = useData();
+  const { labores, tareas, carpetas, save, planFor } = useData();
   const now = useNow();
   const t = ds(now);
   const minute = now.getHours() * 60 + now.getMinutes();
   const { cur, nxt } = nowInfo(planFor(t), minute);
   const r = rolesOn(labores, t);
   const pend = openTasks(tareas).slice(0, 3);
-  const [kind, setKind] = useState<Kind>("idea");
+  const [folder, setFolder] = useState("ideas");
   const [text, setText] = useState("");
   const [editing, setEditing] = useState(false);
 
@@ -73,12 +72,18 @@ export default function Hoy() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!text.trim()) return;
-                  save("notas", { id: newId(), kind, title: "", text: text.trim(), ref: "", created: new Date().toISOString() });
+                  save("notas", { id: newId(), folder, kind: "nota", title: "", text: text.trim(), ref: "", created: new Date().toISOString() });
                   setText("");
                 }}
               >
-                <select id="k-kind" aria-label="Tipo" value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
-                  {Object.entries(KINDS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                <select id="k-kind" aria-label="Carpeta" value={folder} onChange={(e) => setFolder(e.target.value)}>
+                  {carpetas
+                    .filter((c) => !c.parent)
+                    .sort((a, b) => a.orden - b.orden)
+                    .flatMap((t) => [t, ...carpetas.filter((c) => c.parent === t.id).sort((a, b) => a.orden - b.orden)])
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>{c.parent ? `${carpetas.find((p) => p.id === c.parent)?.name} › ${c.name}` : c.name}</option>
+                    ))}
                 </select>
                 <textarea id="k-text" required style={{ minHeight: 70 }} placeholder="Una idea, una profecía, algo que no quieres olvidar…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={submitOnCtrlEnter} />
                 <div>

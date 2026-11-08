@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { DataProvider, useData } from "@/lib/data";
+import QuickTask from "./QuickTask";
 import { pad } from "@/lib/dates";
 import type { Tarea } from "@/lib/types";
 
@@ -47,7 +48,8 @@ function FocusBar({ task, onClose }: { task: Tarea; onClose: () => void }) {
 
 function Frame({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const { mode, email, error } = useData();
+  const { mode, email, error, carpetas } = useData();
+  const tops = carpetas.filter((c) => !c.parent).sort((a, b) => a.orden - b.orden);
   const [focus, setFocus] = useState<Tarea | null>(null);
   const wide = path === "/semana";
   const status = mode === "cloud" ? "Guardado en la nube" : mode === "local" ? "Guardado en este navegador" : "Cargando…";
@@ -62,16 +64,26 @@ function Frame({ children }: { children: ReactNode }) {
         {error && <div className="banner">{error}</div>}
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
+      {mode !== "loading" && <QuickTask />}
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
         <div className="side-brand">
           Mi Semana<small>David · Berlín</small>
         </div>
         {NAV.map((n) => (
-          <Link key={n.href} href={n.href} aria-current={path === n.href ? "page" : undefined}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
-            {n.label}
-          </Link>
+          <div key={n.href} className="navitem">
+            <Link href={n.href} aria-current={path === n.href ? "page" : undefined}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
+              {n.label}
+            </Link>
+            {n.href === "/cerebro" && tops.length > 0 && (
+              <div className="subnav">
+                {tops.map((c) => (
+                  <a key={c.id} href={`/cerebro#${c.id}`}>{c.name}</a>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
         {email && (
           <div className="side-foot">

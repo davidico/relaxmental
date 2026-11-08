@@ -11,8 +11,20 @@ export interface Tarea {
   created: string;
 }
 
+export interface Carpeta {
+  id: string;
+  name: string;
+  parent: string | null; // null = carpeta principal
+  area: Area; // color
+  orden: number;
+  created: string;
+}
+
 export interface Nota {
   id: string;
+  /** Carpeta donde está (id de Carpeta) */
+  folder?: string;
+  /** Tipo antiguo, solo para notas anteriores a las carpetas */
   kind: Kind;
   title: string;
   text: string;

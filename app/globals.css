@@ -232,3 +232,48 @@ input.bad{border-color:var(--warn);color:var(--warn)}
   .modal{left:224px}
 }
 @media (min-width:1280px){.weekgrid .dayhead .edit{align-self:flex-start}}
+
+/* Menú: el Cerebro con sus carpetas como submenú (solo escritorio) */
+.navitem{display:contents}
+.subnav{display:none}
+@media (min-width:900px){
+  .navitem{display:block}
+  .subnav{display:flex;flex-direction:column;margin:2px 0 6px 33px;border-left:1px solid var(--line)}
+  .tabs .subnav a{font-size:13.5px;font-weight:600;padding:6px 12px;border-radius:0 8px 8px 0;color:var(--muted)}
+  .tabs .subnav a:hover{color:var(--ink)}
+}
+
+/* Segundo cerebro: árbol de carpetas */
+.brain{display:grid;grid-template-columns:minmax(0,1fr);gap:0 28px}
+.tree{display:none}
+.fchips.sub button{font-size:12.5px;padding:5px 11px}
+.fhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:8px 0 10px}
+.fpath{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:0;text-transform:none;color:var(--c);margin:0}
+.factions{display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px}
+.frow{font:inherit;display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--ink);text-align:left;font-size:14.5px}
+.frow:hover{background:color-mix(in srgb,var(--pine-soft) 55%,transparent)}
+.frow.on{background:var(--pine-soft);font-weight:700}
+.fdot{flex:none;width:9px;height:9px;border-radius:3px;background:var(--c)}
+.fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcount{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tree .card{padding:6px}
+.folderform{margin-bottom:12px;padding:12px 14px}
+.flabel{font-size:13px;font-weight:700;color:var(--muted)}
+.nmove{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.nmove select{width:auto;max-width:100%;font-size:13px;padding:4px 8px}
+@media (min-width:900px){
+  .fchips{display:none}
+  .brain{grid-template-columns:240px minmax(0,1fr);align-items:start}
+  .tree{display:block;position:sticky;top:24px}
+}
+
+/* Botón flotante "+ Nueva tarea" */
+.fab{position:fixed;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));font:inherit;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:13px 20px 13px 16px;background:var(--pine);color:var(--on-pine);cursor:pointer;box-shadow:0 6px 18px color-mix(in srgb,var(--ink) 28%,transparent)}
+.fab span{font-size:22px;line-height:1;font-weight:400}
+.fab:hover{filter:brightness(1.08)}
+.focus{bottom:calc(136px + env(safe-area-inset-bottom,0px))}
+.saved{font-size:13.5px;font-weight:700;color:var(--pine)}
+@media (min-width:900px){
+  .fab{bottom:max(24px,env(safe-area-inset-bottom,0px));right:max(32px,env(safe-area-inset-right,0px))}
+  .focus{bottom:max(90px,env(safe-area-inset-bottom,0px))}
+}

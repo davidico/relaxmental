@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { Habito, Labores, Nota, Tarea } from "./types";
+import type { Carpeta, Habito, Kind, Labores, Nota, Tarea } from "./types";
 import { scheduleFor, type Bloque } from "./schedule";
 import laboresBase from "@/data/labores.json";
 
@@ -13,8 +13,8 @@ import laboresBase from "@/data/labores.json";
  *   `npm run dev`), todo se guarda en este navegador.
  */
 type Mode = "loading" | "local" | "cloud";
-type Table = "tareas" | "notas" | "habitos";
-type Row = { tareas: Tarea; notas: Nota; habitos: Habito };
+type Table = "tareas" | "notas" | "habitos" | "carpetas";
+type Row = { tareas: Tarea; notas: Nota; habitos: Habito; carpetas: Carpeta };
 type Dias = Record<string, Bloque[]>;
 
 interface DataCtx {
@@ -25,6 +25,8 @@ interface DataCtx {
   tareas: Tarea[];
   notas: Nota[];
   habitos: Habito[];
+  /** Carpetas del segundo cerebro (principales y subcarpetas) */
+  carpetas: Carpeta[];
   /** Días que editaste a mano: fecha -> bloques */
   dias: Dias;
   /** Horario de un día: el que editaste, o el automático */
@@ -52,7 +54,20 @@ const DEFAULT_HABITS: Array<Pick<Habito, "name" | "area">> = [
 const seedHabits = (): Habito[] =>
   DEFAULT_HABITS.map((h, i) => ({ ...h, id: newId(), orden: i, hechos: {}, created: new Date().toISOString() }));
 
-interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; dias: Dias }
+/* Carpetas de inicio del segundo cerebro (ids fijos para poder mover las notas antiguas) */
+const DEFAULT_FOLDERS: Array<Omit<Carpeta, "created">> = [
+  { id: "profecias", name: "Profecías", parent: null, area: "iglesia", orden: 0 },
+  { id: "suenos", name: "Sueños", parent: null, area: "tukuna", orden: 1 },
+  { id: "notas", name: "Notas", parent: null, area: "trabajo", orden: 2 },
+  { id: "ideas", name: "Ideas", parent: "notas", area: "trabajo", orden: 0 },
+  { id: "predicaciones", name: "Predicaciones", parent: "notas", area: "trabajo", orden: 1 },
+  { id: "general", name: "General", parent: "notas", area: "trabajo", orden: 2 },
+];
+const seedFolders = (): Carpeta[] => DEFAULT_FOLDERS.map((f) => ({ ...f, created: new Date().toISOString() }));
+/** Dónde va una nota antigua según su tipo */
+export const FOLDER_OF_KIND: Record<Kind, string> = { profecia: "profecias", idea: "ideas", predicacion: "predicaciones", nota: "general" };
+
+interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias }
 
 function readLocal(): Partial<Snapshot> {
   try {
@@ -75,13 +90,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [notas, setNotas] = useState<Nota[]>([]);
   const [habitos, setHabitos] = useState<Habito[]>([]);
+  const [carpetas, setCarpetas] = useState<Carpeta[]>([]);
   const [dias, setDias] = useState<Dias>({});
   const modeRef = useRef<Mode>("loading");
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
 
-  const setters = useMemo(() => ({ tareas: setTareas, notas: setNotas, habitos: setHabitos }) as const, []);
+  const setters = useMemo(() => ({ tareas: setTareas, notas: setNotas, habitos: setHabitos, carpetas: setCarpetas }) as const, []);
   const fail = useCallback((what: string) => (e: unknown) => setError(`${what}: ${e instanceof Error ? e.message : e}`), []);
 
   useEffect(() => {
@@ -98,6 +114,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setTareas(local.tareas ?? []);
         setNotas(local.notas ?? []);
         setHabitos(local.habitos ?? seedHabits());
+        setCarpetas(local.carpetas ?? []);
         setDias(local.dias ?? {});
         setMode("local");
         return;
@@ -114,6 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...(local.tareas ?? []).map((x) => ({ tabla: "tareas", id: x.id, data: x })),
             ...(local.notas ?? []).map((x) => ({ tabla: "notas", id: x.id, data: x })),
             ...(local.habitos?.length ? local.habitos : seedHabits()).map((x) => ({ tabla: "habitos", id: x.id, data: x })),
+            ...(local.carpetas ?? []).map((x) => ({ tabla: "carpetas", id: x.id, data: x })),
             ...Object.entries(local.dias ?? {}).map(([id, b]) => ({ tabla: "dias", id, data: b })),
           ];
           await call("/api/import", { method: "POST", body: JSON.stringify({ items }) });
@@ -122,6 +140,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setTareas(data.tareas);
         setNotas(data.notas);
         setHabitos(data.habitos);
+        setCarpetas(data.carpetas ?? []);
         setDias(data.dias);
       } catch (e) {
         fail("No se pudieron cargar tus datos")(e);
@@ -134,9 +153,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (mode !== "local") return;
     try {
-      localStorage.setItem(LS, JSON.stringify({ tareas, notas, habitos, dias }));
+      localStorage.setItem(LS, JSON.stringify({ tareas, notas, habitos, carpetas, dias }));
     } catch {}
-  }, [mode, tareas, notas, habitos, dias]);
+  }, [mode, tareas, notas, habitos, carpetas, dias]);
 
   const save = useCallback(
     <T extends Table>(table: T, item: Row[T]) => {
@@ -171,9 +190,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [fail],
   );
 
+  /* La primera vez: crear las carpetas de inicio y mover las notas antiguas a su carpeta */
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (mode === "loading" || seeded.current) return;
+    seeded.current = true;
+    if (!carpetas.length) seedFolders().forEach((f) => save("carpetas", f));
+    for (const n of notas) if (!n.folder) save("notas", { ...n, folder: FOLDER_OF_KIND[n.kind] ?? "general" });
+  }, [mode, carpetas, notas, save]);
+
   const planFor = useCallback((date: string) => dias[date] ?? scheduleFor(LABORES, date), [dias]);
 
-  const value: DataCtx = { mode, email, error, labores: LABORES, tareas, notas, habitos, dias, planFor, saveDia, save, remove };
+  const value: DataCtx = { mode, email, error, labores: LABORES, tareas, notas, habitos, carpetas, dias, planFor, saveDia, save, remove };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
