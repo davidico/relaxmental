@@ -7,32 +7,32 @@
  */
 :root{
   /* Neutros (paleta) */
-  --bg:#e6e5e0;          /* Calma: fondo de la app */
-  --surface:#f8f7f2;     /* papel: tarjetas */
-  --side:#dddad0;        /* Roble pálido: menú lateral y barra de pestañas */
-  --rocio:#dfddcf;       /* Rocío de la mañana */
-  --ink:#2b2f2c;         /* texto principal (contraste ~13:1) */
-  --muted:#585d58;       /* texto secundario (≥ 4.8:1 en todos los fondos) */
-  --line:#dddad0;        /* Roble pálido: separadores */
-  --field:#858a84;       /* Coventry Gray oscurecido: borde de campos (3.3:1) */
-  --cell:#ecebe6;        /* casillas vacías */
-  --stone:#b9bbb7;       /* Coventry Gray */
+  --bg:#f3f6f3;          /* Calma: fondo de la app */
+  --surface:#ffffff;     /* papel: tarjetas */
+  --side:#ffffff;        /* Roble pálido: menú lateral y barra de pestañas */
+  --rocio:#eef2ee;       /* Rocío de la mañana */
+  --ink:#1f2b24;         /* texto principal (contraste ~13:1) */
+  --muted:#56635b;       /* texto secundario (≥ 4.8:1 en todos los fondos) */
+  --line:#e2e8e3;        /* Roble pálido: separadores */
+  --field:#8a968e;       /* Coventry Gray oscurecido: borde de campos (3.3:1) */
+  --cell:#edf1ee;        /* casillas vacías */
+  --stone:#c9d0cb;       /* Coventry Gray */
   --sand:#beb4a3;        /* Pashmina */
   /* Principal: "Momentos de tranquilidad" como relleno, con texto oscuro (8.6:1) */
-  --primary:#c7d0c9; --primary-hover:#b6c3ba; --on-primary:#2b2f2c; --primary-edge:#6c8274;
+  --primary:#dce9df; --primary-hover:#cfe1d4; --on-primary:#1f3a2b; --primary-edge:#a9c2b0;
   /* Salvia profunda solo para texto, enlaces y foco */
-  --pine:#4b6155; --pine-soft:#d9e0da; --sage:#c7d0c9;
+  --pine:#2f5a41; --pine-soft:#e9f1eb; --sage:#dce9df;
   /* Estados */
   --warn:#a3412c; --warn-soft:#f6e1d9; --on-warn:#ffffff;
   --ok:#3f6b4f; --ok-soft:#dcebdf;
-  --ochre:#6e5230; --ochre-soft:#e2dbcd; /* Pashmina para lo de la iglesia */
+  --ochre:#6e5230; --ochre-soft:#f1ebdf; /* Pashmina para lo de la iglesia */
   /* Áreas: pasteles vivos */
   --a-iglesia:#f2c879; --a-trabajo:#8fb8f0; --a-tukuna:#c3a6ef; --a-aleman:#f4a38c;
   --a-familia:#f2a7c6; --a-salud:#8fd4ac; --a-casa:#cbbfa9; --a-rutina:#c9ccc6;
   --on-area:#23262a;     /* texto sobre un pastel */
-  --deep:#2b2f2c; --deepen:45%; /* oscurece los pasteles en gráficos pequeños para que se vean */
+  --deep:#1f2b24; --deepen:45%; /* oscurece los pasteles en gráficos pequeños para que se vean */
   --chip-mix:48%;
-  --shadow:0 1px 2px rgb(43 47 44 / .06), 0 4px 14px rgb(43 47 44 / .06);
+  --shadow:0 1px 2px rgb(31 43 36 / .04), 0 6px 20px rgb(31 43 36 / .05);
   --display:"Schibsted Grotesk","Avenir Next",system-ui,sans-serif;
   --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
   --tap:44px;
@@ -423,3 +423,25 @@ form.add.sheet-form{padding:12px max(16px,env(safe-area-inset-right,0px)) max(16
 .rich-body.view h1{font-size:19px}
 .rich-body.view h2{font-size:17px}
 .rich-body.view h3{font-size:16px}
+
+/* Estilo "blanco y verde suave" (como Labores Berlín) */
+.card{border-color:var(--line);border-radius:18px}
+.tabs{background:var(--side)}
+.brandmark{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--pine);color:#fff;font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.02em;flex:none;box-shadow:inset 0 -3px 0 rgb(255 255 255 / .15)}
+@media (min-width:900px){
+  .tabs{top:16px;bottom:16px;left:max(16px,env(safe-area-inset-left,0px));width:240px;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:20px 14px}
+  .side-brand{display:flex;align-items:center;gap:12px;padding:4px 6px 18px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+  .side-brand small{margin-top:2px}
+  .tabs a{color:var(--muted)}
+  .tabs a[aria-current="page"],.tabs a.in{background:var(--primary);color:var(--on-primary);box-shadow:inset 4px 0 0 var(--pine)}
+  .tabs a:hover{background:var(--pine-soft);color:var(--ink)}
+  .tabs .subnav a[aria-current="page"]{background:var(--pine-soft);color:var(--on-primary);box-shadow:none}
+  .wrap,.wrap.wide{margin-left:272px;padding-left:max(32px,env(safe-area-inset-left,0px))}
+  .focus{left:272px}
+  .modal{left:0}
+}
+.tabs a[aria-current="page"]{color:var(--pine)}
+.now{background:var(--primary);color:var(--on-primary);box-shadow:none;border:1px solid var(--primary-edge)}
+.btn{border-color:var(--primary-edge)}
+.seg button{border-color:var(--line)}
+.seg button[aria-pressed="true"]{background:var(--pine);border-color:var(--pine);color:#fff}

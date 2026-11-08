@@ -80,7 +80,10 @@ function Frame({ children }: { children: ReactNode }) {
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
         <div className="side-brand">
-          Mi Semana<small>David · Berlín</small>
+          <span className="brandmark" aria-hidden="true">MS</span>
+          <span>
+            Mi Semana<small>David · Berlín</small>
+          </span>
         </div>
         {NAV.map((n) => (
           <div key={n.href} className="navitem">
