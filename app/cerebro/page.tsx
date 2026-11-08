@@ -173,16 +173,13 @@ export default function Cerebro() {
               >
                 <input id="n-title" placeholder="Título (opcional)" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
                 <RichEditor id="n-text" value={f.html} placeholder={`Nueva entrada en ${path(current)}… (# título, - lista, [] casilla)`} onChange={(html, text) => setF((x) => ({ ...x, html, text }))} onSubmit={addEntry} />
-                <input id="n-ref" placeholder="Pasaje o referencia (opcional, ej. Juan 3:16)" value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} />
                 <div>
                   <button className="btn" type="submit" disabled={!f.text.trim()}>Guardar en {current.name}</button>
                   <span className="kbd">Ctrl + Enter</span>
                 </div>
               </form>
             </div>
-          ) : (
-            <p className="hint">Para escribir, entra en una carpeta desde el menú{" "}<span className="only-mobile">de arriba</span>.</p>
-          )}
+          ) : null}
 
           <div className="row" style={{ alignItems: "center", margin: "18px 0 10px" }}>
             <h2 style={{ margin: 0, flex: "1 1 auto" }}>{list.length} entrada{list.length === 1 ? "" : "s"}</h2>

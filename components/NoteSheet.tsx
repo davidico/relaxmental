@@ -46,7 +46,6 @@ export default function NoteSheet({ note, onClose }: { note: Nota; onClose: () =
             <select id="ns-folder" aria-label="Carpeta" value={d.folder} onChange={(e) => setD({ ...d, folder: e.target.value })}>
               {folderOptions(carpetas).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
             </select>
-            <input id="ns-ref" placeholder="Pasaje o referencia (opcional)" value={d.ref} onChange={(e) => setD({ ...d, ref: e.target.value })} />
           </div>
           <RichEditor id="ns-text" big value={d.html} onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={commit} />
         </div>
