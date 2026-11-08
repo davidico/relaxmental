@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { useData, newId } from "@/lib/data";
-import { addD, fdate, mondayOf, today } from "@/lib/dates";
+import { MES, addD, fdate, mondayOf, pd, today } from "@/lib/dates";
 import { last30, sortHabits, streak } from "@/lib/habits";
 import { useWide } from "@/lib/hooks";
 import { AREAS, areaColor, type Area, type Habito } from "@/lib/types";
 import { cssC, toggleHecho } from "@/components/ui";
 
+/**
+ * Mapa del hábito: empieza la semana en que lo creaste (o el primer día que lo marcaste)
+ * y avanza hacia el futuro. Cuando hoy llega a la última columna, el mapa se desplaza.
+ */
 function Heat({ h, weeks }: { h: Habito; weeks: number }) {
   const t = today();
-  const start = addD(mondayOf(t), -(weeks - 1) * 7);
+  const first = [h.created?.slice(0, 10) || t, ...Object.keys(h.hechos)].sort()[0];
+  let start = mondayOf(first < t ? first : t);
+  const latest = addD(mondayOf(t), -(weeks - 1) * 7);
+  if (start < latest) start = latest; // hoy siempre dentro del mapa
+  const end = addD(start, weeks * 7 - 1);
+  const mes = (d: string) => `${MES[pd(d).getMonth()].slice(0, 3)} ${pd(d).getFullYear()}`;
   return (
     <div className="heat">
       <div className="hm" style={{ ...cssC(areaColor(h.area)), ["--w" as string]: weeks }}>
@@ -21,9 +30,9 @@ function Heat({ h, weeks }: { h: Habito; weeks: number }) {
         })}
       </div>
       <div className="hlegend">
-        <span>hace {Math.round(weeks / 4.3)} meses</span>
+        <span>{mes(start)}</span>
         <span>lunes arriba · domingo abajo</span>
-        <span>hoy</span>
+        <span>{mes(end)}</span>
       </div>
     </div>
   );
@@ -42,7 +51,7 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, con borde el de hoy. Cada columna es una semana.</p>
+      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, con borde el de hoy, clarito los que aún no llegan. Cada columna es una semana.</p>
       <div className="habgrid">
         {list.length ? (
           list.map((h) => {
