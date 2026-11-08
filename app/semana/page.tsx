@@ -16,18 +16,28 @@ export default function Semana() {
   const a = pd(mon);
   const b = pd(addD(mon, 6));
   const days = Array.from({ length: 7 }, (_, i) => addD(mon, i));
+  const rango =
+    a.getMonth() === b.getMonth()
+      ? `Semana del ${a.getDate()} al ${b.getDate()} de ${MES[b.getMonth()]}`
+      : `Semana del ${a.getDate()} de ${MES[a.getMonth()]} al ${b.getDate()} de ${MES[b.getMonth()]}`;
+  const rel = off === 0 ? "Esta semana" : off === 1 ? "Próxima" : off === -1 ? "Anterior" : "Volver a hoy";
+  const dias = days.filter((x) => rolesOn(labores, x).length).length;
+  const pred = days
+    .filter((x) => preachesOn(labores, x))
+    .map((x) => `el ${DOW[pd(x).getDay()].toLowerCase()} ${pd(x).getDate()}`)
+    .join(" y ");
 
   return (
     <>
       <div className="top">
-        <h1>Semana</h1>
+        <h1>{rango}</h1>
         <div className="wnav">
           <button className="ib" aria-label="Semana anterior" onClick={() => setOff(off - 1)}>‹</button>
-          <button className="btn ghost sm" onClick={() => setOff(0)}>Hoy</button>
+          <button className={`btn sm${off === 0 ? "" : " ghost"}`} onClick={() => setOff(0)} title="Volver a esta semana">{rel}</button>
           <button className="ib" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>›</button>
         </div>
       </div>
-      <p className="sub">{a.getDate()} {MES[a.getMonth()]} – {b.getDate()} {MES[b.getMonth()]}</p>
+      <p className="sub">{dias} día{dias === 1 ? "" : "s"} con labor en la iglesia{pred ? ` · predicas ${pred}` : ""}</p>
       <div className="weekgrid">
         {days.map((x) => {
           const d = pd(x);
