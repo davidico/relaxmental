@@ -51,7 +51,7 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, con borde el de hoy, clarito los que aún no llegan. Cada columna es una semana.</p>
+      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, clarito los que aún no llegan. Cada columna es una semana.</p>
       <div className="habgrid">
         {list.length ? (
           list.map((h) => {
