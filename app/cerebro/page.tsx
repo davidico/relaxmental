@@ -107,6 +107,7 @@ export default function Cerebro() {
         {tops.map((c) => (
           <button key={c.id} aria-pressed={top?.id === c.id} onClick={() => go(c.id)}>{c.name} · {count(c.id)}</button>
         ))}
+        <button className="addchip" onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Carpeta</button>
       </div>
       {top && kids(top.id).length > 0 && (
         <div className="seg fchips sub">
@@ -122,16 +123,13 @@ export default function Cerebro() {
         <div className="bmain">
           <div className="fhead">
             <h2 className="fpath" style={cssC(areaColor(colorOf(current?.id)))}>{path(current)}</h2>
-            <div className="factions">
-              <button className="linkbtn" onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Nueva carpeta</button>
             {current && (
-              <>
-                <button className="linkbtn" onClick={() => setFolderForm({ mode: "sub", name: "" })}>+ Subcarpeta</button>
-                <button className="linkbtn" onClick={() => setFolderForm({ mode: "rename", name: current.name })}>Renombrar</button>
-                <button className="linkbtn" onClick={() => setConfirm(canDelete ? `folder:${current.id}` : "folder-busy")}>Borrar</button>
-              </>
+              <div className="factions" role="group" aria-label="Opciones de la carpeta">
+                <button className="btn ghost sm" onClick={() => setFolderForm({ mode: "sub", name: "" })}>+ Subcarpeta</button>
+                <button className="btn ghost sm" onClick={() => setFolderForm({ mode: "rename", name: current.name })}>Renombrar</button>
+                <button className="btn ghost sm danger" onClick={() => setConfirm(canDelete ? `folder:${current.id}` : "folder-busy")}>Borrar</button>
+              </div>
             )}
-            </div>
           </div>
 
           {folderForm && (
@@ -181,9 +179,9 @@ export default function Cerebro() {
             </div>
           ) : null}
 
-          <div className="row" style={{ alignItems: "center", margin: "18px 0 10px" }}>
-            <h2 style={{ margin: 0, flex: "1 1 auto" }}>{list.length} entrada{list.length === 1 ? "" : "s"}</h2>
-            <input id="q" type="search" placeholder="Buscar en todo…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: "1 1 220px" }} />
+          <div className="listhead">
+            <input id="q" type="search" className="search" placeholder="Buscar en todas tus entradas…" aria-label="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
+            <h2>{list.length} entrada{list.length === 1 ? "" : "s"}{q ? ` para «${q}»` : ""}</h2>
           </div>
 
           <div className="notes">
@@ -191,36 +189,24 @@ export default function Cerebro() {
               list.map((n) => {
                 const fc = n.folder ? byId[n.folder] : undefined;
                 return (
-                  <div className="note" key={n.id}>
-                    <div className="nm">
-                      <div className="meta" style={{ marginTop: 0 }}>
+                  <article className="note" key={n.id}>
+                    <button className="nopen" onClick={() => setOpened(n)} aria-label={`Abrir ${n.title || "entrada"}`}>
+                      <span className="meta" style={{ marginTop: 0 }}>
                         <span className="chip" style={cssC(areaColor(colorOf(n.folder)))}>{fc ? path(fc) : "Sin carpeta"}</span>
                         {n.created && <small>{fdate(n.created)}</small>}
+                      </span>
+                      {n.title && <span className="nt">{n.title}</span>}
+                      <RichView html={n.html} text={n.text} className="clamp" />
+                    </button>
+                    <button className="x nx" aria-label={`Borrar ${n.title || "entrada"}`} onClick={() => setConfirm(n.id)}>✕</button>
+                    {confirm === n.id && (
+                      <div className="confirm">
+                        ¿Borrar esta entrada?
+                        <button className="btn sm warn" onClick={() => { remove("notas", n.id); setConfirm(null); }}>Borrar</button>
+                        <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
                       </div>
-                      {n.title && <div className="nt">{n.title}</div>}
-                      {n.ref && <div className="ref">{n.ref}</div>}
-                      <button className="nbody" onClick={() => setOpened(n)} aria-label={`Abrir ${n.title || "entrada"}`}>
-                        <RichView html={n.html} text={n.text} className="clamp" />
-                      </button>
-                      <div className="nmove">
-                        <button className="btn ghost sm" onClick={() => setOpened(n)}>Abrir</button>
-                        <label htmlFor={`mv-${n.id}`}>Mover a</label>
-                        <select id={`mv-${n.id}`} value={n.folder ?? ""} onChange={(e) => save("notas", { ...n, folder: e.target.value })}>
-                          {tops.flatMap((t) => [t, ...kids(t.id)]).map((c) => (
-                            <option key={c.id} value={c.id}>{path(c)}</option>
-                          ))}
-                        </select>
-                      </div>
-                      {confirm === n.id && (
-                        <div className="confirm">
-                          ¿Borrar esta entrada?
-                          <button className="btn sm warn" onClick={() => { remove("notas", n.id); setConfirm(null); }}>Borrar</button>
-                          <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
-                        </div>
-                      )}
-                    </div>
-                    <button className="x" aria-label="Borrar" onClick={() => setConfirm(n.id)}>✕</button>
-                  </div>
+                    )}
+                  </article>
                 );
               })
             ) : (

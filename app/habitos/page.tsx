@@ -51,7 +51,7 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Pulsa «Hoy» cuando lo hagas. Cada cuadrito es un día: de color si lo cumpliste, clarito los que aún no llegan. Cada columna es una semana.</p>
+      <p className="sub">Marca cada hábito cuando lo hagas. Cada cuadrito es un día y cada columna una semana.</p>
       <div className="habgrid">
         {list.length ? (
           list.map((h) => {
@@ -63,12 +63,13 @@ export default function Habitos() {
                   <div className="hname">
                     {h.name}
                     <div className="hstats">
-                      Racha <b>{s}</b> día{s === 1 ? "" : "s"} · <b>{last30(h)}</b>/30 en el último mes
+                      <span><b>{s}</b> {s === 1 ? "día" : "días"} de racha</span>
+                      <span><b>{last30(h)}</b> de 30 días</span>
                     </div>
                   </div>
                   <div className="row" style={{ flex: "none", gap: 6 }}>
                     <button className={`btn sm${on ? "" : " ghost"}`} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, t))}>
-                      {on ? "Hecho ✓" : "Hoy"}
+                      {on ? "Hecho ✓" : "Marcar hoy"}
                     </button>
                     <button className="x" aria-label="Borrar hábito" onClick={() => setConfirm(h.id)}>✕</button>
                   </div>
@@ -89,7 +90,7 @@ export default function Habitos() {
         )}
       </div>
       <h2>Nuevo hábito</h2>
-      <div className="card" style={{ maxWidth: 620 }}>
+      <div className="card newhabit">
         <form
           className="add"
           onSubmit={(e) => {

@@ -506,3 +506,62 @@ h2{letter-spacing:.06em}
   .fchips:not(.sub){display:flex}
   h1{font-size:40px}
 }
+
+/* ===== Revisión de UI (tarjetas y controles) ===== */
+/* Encabezado de sección con acción a la derecha, alineados */
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 10px}
+.sechead h2{margin:0}
+.hoy>.a-tl .sechead{margin-top:28px}
+
+/* Tareas: casilla propia, título clicable, acción compacta */
+.task{grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start;padding:16px 0}
+.tcheck{appearance:none;-webkit-appearance:none;flex:none;width:24px;height:24px;min-height:0;margin:1px 0 0;padding:0;border:2px solid var(--field);border-radius:8px;background:var(--surface);cursor:pointer;display:grid;place-content:center;transition:background .15s,border-color .15s}
+.tcheck::after{content:"";width:12px;height:7px;border:2.5px solid #fff;border-top:none;border-right:none;transform:rotate(-45deg) translate(1px,-1px) scale(0);transition:transform .12s}
+.tcheck:checked{background:var(--primary);border-color:var(--primary)}
+.tcheck:checked::after{transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+.tcheck:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 45%,transparent);outline-offset:2px}
+.ttitle{display:block;font-weight:700;line-height:1.35;cursor:pointer}
+.task.done .ttitle{text-decoration:line-through;color:var(--muted);font-weight:600}
+.task .meta{margin-top:8px}
+.startbtn{font:inherit;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--pine);cursor:pointer;transition:background .15s,border-color .15s}
+.startbtn span{font-size:10px}
+.startbtn:hover{background:var(--pine-soft);border-color:var(--sage)}
+.task .x{margin-top:-10px}
+.chip{display:inline-flex;align-items:center;min-height:28px}
+/* Móvil: primero tus tareas; el formulario va al final (también está el botón +) */
+.split>.sticky{order:2}
+
+/* Cerebro: tarjetas limpias, toda la tarjeta abre la entrada */
+.notes .note{position:relative;display:block;padding:0;overflow:hidden;transition:box-shadow .15s,transform .15s,border-color .15s}
+.notes .note:hover{border-color:var(--sage);box-shadow:0 10px 28px rgb(21 23 58 / .09)}
+.nopen{font:inherit;color:inherit;text-align:left;display:flex;flex-direction:column;gap:6px;width:100%;padding:16px 52px 16px 16px;background:none;border:none;cursor:pointer}
+.nopen .nt{display:block;font-family:var(--display);font-weight:700;font-size:18px;line-height:1.3;margin:2px 0 0}
+.nopen .clamp{color:var(--muted);max-height:7.2em}
+.nopen .meta{display:flex;gap:8px;align-items:center}
+.nopen small{color:var(--muted);font-size:13px}
+.nx{position:absolute;top:8px;right:8px;margin:0}
+.notes .note .confirm{margin:0 16px 16px}
+.listhead{display:flex;flex-direction:column;gap:8px;margin:22px 0 12px}
+.listhead h2{margin:0}
+.search{padding-left:40px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a5e7b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center/18px}
+.fhead{align-items:center;margin:14px 0 12px}
+.factions{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.factions .btn{white-space:nowrap}
+.btn.ghost.danger{color:var(--warn)}
+.btn.ghost.danger:hover{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.seg .addchip{border-style:dashed;color:var(--pine)}
+/* Barra del editor en una sola línea (se desliza en el móvil) */
+.toolbar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.toolbar::-webkit-scrollbar,.factions::-webkit-scrollbar,.seg::-webkit-scrollbar{display:none}
+.tb{flex:none}
+
+/* Hábitos: estadísticas claras y mapa a todo lo ancho */
+.hhead{align-items:flex-start}
+.hstats{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}
+.hm{max-width:none}
+.hlegend{max-width:none}
+.hm i.on{background:var(--c)}
+.hdot{background:var(--c)}
+.hm i.tdy:not(.on){background:color-mix(in srgb,var(--c) 22%,var(--cell))}
+.newhabit{max-width:620px;margin-left:0!important}
+@media (min-width:900px){.hm{gap:3px}}

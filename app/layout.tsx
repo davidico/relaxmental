@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Mi Semana",
   description: "Tu día hora por hora, hábitos, segundo cerebro y tareas.",
   appleWebApp: { capable: true, title: "Mi Semana", statusBarStyle: "default" },
+  icons: { icon: [{ url: "/icon-192.png", sizes: "192x192" }, { url: "/icon.svg" }], apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -13,8 +14,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eef2ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1512" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f5fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1020" },
   ],
 };
 

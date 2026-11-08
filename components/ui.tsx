@@ -104,29 +104,28 @@ export function DueChoice({ value, onChange, id }: { value: string; onChange: (v
 export function TaskRow({ x }: { x: Tarea }) {
   const { save, remove } = useData();
   const startFocus = useFocus();
+  const t = today();
   return (
     <div className={`task${x.done ? " done" : ""}`}>
-      <input type="checkbox" id={`c-${x.id}`} checked={x.done} aria-label="Hecha" onChange={(e) => save("tareas", { ...x, done: e.target.checked })} />
+      <input type="checkbox" className="tcheck" id={`c-${x.id}`} checked={x.done} aria-label={x.done ? "Marcar como pendiente" : "Marcar como hecha"} onChange={(e) => save("tareas", { ...x, done: e.target.checked })} />
       <div className="tt">
-        <b>{x.title}</b>
-        {x.step && <div className="step">{x.step}</div>}
+        <label htmlFor={`c-${x.id}`} className="ttitle">{x.title}</label>
+        {x.step && !x.done && <div className="step">{x.step}</div>}
         <div className="meta">
-          {x.due && !x.done && x.due < today() ? (
+          {x.due && !x.done && x.due < t ? (
             <span className="chip late">Atrasada · {fdate(x.due)}</span>
           ) : x.due ? (
-            <span className="chip" style={cssC(x.due === today() ? "var(--sage)" : "var(--stone)")}>{x.due === today() ? "Hoy" : fdate(x.due)}</span>
+            <span className="chip" style={cssC(x.due === t ? "var(--sage)" : "var(--stone)")}>{x.due === t ? "Hoy" : fdate(x.due)}</span>
           ) : null}
           {x.area && x.area in AREAS && <span className="chip" style={cssC(areaColor(x.area))}>{AREAS[x.area as keyof typeof AREAS]}</span>}
           {!x.done && (
-            <button className="btn ghost sm" onClick={() => startFocus(x)}>
-              Empezar 10 min
+            <button className="startbtn" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
+              <span aria-hidden="true">▶</span> 10 min
             </button>
           )}
         </div>
       </div>
-      <button className="x" aria-label="Borrar tarea" onClick={() => remove("tareas", x.id)}>
-        ✕
-      </button>
+      <button className="x" aria-label={`Borrar tarea: ${x.title}`} onClick={() => remove("tareas", x.id)}>✕</button>
     </div>
   );
 }

@@ -2,17 +2,31 @@ import type { MetadataRoute } from "next";
 
 export const dynamic = "force-static";
 
-/** Permite instalar la app en Android ("Añadir a pantalla de inicio") */
+/** Permite instalar la app en el móvil y el ordenador (PWA) */
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/hoy",
     name: "Mi Semana",
     short_name: "Mi Semana",
     description: "Tu día hora por hora, hábitos, segundo cerebro y tareas.",
     start_url: "/hoy",
+    scope: "/",
     display: "standalone",
-    background_color: "#eef2ee",
-    theme_color: "#2c6a4c",
+    orientation: "portrait",
+    background_color: "#f4f5fb",
+    theme_color: "#4f46e5",
     lang: "es",
-    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+    categories: ["productivity", "lifestyle"],
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+    ],
+    shortcuts: [
+      { name: "Hoy", url: "/hoy" },
+      { name: "Tareas", url: "/tareas" },
+      { name: "Cerebro", url: "/cerebro" },
+    ],
   };
 }

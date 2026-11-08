@@ -27,6 +27,7 @@ export const toMin = (t: string) => {
 };
 export const fdate = (s: string) => {
   const d = pd(s);
-  return `${d.getDate()} ${MES[d.getMonth()]}`;
+  const y = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : "";
+  return `${d.getDate()} ${MES[d.getMonth()]}${y}`;
 };
 export { pad };

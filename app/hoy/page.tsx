@@ -103,7 +103,7 @@ export default function Hoy() {
           </div>
         </div>
         <div className="a-tl">
-          <div className="top" style={{ alignItems: "center" }}>
+          <div className="sechead">
             <h2>Tu día hora por hora</h2>
             <button className="btn ghost sm" onClick={() => setEditing(true)}>Editar hoy</button>
           </div>
