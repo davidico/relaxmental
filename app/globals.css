@@ -140,8 +140,8 @@ textarea{resize:vertical;min-height:110px}
 
 /* Hábitos de hoy */
 .hchips{display:flex;flex-wrap:wrap;gap:8px}
-.hc{font:inherit;font-size:15px;font-weight:700;min-height:var(--tap);border-radius:999px;padding:8px 16px;border:1.5px solid var(--c-deep);background:color-mix(in srgb,var(--surface),var(--c) 18%);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:background .15s}
-.hc:hover{background:color-mix(in srgb,var(--surface),var(--c) 40%)}
+.hc{font:inherit;font-size:15px;font-weight:700;min-height:var(--tap);border-radius:999px;padding:8px 16px;border:2px solid var(--c-deep);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:background .15s}
+.hc:hover{background:color-mix(in srgb,transparent,var(--c) 22%)}
 .hc[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:var(--on-area)}
 .hc[aria-pressed="true"]::before{content:"✓"}
 

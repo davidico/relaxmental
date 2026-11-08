@@ -4,7 +4,7 @@ import { useData } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
 import { AREAS, areaColor, type Habito, type Tarea } from "@/lib/types";
-import { sortHabits } from "@/lib/habits";
+import { habitColor, sortHabits } from "@/lib/habits";
 import { toMin } from "@/lib/dates";
 import { useFocus } from "./Shell";
 import type { CSSProperties } from "react";
@@ -55,7 +55,7 @@ export function HabitChips({ date }: { date: string }) {
   return (
     <div className="hchips">
       {sortHabits(habitos).map((h) => (
-        <button key={h.id} className="hc" style={cssC(areaColor(h.area))} aria-pressed={!!h.hechos[date]} onClick={() => save("habitos", toggleHecho(h, date))}>
+        <button key={h.id} className="hc" style={cssC(habitColor(h, habitos))} aria-pressed={!!h.hechos[date]} onClick={() => save("habitos", toggleHecho(h, date))}>
           {h.name}
         </button>
       ))}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { MES, addD, fdate, mondayOf, pd, today } from "@/lib/dates";
-import { last30, sortHabits, streak } from "@/lib/habits";
+import { habitColor, last30, sortHabits, streak } from "@/lib/habits";
 import { useWide } from "@/lib/hooks";
 import { AREAS, areaColor, type Area, type Habito } from "@/lib/types";
 import { cssC, toggleHecho } from "@/components/ui";
@@ -12,7 +12,7 @@ import { cssC, toggleHecho } from "@/components/ui";
  * Mapa del hábito: empieza la semana en que lo creaste (o el primer día que lo marcaste)
  * y avanza hacia el futuro. Cuando hoy llega a la última columna, el mapa se desplaza.
  */
-function Heat({ h, weeks }: { h: Habito; weeks: number }) {
+function Heat({ h, weeks, color }: { h: Habito; weeks: number; color: string }) {
   const t = today();
   const first = [h.created?.slice(0, 10) || t, ...Object.keys(h.hechos)].sort()[0];
   let start = mondayOf(first < t ? first : t);
@@ -22,7 +22,7 @@ function Heat({ h, weeks }: { h: Habito; weeks: number }) {
   const mes = (d: string) => `${MES[pd(d).getMonth()].slice(0, 3)} ${pd(d).getFullYear()}`;
   return (
     <div className="heat">
-      <div className="hm" style={{ ...cssC(areaColor(h.area)), ["--w" as string]: weeks }}>
+      <div className="hm" style={{ ...cssC(color), ["--w" as string]: weeks }}>
         {Array.from({ length: weeks * 7 }, (_, i) => {
           const d = addD(start, i);
           const cls = [d > t ? "fut" : h.hechos[d] ? "on" : "", d === t ? "tdy" : ""].filter(Boolean).join(" ");
@@ -80,7 +80,7 @@ export default function Habitos() {
                     <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
                   </div>
                 )}
-                <Heat h={h} weeks={weeks} />
+                <Heat h={h} weeks={weeks} color={habitColor(h, habitos)} />
               </div>
             );
           })
