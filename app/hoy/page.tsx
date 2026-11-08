@@ -59,7 +59,7 @@ export default function Hoy() {
         <div className="a-tasks">
           <h2>Para hoy · {paraHoy.length}</h2>
           <div className="card">
-            {paraHoy.length ? paraHoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. Añade una con «+ Nueva tarea».</div>}
+            {paraHoy.length ? paraHoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. Añade una con el botón +.</div>}
           </div>
           <h2>Te faltan · {luego.length}</h2>
           <div className="card">
