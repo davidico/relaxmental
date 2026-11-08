@@ -1,10 +1,26 @@
-// Configuración de Cloudflare Workers: sirve la web estática que genera `next build` (carpeta out/)
+// Cloudflare Workers: la web estática (out/) + la API en /api (worker/index.ts) + base de datos D1
 {
   "name": "relaxmental",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./out",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "relaxmental-db",
+      "database_id": "4641ebda-b1ae-450b-8ad4-d8bd42083550",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Valores de Cloudflare Access (no son secretos). Se rellenan al activar Access; ver README.
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
   }
 }

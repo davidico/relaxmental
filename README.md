@@ -2,7 +2,7 @@
 
 App personal de David: el día hora por hora según las labores de la iglesia, hábitos con rachas, segundo cerebro (ideas, profecías, predicaciones, notas) y tareas con "primer paso".
 
-Hecha con **Next.js (App Router) + TypeScript**. Datos en **Supabase**; si Supabase no está configurado, guarda en el navegador.
+Hecha con **Next.js (App Router) + TypeScript**, publicada en **Cloudflare Workers**, datos en **Cloudflare D1** e inicio de sesión con **Cloudflare Access**. Si no has iniciado sesión (o en `npm run dev`), guarda en el navegador.
 
 ## Estructura
 
@@ -15,10 +15,12 @@ app/
 components/         Piezas reutilizables (menú, línea de tiempo, tareas…)
 lib/
   schedule.ts       Las reglas que arman tu día hora por hora  ← el corazón
-  data.tsx          Carga y guarda datos (Supabase o navegador)
+  data.tsx          Carga y guarda datos (API de D1 o navegador)
   habits.ts         Rachas y estadísticas
 data/labores.json   Tus labores de la iglesia por fecha
-supabase/schema.sql Tablas y seguridad de la base de datos
+worker/index.ts     API (/api) que guarda en D1 y verifica el login de Access
+migrations/        Tablas de la base de datos D1
+wrangler.jsonc      Configuración de Cloudflare (web + API + D1 + Access)
 ```
 
 ## Probarla en tu ordenador
@@ -29,22 +31,24 @@ npm run dev
 # abre http://localhost:3000
 ```
 
-## Publicarla (Cloudflare Pages + Supabase)
+## Cómo se publica
 
-La app se exporta como web estática (`next build` → carpeta `out/`), así que Cloudflare Pages la sirve sin servidor.
+Cloudflare Workers está conectado a este repo: cada `git push` a `main` ejecuta
+`npm run build` (genera `out/`) y `npx wrangler deploy` (sube la web y la API).
 
-1. **Supabase**: crea un proyecto en supabase.com → SQL Editor → pega `supabase/schema.sql` → Run.
-   En *Authentication → URL Configuration* pon la dirección de tu web (por ejemplo `https://relaxmental.pages.dev`) como *Site URL*.
-2. **Cloudflare**: dash.cloudflare.com → *Workers & Pages* → *Create* → *Pages* → *Connect to Git* → elige `relaxmental`.
-   - Framework preset: **Next.js (Static HTML Export)**
-   - Build command: `npx next build`
-   - Build output directory: `out`
-   - Variables de entorno: `NODE_VERSION` = `22`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-     (Supabase → Project Settings → API)
-   - *Save and Deploy*.
-3. Cada `git push` a `main` publica la nueva versión sola.
+- **Base de datos:** D1 `relaxmental-db` (tabla `items`, ver `migrations/0001_init.sql`).
+- **Inicio de sesión:** Cloudflare Access delante del Worker. La API comprueba el token
+  de Access (`ACCESS_TEAM_DOMAIN` y `ACCESS_AUD` en `wrangler.jsonc`) y usa tu correo
+  para separar los datos de cada persona.
 
-Sin las variables de Supabase la app también funciona: guarda en el navegador.
+### Activar Access (una vez)
+
+1. Cloudflare → Workers & Pages → `relaxmental` → Settings → Domains & Routes →
+   en `workers.dev` activa **Cloudflare Access**.
+2. Copia el **AUD** y el dominio del equipo (`<algo>.cloudflareaccess.com`) a `vars` en `wrangler.jsonc`.
+3. En Zero Trust → Access → Applications → la app → Policies, añade los correos que pueden entrar.
+
+La primera vez que entras con Access, lo que tenías guardado en ese navegador se sube a D1.
 
 ## Instalar en Android
 
@@ -55,3 +59,4 @@ Abre la web en Chrome → menú ⋮ → **Añadir a pantalla de inicio**.
 - Notificaciones push en cada bloque del horario (service worker + Web Push + cron de Vercel).
 - Editar el horario base desde la app.
 - Importar las labores directamente desde Labores Berlín.
+- Labores por persona (ahora `data/labores.json` es común).

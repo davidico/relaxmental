@@ -6,7 +6,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { DataProvider, useData } from "@/lib/data";
 import { pad } from "@/lib/dates";
 import type { Tarea } from "@/lib/types";
-import Login from "./Login";
 
 const NAV = [
   { href: "/hoy", label: "Hoy", icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
@@ -48,10 +47,10 @@ function FocusBar({ task, onClose }: { task: Tarea; onClose: () => void }) {
 
 function Frame({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const { mode, email, error, signOut } = useData();
+  const { mode, email, error } = useData();
   const [focus, setFocus] = useState<Tarea | null>(null);
   const wide = path === "/semana";
-  const status = mode === "cloud" ? "Guardado en la nube" : mode === "local" ? "Guardado en este navegador" : mode === "login" ? "" : "Cargando…";
+  const status = mode === "cloud" ? "Guardado en la nube" : mode === "local" ? "Guardado en este navegador" : "Cargando…";
 
   return (
     <FocusCtx.Provider value={setFocus}>
@@ -61,7 +60,7 @@ function Frame({ children }: { children: ReactNode }) {
           <span className="sync">{status}</span>
         </div>
         {error && <div className="banner">{error}</div>}
-        {mode === "login" ? <Login /> : mode === "loading" ? <div className="empty">Cargando…</div> : children}
+        {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
@@ -78,7 +77,7 @@ function Frame({ children }: { children: ReactNode }) {
           <div className="side-foot">
             {email}
             <br />
-            <button className="linkbtn" onClick={signOut}>Cerrar sesión</button>
+            <a className="linkbtn" href="/cdn-cgi/access/logout">Cerrar sesión</a>
           </div>
         )}
       </nav>
