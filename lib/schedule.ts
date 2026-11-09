@@ -55,7 +55,7 @@ export function exerciseOn(lab: Labores, date: string) {
  * - Mañanas (mejor energía): buscar trabajo (lun/mié/vie) o Tukuna.
  * - Si predica ese día: repaso por la mañana y descanso por la tarde.
  * - Los 3 días antes de predicar: bloque de estudio de la predicación.
- * - Alemán de 15:30 a 16:00.
+ * - Alemán de 15:30 a 16:00. Los días de púlpito, a esa hora te preparas y el alemán pasa a las 20:30.
  * - Ejercicio solo los días de exerciseOn(); los demás, tiempo con el bebé.
  */
 export function scheduleFor(lab: Labores, date: string): Bloque[] {
@@ -70,7 +70,11 @@ export function scheduleFor(lab: Labores, date: string): Bloque[] {
   const npTxt = np ? `Predicas el ${DOW[pd(np.d).getDay()].toLowerCase()} ${pd(np.d).getDate()}` : "";
   const culto = (s: string, e: string) => B(s, e, `Culto · ${svc}`, "iglesia", r.join(" · "), { church: true });
   const biblia = (s = "09:00", e = "09:30") => B(s, e, "Leer la Biblia", "iglesia", "Lectura y oración");
-  const aleman = B("15:30", "16:00", "Alemán", "aleman", "Media hora");
+  const pulpito = r.some((x) => /p[uú]lpito/i.test(x));
+  const aleman = pulpito
+    ? B("15:30", "16:00", "Prepararte para el púlpito", "iglesia", "Hoy te toca púlpito")
+    : B("15:30", "16:00", "Alemán", "aleman", "Media hora");
+  const alemanNoche = B("20:30", "21:00", "Alemán", "aleman", "Media hora, después del culto");
 
   const a: Bloque[] = [B("07:00", "07:15", "Levantarse · pastillas", "salud", "Tómalas antes de desayunar"), B("07:15", "08:00", "Desayuno", "rutina")];
 
@@ -90,6 +94,7 @@ export function scheduleFor(lab: Labores, date: string): Bloque[] {
     else if (P) a.push(B("16:00", "17:30", "Descanso", "salud", "Hoy predicas"));
     else a.push(B("16:00", finTarde, "Tiempo con tu bebé", "familia", "Gaby hace su ejercicio"));
     if (church) a.push(B("17:30", "18:00", "Cena rápida y salir", "rutina"), culto("18:30", "20:30"));
+    if (pulpito) a.push(alemanNoche);
     else
       a.push(
         dow === 2 ? B("18:00", "19:00", "Cocinar en cantidad", "casa", "Para miércoles a viernes") : B("18:00", "19:00", "Cena en familia", "familia"),
@@ -106,6 +111,7 @@ export function scheduleFor(lab: Labores, date: string): Bloque[] {
     );
     if (np) a.push(B("16:00", "17:00", "Estudiar la predicación", "iglesia", npTxt));
     if (church) a.push(B("17:15", "17:45", "Prepararse y salir", "rutina"), culto("18:00", "20:00"));
+    if (pulpito) a.push(alemanNoche);
     else a.push(B("18:00", "21:00", "Noche libre", "familia"));
   } else {
     if (church) a.push(biblia("08:30", "09:00"), B("09:15", "09:45", "Salir a la iglesia", "rutina"), culto("10:00", "12:00"));
