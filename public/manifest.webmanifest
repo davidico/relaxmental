@@ -16,25 +16,25 @@
   ],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@e67c34f96caa6d8fdfa8587f00a0560f1c60d351/public/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@e67c34f96caa6d8fdfa8587f00a0560f1c60d351/public/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-maskable-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@e67c34f96caa6d8fdfa8587f00a0560f1c60d351/public/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon.svg",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@e67c34f96caa6d8fdfa8587f00a0560f1c60d351/public/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
