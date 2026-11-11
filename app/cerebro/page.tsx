@@ -31,6 +31,30 @@ function useHashFolder() {
   return [sel, go] as const;
 }
 
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const monthLabel = (iso: string) => {
+  const d = new Date(iso);
+  return `${MESES[d.getMonth()][0].toUpperCase()}${MESES[d.getMonth()].slice(1)} ${d.getFullYear()}`;
+};
+
+/** Preferencia de vista guardada en este navegador */
+function usePref<T extends string>(key: string, def: T) {
+  const [v, setV] = useState<T>(def);
+  useEffect(() => {
+    try {
+      const x = localStorage.getItem(key);
+      if (x) setV(x as T);
+    } catch {}
+  }, [key]);
+  const set = (x: T) => {
+    setV(x);
+    try {
+      localStorage.setItem(key, x);
+    } catch {}
+  };
+  return [v, set] as const;
+}
+
 export default function Cerebro() {
   const { notas, carpetas, save, remove } = useData();
   const [sel, go] = useHashFolder();
@@ -38,6 +62,8 @@ export default function Cerebro() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [f, setF] = useState({ title: "", html: "", text: "", ref: "" });
   const [opened, setOpened] = useState<Nota | null>(null);
+  const [vista, setVista] = usePref<"tarjetas" | "lista">("cerebro-vista", "tarjetas");
+  const [orden, setOrden] = usePref<"nuevas" | "viejas" | "az">("cerebro-orden", "nuevas");
   const [folderForm, setFolderForm] = useState<{ mode: "new" | "sub" | "rename"; name: string } | null>(null);
 
   const byId = useMemo(() => Object.fromEntries(carpetas.map((c) => [c.id, c])), [carpetas]);
@@ -58,7 +84,21 @@ export default function Cerebro() {
   const ql = q.toLowerCase();
   const list = notas
     .filter((n) => (!inSel || (n.folder && inSel.has(n.folder))) && (!ql || [n.title, n.text, n.ref].join(" ").toLowerCase().includes(ql)))
-    .sort((a, b) => (b.created < a.created ? -1 : 1));
+    .sort((a, b) =>
+      orden === "az"
+        ? (a.title || a.text).localeCompare(b.title || b.text, "es")
+        : orden === "viejas"
+          ? (a.created < b.created ? -1 : 1)
+          : (b.created < a.created ? -1 : 1),
+    );
+  /* Agrupado por mes cuando se ordena por fecha */
+  const groups: { label: string; items: Nota[] }[] = [];
+  for (const n of list) {
+    const label = orden === "az" || !n.created ? "" : monthLabel(n.created);
+    const g = groups[groups.length - 1];
+    if (g && g.label === label) g.items.push(n);
+    else groups.push({ label, items: [n] });
+  }
 
   const colorOf = (id?: string): Area => {
     const c = id ? byId[id] : undefined;
@@ -181,12 +221,29 @@ export default function Cerebro() {
 
           <div className="listhead">
             <input id="q" type="search" className="search" placeholder="Buscar en todas tus entradas…" aria-label="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
-            <h2>{list.length} entrada{list.length === 1 ? "" : "s"}{q ? ` para «${q}»` : ""}</h2>
+            <div className="viewbar">
+              <h2>{list.length} entrada{list.length === 1 ? "" : "s"}{q ? ` para «${q}»` : ""}</h2>
+              <div className="viewctl">
+                <label className="sr-only" htmlFor="n-orden">Ordenar</label>
+                <select id="n-orden" value={orden} onChange={(e) => setOrden(e.target.value as typeof orden)}>
+                  <option value="nuevas">Más recientes</option>
+                  <option value="viejas">Más antiguas</option>
+                  <option value="az">Por título (A–Z)</option>
+                </select>
+                <div className="seg vseg" role="group" aria-label="Vista">
+                  <button aria-pressed={vista === "lista"} onClick={() => setVista("lista")}>☰ Lista</button>
+                  <button aria-pressed={vista === "tarjetas"} onClick={() => setVista("tarjetas")}>▦ Tarjetas</button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="notes">
-            {list.length ? (
-              list.map((n) => {
+          {list.length ? (
+            groups.map((g, gi) => (
+              <section key={gi + g.label} className="ngroup">
+                {g.label && <h3 className="nmonth">{g.label} <span>· {g.items.length}</span></h3>}
+                <div className={vista === "lista" ? "notes nlist" : "notes"}>
+              {g.items.map((n) => {
                 const fc = n.folder ? byId[n.folder] : undefined;
                 return (
                   <article className="note" key={n.id}>
@@ -195,8 +252,14 @@ export default function Cerebro() {
                         <span className="chip" style={cssC(areaColor(colorOf(n.folder)))}>{fc ? path(fc) : "Sin carpeta"}</span>
                         {n.created && <small>{fdate(n.created)}</small>}
                       </span>
-                      {n.title && <span className="nt">{n.title}</span>}
-                      <RichView html={n.html} text={n.text} className="clamp" />
+                      {vista === "lista" ? (
+                        <span className="nt">{n.title || n.text.split("\n")[0].slice(0, 120) || "Sin título"}</span>
+                      ) : (
+                        <>
+                          {n.title && <span className="nt">{n.title}</span>}
+                          <RichView html={n.html} text={n.text} className="clamp" />
+                        </>
+                      )}
                     </button>
                     <button className="x nx" aria-label={`Borrar ${n.title || "entrada"}`} onClick={() => setConfirm(n.id)}>✕</button>
                     {confirm === n.id && (
@@ -208,11 +271,13 @@ export default function Cerebro() {
                     )}
                   </article>
                 );
-              })
-            ) : (
-              <div className="card empty">{q ? "Nada coincide con tu búsqueda." : current ? "Esta carpeta está vacía. Escribe la primera entrada arriba." : "Todavía no hay entradas."}</div>
-            )}
-          </div>
+              })}
+                </div>
+              </section>
+            ))
+          ) : (
+            <div className="card empty">{q ? "Nada coincide con tu búsqueda." : current ? "Esta carpeta está vacía. Escribe la primera entrada arriba." : "Todavía no hay entradas."}</div>
+          )}
         </div>
       </div>
       {opened && <NoteSheet key={opened.id} note={opened} onClose={() => setOpened(null)} />}

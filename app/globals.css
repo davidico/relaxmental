@@ -572,3 +572,25 @@ h2{letter-spacing:.06em}
 .pushbanner .pb-txt{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
 .pushbanner .pb-txt span{color:var(--muted);font-size:15px}
 .pushbanner.ok .pb-ico{font-weight:700}
+
+/* Cerebro: barra de vista, grupos por mes y vista de lista */
+.viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.viewbar h2{margin:0}
+.viewctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.viewctl select{width:auto;min-height:44px}
+.vseg button{min-height:44px}
+.ngroup{margin:0 0 18px}
+.nmonth{font-size:15px;font-weight:700;color:var(--muted);text-transform:none;margin:4px 2px 10px}
+.nmonth span{font-weight:500}
+.notes.nlist{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;grid-template-columns:none}
+.notes.nlist .note{border:none;border-radius:0;box-shadow:none;border-top:1px solid var(--line);transform:none}
+.notes.nlist .note:first-child{border-top:none}
+.notes.nlist .note:hover{background:var(--cell);box-shadow:none}
+.notes.nlist .nopen{flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:12px;padding:12px 52px 12px 16px;min-height:52px}
+.notes.nlist .nopen .nt{font-size:16px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes.nlist .nopen .meta{flex:none}
+.notes.nlist .nx{top:50%;transform:translateY(-50%)}
+@media (max-width:600px){.notes.nlist .nopen .meta .chip{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.notes.nlist{align-items:stretch}
+@media (max-width:600px){.viewctl{width:100%}.viewctl select{flex:1;min-width:0}}
