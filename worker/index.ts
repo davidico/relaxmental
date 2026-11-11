@@ -8,6 +8,13 @@
  * hacerse pasar por otra persona, y cada usuario solo ve sus propias filas.
  */
 
+import { scheduleFor, type Bloque } from "../lib/schedule";
+import laboresBase from "../data/labores.json";
+import { sendPush, vapid, type Sub } from "./push";
+
+const LABORES = (laboresBase as { dias: Record<string, string[]> }).dias;
+const APP = "https://relaxmental.davidcueva-dico.workers.dev";
+
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
   DB: D1Database;
@@ -74,6 +81,28 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
 
   if (url.pathname === "/api/me") return json({ email });
 
+  /* ---- Notificaciones ---- */
+  if (url.pathname === "/api/push/key") return json({ key: (await vapid(env.DB)).pub });
+  if (url.pathname === "/api/push/subscribe" && req.method === "POST") {
+    const sub = (await req.json()) as Sub;
+    if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) return json({ error: "bad_sub" }, 400);
+    await env.DB.prepare(
+      "INSERT INTO push_subs (endpoint, user_email, data) VALUES (?, ?, ?) ON CONFLICT (endpoint) DO UPDATE SET user_email = excluded.user_email, data = excluded.data",
+    )
+      .bind(sub.endpoint, email, JSON.stringify({ endpoint: sub.endpoint, keys: sub.keys }))
+      .run();
+    return json({ ok: true });
+  }
+  if (url.pathname === "/api/push/unsubscribe" && req.method === "POST") {
+    const { endpoint } = (await req.json()) as { endpoint?: string };
+    await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ? AND user_email = ?").bind(endpoint ?? "", email).run();
+    return json({ ok: true });
+  }
+  if (url.pathname === "/api/push/test" && req.method === "POST") {
+    const sent = await notifyUser(env, email, { title: "¡Avisos activados!", body: "Te avisaré al empezar cada bloque de tu día.", tag: "test", url: "/hoy" });
+    return json({ ok: true, sent });
+  }
+
   if (url.pathname === "/api/data" && req.method === "GET") {
     const { results } = await env.DB.prepare("SELECT tabla, id, data FROM items WHERE user_email = ?").bind(email).all<{ tabla: string; id: string; data: string }>();
     const out: Record<string, unknown> = { tareas: [], notas: [], habitos: [], carpetas: [], dias: {} };
@@ -117,7 +146,64 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
   return json({ error: "method" }, 405);
 }
 
+/* ---------- Avisos de cada bloque del día ---------- */
+
+async function notifyUser(env: Env, email: string, data: Record<string, string>) {
+  const { results } = await env.DB.prepare("SELECT endpoint, data FROM push_subs WHERE user_email = ?").bind(email).all<{ endpoint: string; data: string }>();
+  let sent = 0;
+  for (const r of results) {
+    try {
+      const status = await sendPush(env.DB, JSON.parse(r.data) as Sub, data, APP);
+      if (status === 404 || status === 410) await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ?").bind(r.endpoint).run();
+      else if (status < 300) sent++;
+    } catch {
+      /* un teléfono que falla no frena a los demás */
+    }
+  }
+  return sent;
+}
+
+/** Fecha y minuto del día en Berlín */
+function berlinNow(d = new Date()) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+      .formatToParts(d)
+      .map((x) => [x.type, x.value]),
+  );
+  return { date: `${p.year}-${p.month}-${p.day}`, min: (Number(p.hour) % 24) * 60 + Number(p.minute) };
+}
+const toMin = (hm: string) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+
+/** Cada minuto: si un bloque empezó hace menos de 10 min y no se avisó, se avisa (una sola vez). */
+async function tick(env: Env) {
+  const { date, min } = berlinNow();
+  const { results: users } = await env.DB.prepare("SELECT DISTINCT user_email FROM push_subs").all<{ user_email: string }>();
+  for (const { user_email } of users) {
+    const { results: own } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'dias' AND id = ?").bind(user_email, date).all<{ data: string }>();
+    const blocks: Bloque[] = own[0] ? JSON.parse(own[0].data) : scheduleFor(LABORES, date);
+    const due = blocks.filter((b) => toMin(b.s) <= min && min - toMin(b.s) < 10);
+    for (const b of due) {
+      const key = `${date} ${b.s} ${b.t}`;
+      const { results: done } = await env.DB.prepare("SELECT 1 FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).all();
+      if (done.length) continue;
+      await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+      const next = blocks.find((x) => toMin(x.s) > toMin(b.s));
+      await notifyUser(env, user_email, {
+        title: `${b.s} · ${b.t}`,
+        body: [b.sub, next ? `Hasta las ${b.e}. Luego: ${next.t}` : `Hasta las ${b.e}`].filter(Boolean).join("\n"),
+        tag: "bloque",
+        url: "/hoy",
+      });
+    }
+  }
+  if (min === 3) await env.DB.prepare("DELETE FROM push_sent WHERE created_at < datetime('now', '-3 days')").bind().run();
+}
+
 export default {
+  async scheduled(_c: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
+    ctx.waitUntil(tick(env));
+  },
+
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname.startsWith("/api/")) {

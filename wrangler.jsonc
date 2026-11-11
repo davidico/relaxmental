@@ -10,6 +10,8 @@
     "not_found_handling": "404-page",
     "run_worker_first": ["/api/*"]
   },
+  // Cada minuto revisa si empieza un bloque del día y manda el aviso al teléfono
+  "triggers": { "crons": ["* * * * *"] },
   "d1_databases": [
     {
       "binding": "DB",

@@ -8,6 +8,7 @@ import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { HabitChips, TaskRow, Timeline, splitTasks } from "@/components/ui";
 import Link from "next/link";
 import DayEditor from "@/components/DayEditor";
+import PushBanner from "@/components/PushBanner";
 
 export default function Hoy() {
   const { labores, tareas, carpetas, save, planFor } = useData();
@@ -54,6 +55,7 @@ export default function Hoy() {
     <>
       <h1>{DOW[now.getDay()]} {now.getDate()} de {MES[now.getMonth()]}</h1>
       <p className="sub">{preachesOn(labores, t) ? "Hoy predicas." : r.length ? `Culto hoy: ${r.join(", ")}.` : "Hoy no tienes labor en la iglesia."}</p>
+      <PushBanner />
       <div className="hoy">
         <div className="a-now">{nowCard}</div>
         <div className="a-tasks">
