@@ -16,25 +16,25 @@
   ],
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@74aa388e3b2e4460fe0c3618332be8f625b4e7e3/public/icon-192.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@0cb3f4952e16335118cb3ced5b0c207dcdd6a946/public/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@74aa388e3b2e4460fe0c3618332be8f625b4e7e3/public/icon-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@0cb3f4952e16335118cb3ced5b0c207dcdd6a946/public/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@74aa388e3b2e4460fe0c3618332be8f625b4e7e3/public/icon-maskable-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@0cb3f4952e16335118cb3ced5b0c207dcdd6a946/public/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@74aa388e3b2e4460fe0c3618332be8f625b4e7e3/public/icon.svg",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@0cb3f4952e16335118cb3ced5b0c207dcdd6a946/public/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
