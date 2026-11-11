@@ -1,9 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#343d1a"/><stop offset="1" stop-color="#56622b"/></linearGradient></defs>
   <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="28">
-    <rect x="124" y="140" width="264" height="244" rx="40" stroke="#f5f4ee"/>
-    <path d="M124 214h264M196 108v60M316 108v60" stroke="#f5f4ee"/>
-    <path d="M196 296l40 40 80-80" stroke="#e3c46f" stroke-width="32"/>
+  <!-- cabeza -->
+  <path d="M110 440 C100 390 84 346 88 300 C94 228 150 184 216 184 C274 184 316 220 322 272 L344 316 C347 323 343 328 335 328 L326 328 L326 356 C326 373 314 383 297 383 L272 383 L272 440"
+        fill="none" stroke="#f5f4ee" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- trazo que sale de la cabeza hacia la nota -->
+  <path d="M220 236 C240 150 300 110 360 128" fill="none" stroke="#e3c46f" stroke-width="16" stroke-linecap="round" stroke-dasharray="2 30"/>
+  <!-- nota -->
+  <g transform="rotate(8 410 150)">
+    <rect x="356" y="84" width="112" height="132" rx="18" fill="#f5f4ee"/>
+    <path d="M380 124h64M380 152h64M380 180h40" stroke="#4a5524" stroke-width="12" stroke-linecap="round"/>
   </g>
+  <circle cx="220" cy="236" r="12" fill="#e3c46f"/>
 </svg>

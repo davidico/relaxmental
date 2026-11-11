@@ -85,7 +85,7 @@ function Frame({ children }: { children: ReactNode }) {
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
         <div className="side-brand">
-          <span className="brandmark" aria-hidden="true">MS</span>
+          <img className="brandmark logo" src="/icon.svg" alt="" aria-hidden="true" />
           <span>
             Mi Semana<small>David · Berlín</small>
           </span>

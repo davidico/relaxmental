@@ -735,3 +735,6 @@ textarea.rules{min-height:420px;line-height:1.6;resize:vertical}
 .sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 10px}
 .sechead h2{margin:0}
 .row.actions>*{flex:none}
+
+/* Logo: de la cabeza al papel */
+img.brandmark.logo{background:none;padding:0;object-fit:cover;display:block}

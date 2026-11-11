@@ -222,7 +222,7 @@ export default function Perfil() {
       <h2>Acerca de</h2>
       <section className="card pad about">
         <div className="ver">
-          <span className="brandmark sm" aria-hidden="true">MS</span>
+          <img className="brandmark sm logo" src="/icon.svg" alt="" aria-hidden="true" />
           <div>
             <strong>Mi Semana · versión {VERSION}</strong>
             <span>{VERSION_FECHA}</span>
