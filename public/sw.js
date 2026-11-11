@@ -51,7 +51,7 @@ a{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-r
 a.g{background:#fff;color:#1f2316;border:1px solid #e6e4d8}
 @media (prefers-color-scheme:dark){body{background:#12140d;color:#eeefe2}p{color:#aeb29c}a{background:#b9c584;color:#12140d}a.g{background:#1b1e14;color:#eeefe2;border-color:#2c3021}}</style></head>
 <body><main><h1>No se pudo abrir</h1><p>Puede que no haya internet o que tu sesión haya caducado. Vuelve a intentarlo; si te pide entrar, inicia sesión otra vez.</p>
-<a href="${path}">Reintentar</a><a class="g" href="/cdn-cgi/access/login/relaxmental.davidcueva-dico.workers.dev?redirect_url=${encodeURIComponent(path)}">Iniciar sesión</a></main></body></html>`;
+<a href="${path}">Reintentar</a><a class="g" href="/hoy">Ir a Hoy</a></main></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 }
 
