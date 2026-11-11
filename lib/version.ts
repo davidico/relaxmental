@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.0";
+export const VERSION = "1.1";
 export const VERSION_FECHA = "11 de noviembre de 2026";
 export const NOVEDADES = [
+  "Pantalla Hoy nueva: el bloque de ahora manda, lo que ya pasó se pliega y las labores salen en dorado",
+  "Logo nuevo: de la cabeza al papel",
   "Verde oliva y dorado",
   "Avisos al empezar cada bloque del día",
   "Dictar notas por voz",

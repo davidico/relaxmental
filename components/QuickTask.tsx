@@ -55,6 +55,13 @@ export default function QuickTask() {
   };
   const close = () => setMode(null);
 
+  /* Otras pantallas (p. ej. Hoy en escritorio) pueden abrir "Nueva tarea" con un evento */
+  useEffect(() => {
+    const h = () => open("task");
+    addEventListener("mi-semana:nueva-tarea", h);
+    return () => removeEventListener("mi-semana:nueva-tarea", h);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
       {wide ? (

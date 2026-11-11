@@ -738,3 +738,127 @@ textarea.rules{min-height:420px;line-height:1.6;resize:vertical}
 
 /* Logo: de la cabeza al papel */
 img.brandmark.logo{background:none;padding:0;object-fit:cover;display:block}
+
+/* ================= Hoy · v1.1 (diseño de Claude Design) =================
+   Orden en celular: ahora → para hoy → hábitos → tu día.
+   Escritorio (≥1000px): izquierda ahora + tu día; derecha tareas, hábitos, captura. */
+.hy-head{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
+.hy-head h1{margin:0;font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.hy-head .sub{margin:0;font-size:15px}
+.hy-month{display:none}
+@media (min-width:1000px){.hy-month{display:inline}.hy-month-m{display:none}.hy-head h1{font-size:40px;letter-spacing:-.03em}.hy-head .sub{font-size:16px}}
+
+.hy-grid{display:grid;gap:28px;align-items:start}
+.hy-col{display:contents}
+.hy-now{order:1}.hy-grid .hy-sec:not(.hy-dia){order:2}.hy-dia{order:4}.hy-capture{display:none}
+@media (min-width:1000px){
+  .hy-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:32px}
+  .hy-col{display:flex;flex-direction:column;gap:28px;min-width:0}
+  .hy-capture{display:flex}
+}
+
+/* Ahora */
+.hy-now{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:24px;background:#3f4a1f;color:#f5f4ee;box-shadow:0 12px 28px rgb(52 61 26 / .28)}
+.hy-now-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.hy-now-lbl{font-size:15px;font-weight:700;color:#e3c46f}
+.hy-now-left{font-size:15px;color:#dfe4c6;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hy-now h2{margin:0;font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-.02em;color:#f5f4ee;text-transform:none}
+.hy-now p{margin:0;font-size:16px;color:#dfe4c6}
+.hy-bar{height:6px;border-radius:3px;background:rgb(245 244 238 / .18);overflow:hidden}
+.hy-bar i{display:block;height:100%;border-radius:3px;background:#e3c46f;transition:width .6s cubic-bezier(.16,1,.3,1)}
+.hy-next{display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid rgb(245 244 238 / .16);font-size:15px}
+.hy-next svg{color:#e3c46f;flex:none}
+.hy-next strong{color:#f5f4ee}
+@media (min-width:1000px){.hy-now{padding:28px;border-radius:28px;gap:18px}.hy-now h2{font-size:38px;letter-spacing:-.025em}.hy-now p{font-size:17px}.hy-bar{height:8px}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hy-now{background:#2a3115;box-shadow:none;border:1px solid #3a4320}}
+:root[data-theme="dark"] .hy-now{background:#2a3115;box-shadow:none;border:1px solid #3a4320}
+
+/* Secciones */
+.hy-sec{display:flex;flex-direction:column;gap:12px;min-width:0}
+.hy-sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.hy-sec h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+@media (min-width:1000px){.hy-sec h2{font-size:22px}}
+.linkbtn{background:none;border:none;padding:0 2px;min-height:44px;display:inline-flex;align-items:center;font:inherit;font-size:15px;font-weight:700;color:var(--pine);text-decoration:none;cursor:pointer}
+.linkbtn:hover{color:var(--primary-hover);text-decoration:underline;text-underline-offset:3px}
+.hy-count{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hy-empty{margin:0;padding:16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+
+/* Para hoy */
+.hy-tasks{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.hy-tasks li{display:flex;align-items:flex-start;gap:14px;padding:14px 16px}
+.hy-tasks li+li{border-top:1px solid var(--line)}
+.hy-tasks li.done{background:var(--rocio)}
+.hy-check{appearance:none;-webkit-appearance:none;width:28px;height:28px;margin:8px 0;border-radius:50%;border:2px solid var(--field);background:var(--surface);flex:none;cursor:pointer;display:grid;place-items:center;position:relative}
+.hy-check:hover{border-color:var(--primary)}
+.hy-check:checked{background:var(--primary);border-color:var(--primary)}
+.hy-check:checked::after{content:"";width:12px;height:7px;border-left:3px solid var(--on-primary);border-bottom:3px solid var(--on-primary);transform:translateY(-2px) rotate(-45deg)}
+.hy-check:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hy-task-b{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;padding-top:7px}
+.hy-task-b label{font-size:16px;font-weight:700;cursor:pointer;overflow-wrap:anywhere}
+.done .hy-task-b label{font-weight:600;color:var(--muted);text-decoration:line-through}
+.hy-step{font-size:15px;color:var(--muted)}
+.hy-late{align-self:flex-start;font-size:13px;font-weight:700;color:var(--warn)}
+.hy-start{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--sage);background:var(--pine-soft);color:var(--pine);font:inherit;font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:6px;flex:none;cursor:pointer;margin-top:0}
+.hy-start:hover{background:var(--sage)}
+@media (max-width:420px){.hy-start{padding:0 10px}}
+
+/* Hábitos */
+.hy-habits{display:flex;flex-wrap:wrap;gap:8px}
+.hy-habits button{min-height:44px;padding:0 16px 0 12px;border-radius:22px;border:1px solid var(--stone);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s,border-color .2s}
+.hy-habits button:hover{border-color:var(--primary)}
+.hy-habits button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.hy-hdot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.hy-streak{font-weight:500;opacity:.85}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hy-habits button[aria-pressed="true"] svg{stroke:var(--on-primary)}}
+:root[data-theme="dark"] .hy-habits button[aria-pressed="true"] svg{stroke:var(--on-primary)}
+
+/* Tu día */
+.hy-past{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:0 16px;border-radius:14px;border:none;background:var(--cell);color:var(--muted);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+.hy-past:hover{color:var(--ink)}
+.hy-past svg{transition:transform .2s;flex:none}
+.hy-past[aria-expanded="true"] svg{transform:rotate(180deg)}
+.hy-tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hy-tl li{display:grid;grid-template-columns:52px 16px minmax(0,1fr);column-gap:12px;padding:12px 0;position:relative}
+.hy-tl-h{font-size:15px;font-variant-numeric:tabular-nums;padding-top:1px;color:var(--ink)}
+.hy-tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--primary);box-sizing:border-box;margin:6px auto 0}
+.hy-tl li:not(:last-child)::after{content:"";position:absolute;left:71px;top:28px;bottom:-6px;width:2px;background:var(--stone)}
+.hy-tl-b{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hy-tl-t{font-size:16px;font-weight:700}
+.hy-tl-s{font-size:15px;color:var(--muted)}
+.hy-tl li.past .hy-tl-h,.hy-tl li.past .hy-tl-t{color:var(--muted);font-weight:600}
+.hy-tl li.past .hy-tl-dot{background:var(--field);border-color:var(--field)}
+.hy-tl li.cur{background:var(--pine-soft);border-radius:14px;margin:4px -12px;padding:12px}
+.hy-tl li.cur::after{display:none}
+.hy-tl li.cur .hy-tl-h{font-weight:800;color:var(--pine)}
+.hy-tl li.cur .hy-tl-dot{width:14px;height:14px;margin-top:4px;background:var(--primary);box-shadow:0 0 0 4px var(--sage)}
+.hy-tl li.cur .hy-tl-t{font-weight:800}
+.hy-tl-now{font-size:15px;font-weight:600;color:var(--pine)}
+.hy-roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.hy-role{font-size:14px;font-weight:700;color:var(--gold-ink);background:var(--gold-soft);border-radius:8px;padding:3px 10px}
+@media (min-width:1000px){.hy-tl{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:8px 20px}.hy-tl li.cur{margin:4px -8px}.hy-tl li:not(:last-child)::after{left:71px}}
+
+/* Captura */
+.hy-capture h2{margin:0}
+.hy-capform{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:22px}
+.hy-caplbl{font-size:15px;color:var(--muted)}
+.hy-capform textarea{font:inherit;font-size:16px;line-height:1.5;border:1px solid var(--stone);border-radius:14px;padding:12px 14px;resize:vertical;background:var(--rocio);color:var(--ink);min-height:96px}
+.hy-capfoot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hy-capfoot select{flex:1 1 160px;width:auto;min-height:44px}
+.hy-capfoot .btn{flex:none}
+/* Hoy: ajustes tras revisión */
+.hy-sec.hy-capture{display:none}
+@media (min-width:1000px){.hy-sec.hy-capture{display:flex}}
+.hy-check:checked::after{content:none}
+.hy-check:checked{background:var(--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f5f4ee' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") no-repeat center/16px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hy-check:checked{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312140d' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E")}}
+:root[data-theme="dark"] .hy-check:checked{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312140d' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E")}
+.hy-tasks li.done{align-items:center}
+.hy-tasks li.done .hy-check{margin:0}
+.hy-tasks li.done .hy-task-b{padding-top:0}
+.hy-head{position:relative}
+.hy-newtask{display:none}
+@media (min-width:1000px){
+  .hy-newtask{display:inline-flex;align-items:center;gap:8px;position:absolute;right:0;bottom:4px;min-height:48px}
+  .hy-head{padding-right:200px}
+  body:has(.hy) .fab:not(.round){display:none}
+}
