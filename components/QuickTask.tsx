@@ -7,6 +7,8 @@ import { useWide } from "@/lib/hooks";
 import type { Carpeta } from "@/lib/types";
 import { DueChoice } from "./ui";
 import RichEditor from "./RichEditor";
+import VoiceButton from "./VoiceButton";
+import { appendParas, suggestTitle } from "@/lib/voice";
 
 /** Carpetas en orden de árbol, con su nombre completo ("Notas › Ideas") */
 export function folderOptions(carpetas: Carpeta[]) {
@@ -57,7 +59,7 @@ export default function QuickTask() {
     <>
       {wide ? (
         <button className="fab" onClick={() => open("task")} aria-label="Nueva tarea">
-          <span aria-hidden="true">+</span> Nueva tarea
+          <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nueva tarea
         </button>
       ) : (
         <>
@@ -73,7 +75,7 @@ export default function QuickTask() {
             </div>
           )}
           <button className={`fab round${menu ? " open" : ""}`} onClick={() => setMenu(!menu)} aria-label={menu ? "Cerrar" : "Añadir"} aria-expanded={menu}>
-            <span aria-hidden="true">+</span>
+            <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           </button>
         </>
       )}
@@ -120,6 +122,13 @@ export default function QuickTask() {
                 </select>
                 <input id="qn-title" placeholder="Título (opcional)" value={n.title} onChange={(e) => setN({ ...n, title: e.target.value })} />
                 <RichEditor id="qn-text" big autoFocus value={n.html} placeholder="Una idea, una profecía, un sueño… (# título, - lista, [] casilla)" onChange={(html, text) => { setN((x) => ({ ...x, html, text })); setDone(false); }} />
+                <VoiceButton
+                  onText={(p) => { setN((x) => ({ ...x, ...appendParas(x.html, x.text, p) })); setDone(false); }}
+                  onTitle={async (t) => {
+                    const title = await suggestTitle(t);
+                    if (title) setN((x) => (x.title.trim() ? x : { ...x, title }));
+                  }}
+                />
                 <div className="row" style={{ alignItems: "center" }}>
                   <button className="btn" type="submit" style={{ flex: "none" }} disabled={!n.text.trim()}>Guardar nota</button>
                   {done && <span className="saved" role="status">Guardada ✓</span>}

@@ -11,12 +11,14 @@
 import { scheduleFor, type Bloque } from "../lib/schedule";
 import laboresBase from "../data/labores.json";
 import { sendPush, vapid, type Sub } from "./push";
+import { planDay, title, transcribe, type AI } from "./ai";
 
 const LABORES = (laboresBase as { dias: Record<string, string[]> }).dias;
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
 interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
+  AI: AI;
   DB: D1Database;
   /** Ej. "davidico.cloudflareaccess.com" (Zero Trust → Settings → Team domain) */
   ACCESS_TEAM_DOMAIN?: string;
@@ -36,7 +38,7 @@ interface D1Database {
   batch(stmts: D1Prepared[]): Promise<unknown>;
 }
 
-const TABLAS = new Set(["tareas", "notas", "habitos", "dias", "carpetas"]);
+const TABLAS = new Set(["tareas", "notas", "habitos", "dias", "carpetas", "perfil"]);
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 
@@ -105,10 +107,10 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
 
   if (url.pathname === "/api/data" && req.method === "GET") {
     const { results } = await env.DB.prepare("SELECT tabla, id, data FROM items WHERE user_email = ?").bind(email).all<{ tabla: string; id: string; data: string }>();
-    const out: Record<string, unknown> = { tareas: [], notas: [], habitos: [], carpetas: [], dias: {} };
+    const out: Record<string, unknown> = { tareas: [], notas: [], habitos: [], carpetas: [], dias: {}, perfil: {} };
     for (const r of results) {
       const v = JSON.parse(r.data);
-      if (r.tabla === "dias") (out.dias as Record<string, unknown>)[r.id] = v;
+      if (r.tabla === "dias" || r.tabla === "perfil") (out[r.tabla] as Record<string, unknown>)[r.id] = v;
       else (out[r.tabla] as unknown[]).push(v);
     }
     return json(out);
@@ -126,7 +128,35 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     return json({ ok: true, count: items.length });
   }
 
+  /* ---- IA ---- */
+  if (url.pathname === "/api/voice" && req.method === "POST") {
+    const buf = await req.arrayBuffer();
+    if (buf.byteLength > 6_000_000) return json({ error: "too_large" }, 413);
+    return json({ text: await transcribe(env.AI, buf) });
+  }
+  if (url.pathname === "/api/ai/title" && req.method === "POST") {
+    const { text } = (await req.json()) as { text?: string };
+    return json({ title: text?.trim() ? await title(env.AI, text) : "" });
+  }
+  if (url.pathname === "/api/ai/plan" && req.method === "POST") {
+    const { fecha, reglas } = (await req.json()) as { fecha?: string; reglas?: string };
+    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !reglas?.trim()) return json({ error: "bad_input" }, 400);
+    const { results } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(email).all<{ data: string }>();
+    const tareas = results
+      .map((r) => JSON.parse(r.data) as { title: string; done?: boolean; due?: string })
+      .filter((t) => !t.done && (!t.due || t.due <= fecha))
+      .map((t) => t.title);
+    const bloques = await planDay(env.AI, { reglas, fecha, labores: LABORES, tareas });
+    if (!bloques.length) return json({ error: "ai_empty" }, 502);
+    return json({ bloques });
+  }
+
   if (!TABLAS.has(tabla) || !id) return json({ error: "not_found" }, 404);
+
+  if (req.method === "GET") {
+    const { results } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = ? AND id = ?").bind(email, tabla, id).all<{ data: string }>();
+    return results[0] ? new Response(results[0].data, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }) : json(null);
+  }
 
   if (req.method === "PUT") {
     const data = await req.text();

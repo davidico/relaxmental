@@ -7,6 +7,8 @@ import { areaColor, type Area, type Carpeta, type Nota } from "@/lib/types";
 import { cssC } from "@/components/ui";
 import RichEditor, { RichView } from "@/components/RichEditor";
 import NoteSheet from "@/components/NoteSheet";
+import VoiceButton from "@/components/VoiceButton";
+import { appendParas, suggestTitle } from "@/lib/voice";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
@@ -62,6 +64,7 @@ export default function Cerebro() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [f, setF] = useState({ title: "", html: "", text: "", ref: "" });
   const [opened, setOpened] = useState<Nota | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [vista, setVista] = usePref<"tarjetas" | "lista">("cerebro-vista", "tarjetas");
   const [orden, setOrden] = usePref<"nuevas" | "viejas" | "az">("cerebro-orden", "nuevas");
   const [folderForm, setFolderForm] = useState<{ mode: "new" | "sub" | "rename"; name: string } | null>(null);
@@ -164,10 +167,21 @@ export default function Cerebro() {
           <div className="fhead">
             <h2 className="fpath" style={cssC(areaColor(colorOf(current?.id)))}>{path(current)}</h2>
             {current && (
-              <div className="factions" role="group" aria-label="Opciones de la carpeta">
-                <button className="btn ghost sm" onClick={() => setFolderForm({ mode: "sub", name: "" })}>+ Subcarpeta</button>
-                <button className="btn ghost sm" onClick={() => setFolderForm({ mode: "rename", name: current.name })}>Renombrar</button>
-                <button className="btn ghost sm danger" onClick={() => setConfirm(canDelete ? `folder:${current.id}` : "folder-busy")}>Borrar</button>
+              <div className="fmenu">
+                <button className="iconbtn" aria-haspopup="menu" aria-expanded={menuOpen} aria-label={`Opciones de ${current.name}`} onClick={() => setMenuOpen(!menuOpen)}>
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
+                </button>
+                {menuOpen && (
+                  <>
+                    <div className="dial-backdrop clear" onClick={() => setMenuOpen(false)} />
+                    <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenuOpen(false)}>
+                      <button role="menuitem" autoFocus onClick={() => { setMenuOpen(false); setFolderForm({ mode: "sub", name: "" }); }}>Nueva subcarpeta</button>
+                      <button role="menuitem" onClick={() => { setMenuOpen(false); setFolderForm({ mode: "rename", name: current.name }); }}>Renombrar carpeta</button>
+                      <hr />
+                      <button role="menuitem" className="danger" onClick={() => { setMenuOpen(false); setConfirm(canDelete ? `folder:${current.id}` : "folder-busy"); }}>Borrar carpeta</button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -211,6 +225,14 @@ export default function Cerebro() {
               >
                 <input id="n-title" placeholder="Título (opcional)" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
                 <RichEditor id="n-text" value={f.html} placeholder={`Nueva entrada en ${path(current)}… (# título, - lista, [] casilla)`} onChange={(html, text) => setF((x) => ({ ...x, html, text }))} onSubmit={addEntry} />
+                <VoiceButton
+                  onText={(p) => setF((x) => ({ ...x, ...appendParas(x.html, x.text, p) }))}
+                  onTitle={async (t) => {
+                    if (f.title.trim()) return;
+                    const title = await suggestTitle(t);
+                    if (title) setF((x) => (x.title.trim() ? x : { ...x, title }));
+                  }}
+                />
                 <div>
                   <button className="btn" type="submit" disabled={!f.text.trim()}>Guardar en {current.name}</button>
                   <span className="kbd">Ctrl + Enter</span>
@@ -230,9 +252,13 @@ export default function Cerebro() {
                   <option value="viejas">Más antiguas</option>
                   <option value="az">Por título (A–Z)</option>
                 </select>
-                <div className="seg vseg" role="group" aria-label="Vista">
-                  <button aria-pressed={vista === "lista"} onClick={() => setVista("lista")}>☰ Lista</button>
-                  <button aria-pressed={vista === "tarjetas"} onClick={() => setVista("tarjetas")}>▦ Tarjetas</button>
+                <div className="vtoggle" role="group" aria-label="Vista">
+                  <button aria-pressed={vista === "lista"} aria-label="Vista de lista" title="Lista" onClick={() => setVista("lista")}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" /></svg>
+                  </button>
+                  <button aria-pressed={vista === "tarjetas"} aria-label="Vista de tarjetas" title="Tarjetas" onClick={() => setVista("tarjetas")}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" /></svg>
+                  </button>
                 </div>
               </div>
             </div>

@@ -25,7 +25,7 @@ export const sortHabits = (list: Habito[]) =>
  * Un color distinto para cada hábito (según su orden).
  * Comprobado: ≥ 3:1 contra las casillas vacías (WCAG 1.4.11).
  */
-export const HABIT_COLORS = ["#6366f1", "#0284c7", "#0d9488", "#059669", "#b45309", "#ea580c", "#e11d48", "#db2777", "#7c3aed", "#0e7490", "#4d7c0f"];
+export const HABIT_COLORS = ["#4d7c0f", "#0284c7", "#0d9488", "#059669", "#b45309", "#ea580c", "#e11d48", "#db2777", "#7c3aed", "#0e7490", "#a16207"];
 export function habitColor(h: Habito, all: Habito[]) {
   const i = sortHabits(all).findIndex((x) => x.id === h.id);
   return HABIT_COLORS[(i < 0 ? 0 : i) % HABIT_COLORS.length];

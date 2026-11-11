@@ -6,6 +6,8 @@ import { fdate } from "@/lib/dates";
 import type { Nota } from "@/lib/types";
 import RichEditor from "./RichEditor";
 import { folderOptions } from "./QuickTask";
+import VoiceButton from "./VoiceButton";
+import { appendParas } from "@/lib/voice";
 
 /** Abrir una entrada del cerebro para leerla y editarla */
 export default function NoteSheet({ note, onClose }: { note: Nota; onClose: () => void }) {
@@ -48,6 +50,7 @@ export default function NoteSheet({ note, onClose }: { note: Nota; onClose: () =
             </select>
           </div>
           <RichEditor id="ns-text" big value={d.html} onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={commit} />
+          <VoiceButton onText={(p) => setD((x) => ({ ...x, ...appendParas(x.html, x.text, p) }))} />
         </div>
         <div className="sheet-foot">
           {!d.text.trim() && <span className="ed-warn" role="status">La entrada no puede quedar vacía.</span>}

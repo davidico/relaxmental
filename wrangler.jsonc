@@ -11,6 +11,8 @@
     "run_worker_first": ["/api/*"]
   },
   // Cada minuto revisa si empieza un bloque del día y manda el aviso al teléfono
+  // IA de Cloudflare: Whisper (voz a texto) y Llama (títulos y horario según tus reglas)
+  "ai": { "binding": "AI" },
   "triggers": { "crons": ["* * * * *"] },
   "d1_databases": [
     {

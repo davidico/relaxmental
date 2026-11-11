@@ -594,3 +594,144 @@ h2{letter-spacing:.06em}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .notes.nlist{align-items:stretch}
 @media (max-width:600px){.viewctl{width:100%}.viewctl select{flex:1;min-width:0}}
+
+/* ================= v1.0 · Verde oliva y dorado =================
+   Oliva oscuro como color principal (texto blanco 8:1), dorado como acento.
+   El dorado claro solo decora; para texto se usa --gold-ink (≥ 4.8:1). */
+:root{
+  --bg:#f5f4ee; --surface:#ffffff; --side:#ffffff; --rocio:#efeee5;
+  --ink:#1f2316; --muted:#5c6150; --line:#e6e4d8; --field:#8b8f7a; --cell:#efeee6; --stone:#dedcce;
+  --primary:#4a5524; --primary-hover:#3c461c; --on-primary:#ffffff; --primary-edge:#4a5524;
+  --pine:#4a5524; --pine-soft:#eef0e1; --sage:#dfe4c6;
+  --gold:#c9a548; --gold-soft:#f5ecd2; --gold-ink:#84661a;
+  --deep:#1f2316;
+  --shadow:0 1px 2px rgb(31 35 22 / .05), 0 8px 24px rgb(31 35 22 / .07);
+  --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235c6150' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12140d; --surface:#1b1e14; --side:#16180f; --rocio:#1f2217;
+  --ink:#eeefe2; --muted:#aeb29c; --line:#2c3021; --field:#757a62; --cell:#23271a; --stone:#3a3f2c;
+  --primary:#b9c584; --primary-hover:#cbd59c; --on-primary:#12140d; --primary-edge:#b9c584;
+  --pine:#c5cf93; --pine-soft:#262b1a; --sage:#333a22;
+  --gold:#d9b65a; --gold-soft:#332b17; --gold-ink:#e2c272;
+  --deep:#12140d;
+  --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aeb29c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12140d; --surface:#1b1e14; --side:#16180f; --rocio:#1f2217;
+  --ink:#eeefe2; --muted:#aeb29c; --line:#2c3021; --field:#757a62; --cell:#23271a; --stone:#3a3f2c;
+  --primary:#b9c584; --primary-hover:#cbd59c; --on-primary:#12140d; --primary-edge:#b9c584;
+  --pine:#c5cf93; --pine-soft:#262b1a; --sage:#333a22;
+  --gold:#d9b65a; --gold-soft:#332b17; --gold-ink:#e2c272;
+  --deep:#12140d;
+  --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aeb29c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme:dark}
+
+/* Tarjeta "ahora", marca y botón flotante en oliva con detalle dorado */
+.now{background:linear-gradient(135deg,#343d1a 0%,#4a5524 60%,#56622b 100%);box-shadow:0 10px 30px rgb(52 61 26 / .28)}
+.now .lbl,.now small,.now .eyebrow{color:#e3c46f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .now{background:linear-gradient(135deg,#262c13,#3a4320)}}
+:root[data-theme="dark"] .now{background:linear-gradient(135deg,#262c13,#3a4320)}
+.brandmark{background:linear-gradient(135deg,#3a4320,#56622b);color:#e3c46f}
+.fab:not(.round){box-shadow:0 10px 24px rgb(52 61 26 / .3)}
+.fab.round{box-shadow:0 10px 24px rgb(52 61 26 / .35)}
+.dial-ico{background:var(--primary);color:var(--on-primary)}
+.seg button[aria-pressed="true"]{background:var(--pine-soft);border-color:var(--sage);color:var(--pine)}
+.brand{color:var(--pine)}
+
+/* Botón flotante: el ícono es un SVG centrado en una caja de 24 px (Material: botón 56–60, ícono 24) */
+.fab .ico{display:block;width:24px;height:24px;flex:none}
+.fab.round .ico{width:28px;height:28px;transition:transform .2s}
+.fab.round.open .ico{transform:rotate(45deg)}
+
+/* Desplegables: flecha propia con aire a la derecha; el texto nunca pasa por debajo */
+select{appearance:none;-webkit-appearance:none;background-image:var(--chev);background-repeat:no-repeat;background-position:right 14px center;background-size:16px 16px;padding-right:44px;cursor:pointer}
+select::-ms-expand{display:none}
+select:hover{border-color:var(--ink)}
+
+/* Cerebro: cabecera de carpeta con menú de opciones */
+.fhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;margin:16px 0 14px}
+.fhead .fpath{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmenu{position:relative;flex:none}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.iconbtn:hover{background:var(--pine-soft);border-color:var(--sage)}
+.iconbtn svg{width:20px;height:20px;flex:none}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:8;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgb(31 35 22 / .14);padding:6px;display:flex;flex-direction:column}
+.menu button{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border:none;background:none;border-radius:10px;font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer}
+.menu button:hover,.menu button:focus-visible{background:var(--pine-soft)}
+.menu hr{border:none;border-top:1px solid var(--line);margin:6px 4px}
+.menu .danger{color:var(--warn)}
+
+/* Barra de la lista: contador a la izquierda; orden y vista a la derecha, mismas alturas */
+.viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.viewctl{display:flex;gap:8px;align-items:center}
+.viewctl select{width:auto;min-height:44px;height:44px;padding-top:0;padding-bottom:0}
+.vtoggle{display:inline-flex;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:3px;gap:2px;height:44px;box-sizing:border-box}
+.vtoggle button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:36px;border:none;border-radius:9px;background:none;color:var(--muted);cursor:pointer}
+.vtoggle button svg{width:20px;height:20px}
+.vtoggle button[aria-pressed="true"]{background:var(--pine-soft);color:var(--pine)}
+.vtoggle button:hover{color:var(--ink)}
+@media (max-width:600px){.viewbar h2{width:100%}.viewctl{width:100%}.viewctl select{flex:1;min-width:0}}
+
+/* Dictado por voz */
+.voice{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;min-height:44px}
+.voice .vbtn{color:var(--pine)}
+.voice.rec{background:var(--gold-soft);border:1px solid var(--gold);border-radius:14px;padding:8px 10px 8px 14px}
+.vdot{width:12px;height:12px;border-radius:50%;background:#c2412d;box-shadow:0 0 0 0 rgb(194 65 45 / .5);animation:vpulse 1.4s infinite}
+@keyframes vpulse{70%{box-shadow:0 0 0 10px rgb(194 65 45 / 0)}100%{box-shadow:0 0 0 0 rgb(194 65 45 / 0)}}
+@media (prefers-reduced-motion:reduce){.vdot{animation:none}}
+.vtime{font-weight:700;font-variant-numeric:tabular-nums}
+.vwarn{color:var(--gold-ink);font-weight:700;font-size:15px}
+.vspace{flex:1}
+.vwork{display:inline-flex;align-items:center;gap:10px;color:var(--muted)}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--sage);border-top-color:var(--pine);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.verr{color:var(--warn);font-weight:600}
+.vok{color:var(--ok);font-weight:600}
+@media (max-width:600px){.voice.rec .btn{flex:1}}
+.dial-backdrop.clear{background:transparent}
+
+/* Perfil */
+.top{align-items:center}
+.topr{display:inline-flex;align-items:center;gap:12px}
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--primary);color:#e3c46f;font-weight:800;font-size:17px;text-decoration:none;flex:none;border:2px solid var(--gold)}
+.avatar[aria-current="page"]{box-shadow:0 0 0 3px var(--gold-soft)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .avatar{color:var(--on-primary)}}
+:root[data-theme="dark"] .avatar{color:var(--on-primary)}
+.avatar.lg{width:56px;height:56px;font-size:22px}
+.card.pad{padding:16px}
+.hint{color:var(--muted);margin:0 0 12px;max-width:68ch;font-size:15px}
+.profile{display:flex;align-items:center;gap:14px;padding:16px;flex-wrap:wrap}
+.pinfo{display:flex;flex-direction:column;flex:1 1 200px;min-width:0}
+.pinfo strong{overflow-wrap:anywhere}
+.pinfo span{color:var(--muted);font-size:15px}
+textarea.rules{min-height:420px;line-height:1.6;resize:vertical}
+.row.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.row.actions:first-child{margin-top:0}
+.plan-days{display:grid;gap:10px;margin-top:14px}
+@media (min-width:900px){.plan-days{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}}
+.plan-day{padding:0}
+.plan-day summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px;padding:0 16px;cursor:pointer;font-weight:700;list-style:none}
+.plan-day summary::-webkit-details-marker{display:none}
+.plan-day summary::after{content:"";width:16px;height:16px;background:var(--chev) no-repeat center/16px;transition:transform .2s;flex:none}
+.plan-day[open] summary::after{transform:rotate(180deg)}
+.plan-day summary small{color:var(--muted);font-weight:500;margin-left:auto}
+.plan-day > :not(summary){margin:0 16px 14px}
+.plan-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:0}
+.plan-list li{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.plan-list .pt{color:var(--muted);font-variant-numeric:tabular-nums;font-size:15px}
+.plan-list .pn{display:flex;flex-direction:column}
+.plan-list .pn small{color:var(--muted);font-size:14px}
+.apply{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:3}
+@media (min-width:900px){.apply{bottom:16px}}
+.about .ver{display:flex;align-items:center;gap:12px}
+.about .ver div{display:flex;flex-direction:column}
+.brandmark.sm{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;border-radius:12px}
+.about ul{margin:12px 0 4px;padding-left:20px;color:var(--muted)}
+.about li{margin:4px 0}
+.card .hint,.card p.hint{border:none;background:none;padding:0;text-align:left;border-radius:0}
+.about .ver div span{color:var(--muted);font-size:15px}
+.about .ver .brandmark{color:#e3c46f;font-size:15px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 10px}
+.sechead h2{margin:0}
+.row.actions>*{flex:none}

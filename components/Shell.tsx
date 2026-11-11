@@ -71,7 +71,12 @@ function Frame({ children }: { children: ReactNode }) {
       <div className={`wrap${wide ? " wide" : ""}`}>
         <div className="top">
           <span className="brand">MI SEMANA</span>
-          <span className="sync">{status}</span>
+          <span className="topr">
+            <span className="sync">{status}</span>
+            <Link href="/perfil" className="avatar" aria-label="Tu perfil y reglas" aria-current={path === "/perfil" ? "page" : undefined}>
+              {(email ?? "D")[0].toUpperCase()}
+            </Link>
+          </span>
         </div>
         {error && <div className="banner" role="alert">{error}</div>}
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
