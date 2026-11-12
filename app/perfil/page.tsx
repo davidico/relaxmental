@@ -126,11 +126,24 @@ export default function Perfil() {
         {cloud && <a className="btn ghost sm" href="/cdn-cgi/access/logout">Cerrar sesión</a>}
       </section>
 
-      <h2 id="reglas-h">Mis reglas del horario</h2>
-      <section className="card pad" aria-labelledby="reglas-h">
-        <p className="hint">
+      <section className="card pad rules-card" aria-labelledby="reglas-h">
+        <div className="rules-head">
+          <h2 id="reglas-h">Mis reglas del horario</h2>
+          {!editando && (
+            <button className="nv-ib" aria-expanded={todas} aria-controls="reglas-zona" aria-label={todas ? "Ocultar reglas" : "Ver reglas"} title={todas ? "Ocultar" : "Ver"} onClick={() => setTodas(!todas)}>
+              {todas ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 6.1A10 10 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3 3.6M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18 12 18c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2" /></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" /><circle cx="12" cy="12" r="3" /></svg>
+              )}
+            </button>
+          )}
+        </div>
+        {estado === "ok" && !todas && <p role="status" className="vok">✓ Reglas guardadas</p>}
+        <div id="reglas-zona">
+        {(todas || editando) && <p className="hint">
           Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las usa para armar tu semana. Tus labores de la iglesia y tus tareas pendientes se añaden solas.
-        </p>
+        </p>}
         {editando ? (
           <>
             <label htmlFor="reglas" className="sr-only">Mis reglas</label>
@@ -148,18 +161,16 @@ export default function Perfil() {
               {estado === "error" ? "⚠ No se pudieron guardar. Inténtalo otra vez." : cambiado ? "Tienes cambios sin guardar" : ""}
             </p>
           </>
-        ) : (
+        ) : todas ? (
           <>
-            <p className={`rules-view${todas ? " all" : ""}`} id="reglas-texto">{guardadas}</p>
+            <p className="rules-view all" id="reglas-texto">{guardadas}</p>
             <div className="row actions">
-              <button className="btn" onClick={() => { setEditando(true); setTodas(true); }}>Editar reglas</button>
-              <button className="btn ghost" aria-expanded={todas} aria-controls="reglas-texto" onClick={() => setTodas(!todas)}>
-                {todas ? "Ver menos" : "Ver todas"}
-              </button>
+              <button className="btn" onClick={() => setEditando(true)}>Editar reglas</button>
               {estado === "ok" && <span role="status" className="vok">✓ Reglas guardadas</span>}
             </div>
           </>
-        )}
+        ) : null}
+        </div>
       </section>
 
       <h2 id="ia-h">Armar mi semana con IA</h2>

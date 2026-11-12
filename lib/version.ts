@@ -1,7 +1,14 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.3";
+export const VERSION = "1.4";
 export const VERSION_FECHA = "12 de noviembre de 2026";
 export const NOVEDADES = [
+  "Estilo de papel, como tu hoja: letra Atkinson (fácil de leer) con títulos en Inter",
+  "Cerebro por secciones: Notas a la vista, como Google Keep, con notas de texto o de lista",
+  "Secciones privadas (Espiritual): no se ven al abrir Cerebro, solo desde el menú de secciones",
+  "Las notas se abren para leer a pantalla completa; Editar está a la derecha y puedes deslizar a la siguiente",
+  "Semana: los días que ya pasaron se pliegan",
+  "Tus reglas se ven con el ojito",
+  "Hoy en el centro de la barra de abajo",
   "Tus reglas se leen tranquilas y se cambian con «Editar reglas»",
   "El círculo de las tareas de hoy vuelve a ser redondo",
   "Perfil vuelve a abrir todos los días",

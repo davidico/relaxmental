@@ -10,7 +10,7 @@ import { habitColor, sortHabits, streak } from "@/lib/habits";
 import type { Tarea } from "@/lib/types";
 import { cssC, openTasks, toggleHecho } from "@/components/ui";
 import { useFocus } from "@/components/Shell";
-import { folderOptions } from "@/components/QuickTask";
+import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
 import PushBanner from "@/components/PushBanner";
 import VoiceButton from "@/components/VoiceButton";

@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
     );
     return;
   }
-  if (url.pathname.startsWith("/_next/") || /\.(png|svg|ico|webmanifest)$/.test(url.pathname)) {
+  if (url.pathname.startsWith("/_next/") || /\.(png|svg|ico|webmanifest|woff2)$/.test(url.pathname)) {
     e.respondWith(
       caches.match(e.request).then((hit) => {
         const net = fetch(e.request).then((r) => {

@@ -4,21 +4,8 @@ import { useEffect, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { today } from "@/lib/dates";
 import { useWide } from "@/lib/hooks";
-import type { Carpeta } from "@/lib/types";
 import { DueChoice } from "./ui";
-import RichEditor from "./RichEditor";
-import VoiceButton from "./VoiceButton";
-import { appendParas, suggestTitle } from "@/lib/voice";
-
-/** Carpetas en orden de árbol, con su nombre completo ("Notas › Ideas") */
-export function folderOptions(carpetas: Carpeta[]) {
-  const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden;
-  return carpetas
-    .filter((c) => !c.parent)
-    .sort(byOrder)
-    .flatMap((t) => [t, ...carpetas.filter((c) => c.parent === t.id).sort(byOrder)])
-    .map((c) => ({ id: c.id, label: c.parent ? `${carpetas.find((p) => p.id === c.parent)?.name} › ${c.name}` : c.name }));
-}
+import NoteView from "./NoteView";
 
 type Mode = "task" | "note" | null;
 
@@ -28,7 +15,7 @@ type Mode = "task" | "note" | null;
  * - Móvil: "+" que abre dos opciones: Nueva tarea / Nueva nota.
  */
 export default function QuickTask() {
-  const { save, carpetas, hoy } = useData();
+  const { save, hoy } = useData();
   const wide = useWide();
   const [menu, setMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
@@ -36,7 +23,6 @@ export default function QuickTask() {
   const [f, setF] = useState({ title: "", step: "", due: today() });
   /* Si la app quedó abierta pasada la medianoche, "hoy" pasa al día nuevo */
   useEffect(() => setF((x) => (x.due && x.due < hoy ? { ...x, due: hoy } : x)), [hoy]);
-  const [n, setN] = useState({ folder: "ideas", title: "", html: "", text: "" });
 
   useEffect(() => {
     if (!mode && !menu) return;
@@ -89,14 +75,14 @@ export default function QuickTask() {
         </>
       )}
 
-      {mode && (
+      {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
+      {mode === "task" && (
         <div className="modal" role="dialog" aria-modal="true" aria-labelledby="qt-title" onClick={(e) => e.target === e.currentTarget && close()}>
           <div className="sheet" style={{ maxWidth: 560 }}>
             <div className="sheet-head">
-              <h2 id="qt-title" className="sheet-title">{mode === "task" ? "Nueva tarea" : "Nueva nota"}</h2>
+              <h2 id="qt-title" className="sheet-title">Nueva tarea</h2>
               <button className="x" aria-label="Cerrar" onClick={close}>✕</button>
             </div>
-            {mode === "task" ? (
               <form
                 className="add sheet-form"
                 onSubmit={(e) => {
@@ -115,35 +101,6 @@ export default function QuickTask() {
                   {done && <span className="saved" role="status">Guardada ✓ Puedes añadir otra.</span>}
                 </div>
               </form>
-            ) : (
-              <form
-                className="add sheet-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!n.text.trim()) return;
-                  save("notas", { id: newId(), folder: n.folder, kind: "nota", title: n.title.trim(), html: n.html, text: n.text.trim(), ref: "", created: new Date().toISOString() });
-                  setN({ ...n, title: "", html: "", text: "" });
-                  setDone(true);
-                }}
-              >
-                <select id="qn-folder" aria-label="Carpeta" value={n.folder} onChange={(e) => setN({ ...n, folder: e.target.value })}>
-                  {folderOptions(carpetas).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-                </select>
-                <input id="qn-title" placeholder="Título (opcional)" value={n.title} onChange={(e) => setN({ ...n, title: e.target.value })} />
-                <RichEditor id="qn-text" big autoFocus value={n.html} placeholder="Una idea, una profecía, un sueño… (# título, - lista, [] casilla)" onChange={(html, text) => { setN((x) => ({ ...x, html, text })); setDone(false); }} />
-                <VoiceButton
-                  onText={(p) => { setN((x) => ({ ...x, ...appendParas(x.html, x.text, p) })); setDone(false); }}
-                  onTitle={async (t) => {
-                    const title = await suggestTitle(t);
-                    if (title) setN((x) => (x.title.trim() ? x : { ...x, title }));
-                  }}
-                />
-                <div className="row" style={{ alignItems: "center" }}>
-                  <button className="btn" type="submit" style={{ flex: "none" }} disabled={!n.text.trim()}>Guardar nota</button>
-                  {done && <span className="saved" role="status">Guardada ✓</span>}
-                </div>
-              </form>
-            )}
           </div>
         </div>
       )}

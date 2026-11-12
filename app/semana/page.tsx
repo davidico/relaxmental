@@ -43,22 +43,40 @@ export default function Semana() {
       <div className="weekgrid">
         {days.map((x) => {
           const d = pd(x);
+          const bloques = planFor(x).filter((bl) => bl.a !== "rutina");
+          const head = (
+            <>
+              <b>{DOW[d.getDay()]} {d.getDate()}</b>
+              {preachesOn(labores, x) ? <span className="pill">Predicas</span> : rolesOn(labores, x).length ? <span className="pill">Culto</span> : <span className="pill free">Noche libre</span>}
+              {dias[x] && <span className="pill mine">Editado</span>}
+            </>
+          );
+          const cuerpo = bloques.map((bl) => (
+            <div className="mini" key={bl.s + bl.t} style={cssC(areaColor(bl.a))}>
+              <span>{bl.s}</span>
+              <i>{bl.t}</i>
+            </div>
+          ));
+          /* Los días que ya pasaron se pliegan: se abren tocándolos */
+          if (x < t)
+            return (
+              <details className="card daypast" key={x}>
+                <summary className="dayhead">
+                  {head}
+                  <span className="dp-n">{bloques.length} bloques</span>
+                  <svg className="dp-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                </summary>
+                {cuerpo}
+                <button className="linkbtn" onClick={() => setEditing(x)}>Editar {DOW[d.getDay()].toLowerCase()} {d.getDate()}</button>
+              </details>
+            );
           return (
             <div className="card" key={x}>
               <div className={`dayhead${x === t ? " today" : ""}`}>
-                <b>{DOW[d.getDay()]} {d.getDate()}</b>
-                {preachesOn(labores, x) ? <span className="pill">Predicas</span> : rolesOn(labores, x).length ? <span className="pill">Culto</span> : <span className="pill free">Noche libre</span>}
-                {dias[x] && <span className="pill mine">Editado</span>}
+                {head}
                 <button className="edit" onClick={() => setEditing(x)} aria-label={`Editar ${DOW[d.getDay()]} ${d.getDate()}`}>Editar</button>
               </div>
-              {planFor(x)
-                .filter((bl) => bl.a !== "rutina")
-                .map((bl) => (
-                  <div className="mini" key={bl.s + bl.t} style={cssC(areaColor(bl.a))}>
-                    <span>{bl.s}</span>
-                    <i>{bl.t}</i>
-                  </div>
-                ))}
+              {cuerpo}
             </div>
           );
         })}

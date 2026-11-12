@@ -63,18 +63,50 @@ const DEFAULT_HABITS: Array<Pick<Habito, "name" | "area">> = [
 const seedHabits = (): Habito[] =>
   DEFAULT_HABITS.map((h, i) => ({ ...h, id: newId(), orden: i, hechos: {}, created: new Date().toISOString() }));
 
-/* Carpetas de inicio del segundo cerebro (ids fijos para poder mover las notas antiguas) */
+/* Secciones de inicio del segundo cerebro: Notas a la vista; Espiritual privada con Sueños y Profecías */
 const DEFAULT_FOLDERS: Array<Omit<Carpeta, "created">> = [
-  { id: "profecias", name: "Profecías", parent: null, area: "iglesia", orden: 0 },
-  { id: "suenos", name: "Sueños", parent: null, area: "tukuna", orden: 1 },
-  { id: "notas", name: "Notas", parent: null, area: "trabajo", orden: 2 },
-  { id: "ideas", name: "Ideas", parent: "notas", area: "trabajo", orden: 0 },
-  { id: "predicaciones", name: "Predicaciones", parent: "notas", area: "trabajo", orden: 1 },
-  { id: "general", name: "General", parent: "notas", area: "trabajo", orden: 2 },
+  { id: "notas", name: "Notas", parent: null, area: "trabajo", orden: 0, v: 2 },
+  { id: "espiritual", name: "Espiritual", parent: null, area: "iglesia", orden: 1, privada: true },
+  { id: "suenos", name: "Sueños", parent: "espiritual", area: "iglesia", orden: 0 },
+  { id: "profecias", name: "Profecías", parent: "espiritual", area: "iglesia", orden: 1 },
 ];
 const seedFolders = (): Carpeta[] => DEFAULT_FOLDERS.map((f) => ({ ...f, created: new Date().toISOString() }));
+
+/**
+ * Reorganización en secciones (una sola vez): Notas queda como sección visible,
+ * Sueños y Profecías pasan a la sección privada «Espiritual», y las demás carpetas
+ * principales pasan a ser carpetas dentro de Notas. No se borra ninguna nota.
+ */
+function migrateSections(carpetas: Carpeta[], notas: Nota[]): { save: Carpeta[]; remove: string[] } {
+  const now = new Date().toISOString();
+  const byId = Object.fromEntries(carpetas.map((c) => [c.id, c]));
+  if (byId.notas?.v === 2 || carpetas.some((c) => c.privada)) return { save: [], remove: [] };
+  const out: Record<string, Carpeta> = {};
+  const put = (c: Carpeta) => (out[c.id] = c);
+  const notasSec: Carpeta = { ...(byId.notas ?? { id: "notas", name: "Notas", area: "trabajo", created: now }), parent: null, orden: 0, v: 2 } as Carpeta;
+  put(notasSec);
+  if (!byId.espiritual) put({ id: "espiritual", name: "Espiritual", parent: null, area: "iglesia", orden: 1, privada: true, created: now });
+  const espirituales = new Set(["suenos", "profecias"]);
+  let i = 0;
+  for (const c of carpetas) {
+    if (c.id === "notas" || c.id === "espiritual") continue;
+    if (espirituales.has(c.id)) put({ ...c, parent: "espiritual", orden: c.id === "suenos" ? 0 : 1 });
+    else if (!c.parent) put({ ...c, parent: "notas", orden: 10 + i++ });
+  }
+  /* Subcarpetas vacías con el mismo nombre que otra de Notas: sobran */
+  const final = carpetas.map((c) => out[c.id] ?? c);
+  const used = new Set(notas.map((n) => n.folder));
+  const remove: string[] = [];
+  const seen = new Set<string>();
+  for (const c of final.filter((x) => x.parent === "notas").sort((a, b) => Number(used.has(b.id)) - Number(used.has(a.id)))) {
+    const k = c.name.trim().toLowerCase();
+    if (seen.has(k) && !used.has(c.id) && !final.some((x) => x.parent === c.id)) remove.push(c.id);
+    seen.add(k);
+  }
+  return { save: Object.values(out), remove };
+}
 /** Dónde va una nota antigua según su tipo */
-export const FOLDER_OF_KIND: Record<Kind, string> = { profecia: "profecias", idea: "ideas", predicacion: "predicaciones", nota: "general" };
+export const FOLDER_OF_KIND: Record<Kind, string> = { profecia: "profecias", idea: "notas", predicacion: "notas", nota: "notas" };
 
 interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias }
 
@@ -347,8 +379,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (mode === "loading" || !loaded || seeded.current) return;
     seeded.current = true;
     if (!carpetas.length) seedFolders().forEach((f) => save("carpetas", f));
+    else {
+      const m = migrateSections(carpetas, notas);
+      m.save.forEach((c) => save("carpetas", c));
+      m.remove.forEach((id) => remove("carpetas", id));
+    }
     for (const n of notas) if (!n.folder) save("notas", { ...n, folder: FOLDER_OF_KIND[n.kind] ?? "general" });
-  }, [mode, loaded, carpetas, notas, save]);
+  }, [mode, loaded, carpetas, notas, save, remove]);
 
   const planFor = useCallback((date: string) => dias[date] ?? scheduleFor(LABORES, date), [dias]);
   const retry = useCallback(() => {

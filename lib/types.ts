@@ -14,8 +14,12 @@ export interface Tarea {
 export interface Carpeta {
   id: string;
   name: string;
-  parent: string | null; // null = carpeta principal
+  parent: string | null; // null = sección (carpeta principal)
   area: Area; // color
+  /** Sección privada: no sale en Cerebro, solo desde «Secciones» */
+  privada?: boolean;
+  /** Marca de la reorganización en secciones (en la sección Notas) */
+  v?: number;
   orden: number;
   created: string;
 }
@@ -32,6 +36,16 @@ export interface Nota {
   text: string;
   ref: string;
   created: string;
+  /** "lista": casillas en vez de texto (como Google Keep) */
+  tipo?: "texto" | "lista";
+  items?: ItemLista[];
+  updated?: string;
+}
+
+export interface ItemLista {
+  id: string;
+  t: string;
+  ok: boolean;
 }
 
 export interface Habito {

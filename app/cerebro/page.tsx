@@ -3,32 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { fdate } from "@/lib/dates";
-import { areaColor, type Area, type Carpeta, type Nota } from "@/lib/types";
-import { cssC } from "@/components/ui";
-import RichEditor, { RichView } from "@/components/RichEditor";
-import NoteSheet from "@/components/NoteSheet";
-import VoiceButton from "@/components/VoiceButton";
-import { appendParas, suggestTitle } from "@/lib/voice";
+import type { Area, Carpeta, Nota } from "@/lib/types";
+import { RichView } from "@/components/RichEditor";
+import NoteView from "@/components/NoteView";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
 
-/** Carpeta seleccionada en la dirección: /cerebro#ideas (vacío = todo) */
-function useHashFolder() {
-  const [sel, setSel] = useState("");
+/** Sección y carpeta en la dirección: /cerebro#seccion o /cerebro#seccion/carpeta (vacío = Notas) */
+function useHashSel() {
+  const [sel, setSel] = useState({ sec: "notas", sub: "" });
   useEffect(() => {
     const read = () => {
-      const h = decodeURIComponent(location.hash.slice(1));
-      setSel(h === "todo" ? "" : h);
+      const [sec, sub] = decodeURIComponent(location.hash.slice(1)).split("/");
+      setSel({ sec: sec && sec !== "todo" ? sec : "notas", sub: sub ?? "" });
     };
     read();
     addEventListener("hashchange", read);
     return () => removeEventListener("hashchange", read);
   }, []);
-  const go = (id: string) => {
-    location.hash = id;
-    if (!id) history.replaceState(null, "", location.pathname);
-    setSel(id);
+  const go = (sec: string, sub = "") => {
+    history.replaceState(null, "", `${location.pathname}#${sec}${sub ? `/${sub}` : ""}`);
+    setSel({ sec, sub });
   };
   return [sel, go] as const;
 }
@@ -39,7 +35,6 @@ const monthLabel = (iso: string) => {
   return `${MESES[d.getMonth()][0].toUpperCase()}${MESES[d.getMonth()].slice(1)} ${d.getFullYear()}`;
 };
 
-/** Preferencia de vista guardada en este navegador */
 function usePref<T extends string>(key: string, def: T) {
   const [v, setV] = useState<T>(def);
   useEffect(() => {
@@ -57,36 +52,38 @@ function usePref<T extends string>(key: string, def: T) {
   return [v, set] as const;
 }
 
+const Lock = () => (
+  <svg className="k-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+);
+
 export default function Cerebro() {
   const { notas, carpetas, save, remove } = useData();
-  const [sel, go] = useHashFolder();
+  const [sel, go] = useHashSel();
   const [q, setQ] = useState("");
-  const [confirm, setConfirm] = useState<string | null>(null);
-  const [f, setF] = useState({ title: "", html: "", text: "", ref: "" });
-  const [opened, setOpened] = useState<Nota | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [vista, setVista] = usePref<"tarjetas" | "lista">("cerebro-vista", "tarjetas");
   const [orden, setOrden] = usePref<"nuevas" | "viejas" | "az">("cerebro-orden", "nuevas");
-  const [folderForm, setFolderForm] = useState<{ mode: "new" | "sub" | "rename"; name: string } | null>(null);
+  const [abierta, setAbierta] = useState<number | null>(null);
+  const [nueva, setNueva] = useState<"texto" | "lista" | null>(null);
+  const [secMenu, setSecMenu] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [newMenu, setNewMenu] = useState(false);
+  const [form, setForm] = useState<{ mode: "seccion" | "carpeta" | "renombrar"; name: string; privada: boolean } | null>(null);
+  const [confirm, setConfirm] = useState<string | null>(null);
 
   const byId = useMemo(() => Object.fromEntries(carpetas.map((c) => [c.id, c])), [carpetas]);
-  const tops = carpetas.filter((c) => !c.parent).sort(byOrder);
-  const kids = (id: string) => carpetas.filter((c) => c.parent === id).sort(byOrder);
-  const current = sel ? byId[sel] : undefined;
-  const top = current ? (current.parent ? byId[current.parent] : current) : undefined;
-  const subtree = (id: string): string[] => [id, ...kids(id).flatMap((k) => subtree(k.id))];
-  const inSel = useMemo(() => (current ? new Set(subtree(current.id)) : null), [current, carpetas]); // eslint-disable-line react-hooks/exhaustive-deps
-  const count = (id: string) => {
-    const ids = new Set(subtree(id));
-    return notas.filter((n) => n.folder && ids.has(n.folder)).length;
-  };
-  const path = (c?: Carpeta) => (c ? (c.parent && byId[c.parent] ? `${byId[c.parent].name} › ${c.name}` : c.name) : "Todo");
-  /* Dónde se guarda una entrada nueva: la carpeta abierta; si es una principal con subcarpetas, su primera subcarpeta; si no hay ninguna, General */
-  const target = current?.id ?? "";
+  const secciones = carpetas.filter((c) => !c.parent).sort(byOrder);
+  const visibles = secciones.filter((c) => !c.privada);
+  const privadas = secciones.filter((c) => c.privada);
+  const h = byId[sel.sec];
+  const sec = h ? (h.parent ? byId[h.parent] : h) : (byId.notas ?? visibles[0]);
+  const kids = sec ? carpetas.filter((c) => c.parent === sec.id).sort(byOrder) : [];
+  const subId = h?.parent ? h.id : sel.sub;
+  const sub = subId && byId[subId]?.parent === sec?.id ? byId[subId] : undefined;
+  const ids = new Set(sub ? [sub.id] : sec ? [sec.id, ...kids.map((k) => k.id)] : []);
+  const count = (c: Carpeta) => notas.filter((n) => n.folder === c.id || byId[n.folder ?? ""]?.parent === c.id).length;
 
   const ql = q.toLowerCase();
   const list = notas
-    .filter((n) => (!inSel || (n.folder && inSel.has(n.folder))) && (!ql || [n.title, n.text, n.ref].join(" ").toLowerCase().includes(ql)))
+    .filter((n) => n.folder && ids.has(n.folder) && (!ql || [n.title, n.text, n.ref].join(" ").toLowerCase().includes(ql)))
     .sort((a, b) =>
       orden === "az"
         ? (a.title || a.text).localeCompare(b.title || b.text, "es")
@@ -94,219 +91,192 @@ export default function Cerebro() {
           ? (a.created < b.created ? -1 : 1)
           : (b.created < a.created ? -1 : 1),
     );
-  /* Agrupado por mes cuando se ordena por fecha */
-  const groups: { label: string; items: Nota[] }[] = [];
-  for (const n of list) {
+  const groups: { label: string; items: { n: Nota; i: number }[] }[] = [];
+  list.forEach((n, i) => {
     const label = orden === "az" || !n.created ? "" : monthLabel(n.created);
     const g = groups[groups.length - 1];
-    if (g && g.label === label) g.items.push(n);
-    else groups.push({ label, items: [n] });
-  }
+    if (g && g.label === label) g.items.push({ n, i });
+    else groups.push({ label, items: [{ n, i }] });
+  });
 
-  const colorOf = (id?: string): Area => {
-    const c = id ? byId[id] : undefined;
-    if (!c) return "casa";
-    return c.parent && byId[c.parent] ? byId[c.parent].area : c.area;
-  };
+  /* Si cambia la lista mientras lees (p. ej. borraste), no salirse del rango */
+  useEffect(() => {
+    if (abierta !== null && abierta >= list.length) setAbierta(list.length ? list.length - 1 : null);
+  }, [abierta, list.length]);
 
-  const saveFolder = () => {
-    if (!folderForm || !folderForm.name.trim()) return;
-    const name = folderForm.name.trim();
-    if (folderForm.mode === "rename" && current) save("carpetas", { ...current, name });
-    else {
-      const parent = folderForm.mode === "sub" && current ? (current.parent ?? current.id) : null;
-      const siblings = carpetas.filter((c) => c.parent === parent);
-      const c: Carpeta = {
-        id: newId(),
-        name,
-        parent,
-        area: parent ? (byId[parent]?.area ?? "casa") : COLORS[tops.length % COLORS.length],
-        orden: siblings.length,
-        created: new Date().toISOString(),
-      };
+  const guardarForm = () => {
+    if (!form || !form.name.trim() || !sec) return;
+    const name = form.name.trim();
+    if (form.mode === "renombrar") save("carpetas", { ...sec, name, privada: form.privada });
+    else if (form.mode === "seccion") {
+      const c: Carpeta = { id: newId(), name, parent: null, privada: form.privada, area: COLORS[secciones.length % COLORS.length], orden: secciones.length, created: new Date().toISOString() };
       save("carpetas", c);
       go(c.id);
+    } else {
+      const c: Carpeta = { id: newId(), name, parent: sec.id, area: sec.area, orden: kids.length, created: new Date().toISOString() };
+      save("carpetas", c);
+      go(sec.id, c.id);
     }
-    setFolderForm(null);
+    setForm(null);
   };
+  const borrable = (c: Carpeta) => count(c) === 0 && !carpetas.some((x) => x.parent === c.id) && c.id !== "notas";
 
-  const addEntry = () => {
-    if (!f.text.trim() || !target) return;
-    const n: Nota = { id: newId(), folder: target, kind: "nota", title: f.title.trim(), html: f.html, text: f.text.trim(), ref: f.ref.trim(), created: new Date().toISOString() };
-    save("notas", n);
-    setF({ title: "", html: "", text: "", ref: "" });
-  };
-
-  const canDelete = current && count(current.id) === 0 && kids(current.id).length === 0;
+  if (!sec) return <div className="card empty">Cargando tus secciones…</div>;
 
   return (
     <>
-      <h1>Segundo cerebro</h1>
-      <p className="sub">Profecías, sueños, ideas, predicaciones… Sácalo de la cabeza y guárdalo en su carpeta.</p>
-
-      {/* Móvil: carpetas como fichas */}
-      <div className="seg fchips">
-        <button aria-pressed={!sel} onClick={() => go("")}>Todo · {notas.length}</button>
-        {tops.map((c) => (
-          <button key={c.id} aria-pressed={top?.id === c.id} onClick={() => go(c.id)}>{c.name} · {count(c.id)}</button>
-        ))}
-        <button className="addchip" onClick={() => setFolderForm({ mode: "new", name: "" })}>+ Carpeta</button>
+      <div className="k-head">
+        <div className="k-sec">
+          <button className="k-secbtn" aria-haspopup="menu" aria-expanded={secMenu} onClick={() => setSecMenu(!secMenu)}>
+            <h1>{sec.name}</h1>
+            {sec.privada && <Lock />}
+            <svg className="k-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+            <span className="sr-only">Cambiar de sección</span>
+          </button>
+          {secMenu && (
+            <>
+              <div className="dial-backdrop clear" onClick={() => setSecMenu(false)} />
+              <div className="menu k-secmenu" role="menu" onKeyDown={(e) => e.key === "Escape" && setSecMenu(false)}>
+                {visibles.map((c, i) => (
+                  <button key={c.id} role="menuitem" autoFocus={i === 0} aria-current={c.id === sec.id || undefined} onClick={() => { setSecMenu(false); setQ(""); go(c.id); }}>
+                    <span>{c.name}</span><small>{count(c)}</small>
+                  </button>
+                ))}
+                {privadas.length > 0 && <p className="k-menulabel">Privadas</p>}
+                {privadas.map((c) => (
+                  <button key={c.id} role="menuitem" aria-current={c.id === sec.id || undefined} onClick={() => { setSecMenu(false); setQ(""); go(c.id); }}>
+                    <span><Lock /> {c.name}</span><small>{count(c)}</small>
+                  </button>
+                ))}
+                <hr />
+                <button role="menuitem" onClick={() => { setSecMenu(false); setForm({ mode: "seccion", name: "", privada: false }); }}>+ Nueva sección</button>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="k-actions">
+          <div className="nv-more">
+            <button className="btn sm" aria-haspopup="menu" aria-expanded={newMenu} onClick={() => setNewMenu(!newMenu)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nueva
+            </button>
+            {newMenu && (
+              <>
+                <div className="dial-backdrop clear" onClick={() => setNewMenu(false)} />
+                <div className="menu k-newmenu" role="menu" onKeyDown={(e) => e.key === "Escape" && setNewMenu(false)}>
+                  <button role="menuitem" autoFocus onClick={() => { setNewMenu(false); setNueva("texto"); }}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9" /></svg> Nota de texto
+                  </button>
+                  <button role="menuitem" onClick={() => { setNewMenu(false); setNueva("lista"); }}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12l3 3 5-6" /></svg> Lista
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="nv-more">
+            <button className="nv-ib" aria-haspopup="menu" aria-expanded={menu} aria-label={`Opciones de ${sec.name}`} onClick={() => setMenu(!menu)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+            </button>
+            {menu && (
+              <>
+                <div className="dial-backdrop clear" onClick={() => setMenu(false)} />
+                <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu(false)}>
+                  <button role="menuitem" autoFocus onClick={() => { setMenu(false); setForm({ mode: "carpeta", name: "", privada: false }); }}>Nueva carpeta en {sec.name}</button>
+                  <button role="menuitem" onClick={() => { setMenu(false); setForm({ mode: "renombrar", name: sec.name, privada: !!sec.privada }); }}>Renombrar o hacer privada</button>
+                  {sub && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sub) ? `c:${sub.id}` : "ocupada"); }}>Borrar carpeta «{sub.name}»</button>}
+                  {!sub && sec.id !== "notas" && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sec) ? `c:${sec.id}` : "ocupada"); }}>Borrar sección</button>}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-      {top && kids(top.id).length > 0 && (
-        <div className="seg fchips sub">
-          <button aria-pressed={sel === top.id} onClick={() => go(top.id)}>Todas</button>
-          {kids(top.id).map((k) => (
-            <button key={k.id} aria-pressed={sel === k.id} onClick={() => go(k.id)}>{k.name} · {count(k.id)}</button>
+      <div className="k-dots" aria-hidden="true" />
+
+      {form && (
+        <form className="card pad k-form" onSubmit={(e) => { e.preventDefault(); guardarForm(); }}>
+          <label htmlFor="k-name" className="flabel">
+            {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva carpeta en ${sec.name}` : "Nombre de la sección"}
+          </label>
+          <input id="k-name" autoFocus placeholder={form.mode === "carpeta" ? "Ej. Cosas por orar, Inspiración…" : "Ej. Espiritual, Trabajo…"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          {form.mode !== "carpeta" && (
+            <label className="k-check">
+              <input type="checkbox" checked={form.privada} onChange={(e) => setForm({ ...form, privada: e.target.checked })} />
+              <span>Privada: no se muestra al abrir Cerebro, solo desde el menú de secciones</span>
+            </label>
+          )}
+          <div className="row actions">
+            <button className="btn" type="submit" disabled={!form.name.trim()}>Guardar</button>
+            <button className="btn ghost" type="button" onClick={() => setForm(null)}>Cancelar</button>
+          </div>
+        </form>
+      )}
+      {confirm === "ocupada" && (
+        <div className="confirm">
+          Para borrarla tiene que estar vacía (sin notas ni carpetas).
+          <button className="btn sm ghost" onClick={() => setConfirm(null)}>Entendido</button>
+        </div>
+      )}
+      {confirm?.startsWith("c:") && (
+        <div className="confirm">
+          ¿Borrar «{byId[confirm.slice(2)]?.name}»?
+          <button className="btn sm warn" onClick={() => { const id = confirm.slice(2); remove("carpetas", id); setConfirm(null); go(id === sec.id ? "notas" : sec.id); }}>Borrar</button>
+          <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
+        </div>
+      )}
+
+      {kids.length > 0 && (
+        <div className="seg k-chips" role="group" aria-label={`Carpetas de ${sec.name}`}>
+          <button aria-pressed={!sub} onClick={() => go(sec.id)}>Todo · {count(sec)}</button>
+          {kids.map((k) => (
+            <button key={k.id} aria-pressed={sub?.id === k.id} onClick={() => go(sec.id, k.id)}>{k.name} · {count(k)}</button>
           ))}
         </div>
       )}
 
-      <div className="brain">
-
-        <div className="bmain">
-          <div className="fhead">
-            <h2 className="fpath" style={cssC(areaColor(colorOf(current?.id)))}>{path(current)}</h2>
-            {current && (
-              <div className="fmenu">
-                <button className="iconbtn" aria-haspopup="menu" aria-expanded={menuOpen} aria-label={`Opciones de ${current.name}`} onClick={() => setMenuOpen(!menuOpen)}>
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
-                </button>
-                {menuOpen && (
-                  <>
-                    <div className="dial-backdrop clear" onClick={() => setMenuOpen(false)} />
-                    <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenuOpen(false)}>
-                      <button role="menuitem" autoFocus onClick={() => { setMenuOpen(false); setFolderForm({ mode: "sub", name: "" }); }}>Nueva subcarpeta</button>
-                      <button role="menuitem" onClick={() => { setMenuOpen(false); setFolderForm({ mode: "rename", name: current.name }); }}>Renombrar carpeta</button>
-                      <hr />
-                      <button role="menuitem" className="danger" onClick={() => { setMenuOpen(false); setConfirm(canDelete ? `folder:${current.id}` : "folder-busy"); }}>Borrar carpeta</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {folderForm && (
-            <form className="card add folderform" onSubmit={(e) => { e.preventDefault(); saveFolder(); }}>
-              <label htmlFor="fold-name" className="flabel">
-                {folderForm.mode === "rename" ? "Nuevo nombre" : folderForm.mode === "sub" ? `Nueva subcarpeta en ${current?.parent ? byId[current.parent]?.name : current?.name}` : "Nueva carpeta principal"}
-              </label>
-              <div className="row">
-                <input id="fold-name" autoFocus placeholder="Ej. Visiones, Estudios bíblicos…" value={folderForm.name} onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })} />
-                <div className="row" style={{ flex: "none" }}>
-                  <button className="btn" type="submit">Guardar</button>
-                  <button className="btn ghost" type="button" onClick={() => setFolderForm(null)}>Cancelar</button>
-                </div>
-              </div>
-            </form>
-          )}
-          {confirm === "folder-busy" && (
-            <div className="confirm">
-              Para borrar una carpeta tiene que estar vacía (sin entradas ni subcarpetas).
-              <button className="btn sm ghost" onClick={() => setConfirm(null)}>Entendido</button>
-            </div>
-          )}
-          {current && confirm === `folder:${current.id}` && (
-            <div className="confirm">
-              ¿Borrar la carpeta «{current.name}»?
-              <button className="btn sm warn" onClick={() => { remove("carpetas", current.id); setConfirm(null); go(current.parent ?? ""); }}>Borrar</button>
-              <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
-            </div>
-          )}
-
-          {current ? (
-            <div className="card">
-              <form
-                className="add"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addEntry();
-                }}
-              >
-                <input id="n-title" placeholder="Título (opcional)" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-                <RichEditor id="n-text" value={f.html} placeholder={`Nueva entrada en ${path(current)}… (# título, - lista, [] casilla)`} onChange={(html, text) => setF((x) => ({ ...x, html, text }))} onSubmit={addEntry} />
-                <VoiceButton
-                  onText={(p) => setF((x) => ({ ...x, ...appendParas(x.html, x.text, p) }))}
-                  onTitle={async (t) => {
-                    if (f.title.trim()) return;
-                    const title = await suggestTitle(t);
-                    if (title) setF((x) => (x.title.trim() ? x : { ...x, title }));
-                  }}
-                />
-                <div>
-                  <button className="btn" type="submit" disabled={!f.text.trim()}>Guardar en {current.name}</button>
-                  <span className="kbd">Ctrl + Enter</span>
-                </div>
-              </form>
-            </div>
-          ) : null}
-
-          <div className="listhead">
-            <input id="q" type="search" className="search" placeholder="Buscar en todas tus entradas…" aria-label="Buscar" value={q} onChange={(e) => setQ(e.target.value)} />
-            <div className="viewbar">
-              <h2>{list.length} entrada{list.length === 1 ? "" : "s"}{q ? ` para «${q}»` : ""}</h2>
-              <div className="viewctl">
-                <label className="sr-only" htmlFor="n-orden">Ordenar</label>
-                <select id="n-orden" value={orden} onChange={(e) => setOrden(e.target.value as typeof orden)}>
-                  <option value="nuevas">Más recientes</option>
-                  <option value="viejas">Más antiguas</option>
-                  <option value="az">Por título (A–Z)</option>
-                </select>
-                <div className="vtoggle" role="group" aria-label="Vista">
-                  <button aria-pressed={vista === "lista"} aria-label="Vista de lista" title="Lista" onClick={() => setVista("lista")}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" /></svg>
-                  </button>
-                  <button aria-pressed={vista === "tarjetas"} aria-label="Vista de tarjetas" title="Tarjetas" onClick={() => setVista("tarjetas")}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" /></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {list.length ? (
-            groups.map((g, gi) => (
-              <section key={gi + g.label} className="ngroup">
-                {g.label && <h3 className="nmonth">{g.label} <span>· {g.items.length}</span></h3>}
-                <div className={vista === "lista" ? "notes nlist" : "notes"}>
-              {g.items.map((n) => {
-                const fc = n.folder ? byId[n.folder] : undefined;
-                return (
-                  <article className="note" key={n.id}>
-                    <button className="nopen" onClick={() => setOpened(n)} aria-label={`Abrir ${n.title || "entrada"}`}>
-                      <span className="meta" style={{ marginTop: 0 }}>
-                        <span className="chip" style={cssC(areaColor(colorOf(n.folder)))}>{fc ? path(fc) : "Sin carpeta"}</span>
-                        {n.created && <small>{fdate(n.created)}</small>}
-                      </span>
-                      {vista === "lista" ? (
-                        <span className="nt">{n.title || n.text.split("\n")[0].slice(0, 120) || "Sin título"}</span>
-                      ) : (
-                        <>
-                          {n.title && <span className="nt">{n.title}</span>}
-                          <RichView html={n.html} text={n.text} className="clamp" />
-                        </>
-                      )}
-                    </button>
-                    <button className="x nx" aria-label={`Borrar ${n.title || "entrada"}`} onClick={() => setConfirm(n.id)}>✕</button>
-                    {confirm === n.id && (
-                      <div className="confirm">
-                        ¿Borrar esta entrada?
-                        <button className="btn sm warn" onClick={() => { remove("notas", n.id); setConfirm(null); }}>Borrar</button>
-                        <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-                </div>
-              </section>
-            ))
-          ) : (
-            <div className="card empty">{q ? "Nada coincide con tu búsqueda." : current ? "Esta carpeta está vacía. Escribe la primera entrada arriba." : "Todavía no hay entradas."}</div>
-          )}
-        </div>
+      <div className="k-tools">
+        <label htmlFor="q" className="sr-only">Buscar en {sec.name}</label>
+        <input id="q" type="search" className="search" placeholder={`Buscar en ${sub?.name ?? sec.name}…`} value={q} onChange={(e) => setQ(e.target.value)} />
+        <label className="sr-only" htmlFor="n-orden">Ordenar</label>
+        <select id="n-orden" value={orden} onChange={(e) => setOrden(e.target.value as typeof orden)}>
+          <option value="nuevas">Recientes</option>
+          <option value="viejas">Antiguas</option>
+          <option value="az">A–Z</option>
+        </select>
       </div>
-      {opened && <NoteSheet key={opened.id} note={opened} onClose={() => setOpened(null)} />}
+
+      {list.length ? (
+        groups.map((g, gi) => (
+          <section key={gi + g.label} className="k-group">
+            {g.label && <h2 className="k-month">{g.label} <span>· {g.items.length}</span></h2>}
+            <div className="k-grid">
+              {g.items.map(({ n, i }) => (
+                <button key={n.id} className="k-card" onClick={() => setAbierta(i)}>
+                  {n.title && <span className="k-title">{n.title}</span>}
+                  {n.created && <span className="k-date">{fdate(n.created)}{!sub && n.folder !== sec.id && byId[n.folder ?? ""] ? ` · ${byId[n.folder ?? ""].name}` : ""}</span>}
+                  {n.tipo === "lista" ? (
+                    <span className="k-items">
+                      {(n.items ?? []).filter((x) => !x.ok).slice(0, 6).map((x) => (
+                        <span key={x.id} className="k-item"><i aria-hidden="true" />{x.t}</span>
+                      ))}
+                      {(n.items ?? []).filter((x) => x.ok).length > 0 && <span className="k-more">+ {(n.items ?? []).filter((x) => x.ok).length} hechas</span>}
+                    </span>
+                  ) : (
+                    <RichView html={n.html} text={n.text} className="k-text" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        ))
+      ) : (
+        <div className="card empty">
+          {q ? "Nada coincide con tu búsqueda." : <>Aún no hay notas aquí. Toca <b>Nueva</b> para escribir una, o el cuadrito para una lista.</>}
+        </div>
+      )}
+
+      {abierta !== null && list[abierta] && <NoteView list={list} index={abierta} onIndex={setAbierta} onClose={() => setAbierta(null)} />}
+      {nueva && <NoteView list={[]} index={0} nueva={{ folder: sub?.id ?? sec.id, tipo: nueva }} onClose={() => setNueva(null)} />}
     </>
   );
 }

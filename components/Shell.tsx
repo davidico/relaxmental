@@ -9,13 +9,13 @@ import { pad } from "@/lib/dates";
 import type { Tarea } from "@/lib/types";
 
 const NAV = [
-  { href: "/hoy", label: "Hoy", icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
   { href: "/semana", label: "Semana", icon: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></> },
   {
     href: "/habitos",
     label: "Hábitos",
     icon: <><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="10" y="3" width="5" height="5" rx="1" /><rect x="17" y="3" width="4" height="5" rx="1" /><rect x="3" y="10" width="5" height="5" rx="1" /><rect x="10" y="10" width="5" height="5" rx="1" /><rect x="3" y="17" width="5" height="4" rx="1" /></>,
   },
+  { href: "/hoy", label: "Hoy", icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
   { href: "/cerebro", label: "Cerebro", icon: <><path d="M9 18h6M10 21h4" /><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" /></> },
   { href: "/tareas", label: "Tareas", icon: <><path d="M9 6h11M9 12h11M9 18h11" /><path d="M3.5 6l1.5 1.5L7 5M3.5 12l1.5 1.5L7 11M3.5 18l1.5 1.5L7 17" /></> },
 ];
@@ -60,7 +60,7 @@ function Frame({ children }: { children: ReactNode }) {
     addEventListener("hashchange", read);
     return () => removeEventListener("hashchange", read);
   }, [path]);
-  const hc = carpetas.find((c) => c.id === hash);
+  const hc = carpetas.find((c) => c.id === hash.split("/")[0]);
   const topOfHash = hc ? (hc.parent ?? hc.id) : "";
   const [focus, setFocus] = useState<Tarea | null>(null);
   const wide = path === "/semana";
@@ -101,9 +101,9 @@ function Frame({ children }: { children: ReactNode }) {
           </span>
         </div>
         {NAV.map((n) => (
-          <div key={n.href} className="navitem">
+          <div key={n.href} className={`navitem${n.href === "/hoy" ? " hoy" : ""}`}>
             {n.href === "/cerebro" ? (
-              <a href="/cerebro#todo" aria-current={path === n.href && !hash ? "page" : undefined} className={path === n.href ? "in" : undefined}>
+              <a href="/cerebro#notas" aria-current={path === n.href ? "page" : undefined} className={path === n.href ? "in" : undefined}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">{n.icon}</svg>
                 {n.label}
               </a>
@@ -113,9 +113,9 @@ function Frame({ children }: { children: ReactNode }) {
                 {n.label}
               </Link>
             )}
-            {n.href === "/cerebro" && tops.length > 0 && (
+            {n.href === "/cerebro" && tops.filter((c) => !c.privada).length > 0 && (
               <div className="subnav">
-                {tops.map((c) => (
+                {tops.filter((c) => !c.privada).map((c) => (
                   <a key={c.id} href={`/cerebro#${c.id}`} aria-current={path === "/cerebro" && topOfHash === c.id ? "page" : undefined}>{c.name}</a>
                 ))}
               </div>
