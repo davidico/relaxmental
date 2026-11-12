@@ -15,6 +15,8 @@ export default function Perfil() {
   const [reglas, setReglas] = useState("");
   const [guardadas, setGuardadas] = useState("");
   const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
+  const [editando, setEditando] = useState(false);
+  const [todas, setTodas] = useState(false);
   const [semana, setSemana] = useState<"esta" | "proxima">(new Date().getDay() === 0 ? "proxima" : "esta");
   const [props, setProps] = useState<Prop[] | null>(null);
   const [trabajando, setTrabajando] = useState("");
@@ -52,6 +54,7 @@ export default function Perfil() {
       } else localStorage.setItem("mi-semana-reglas", reglas);
       setGuardadas(reglas);
       setEstado("ok");
+      setEditando(false);
     } catch {
       setEstado("error");
     }
@@ -128,19 +131,35 @@ export default function Perfil() {
         <p className="hint">
           Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las usa para armar tu semana. Tus labores de la iglesia y tus tareas pendientes se añaden solas.
         </p>
-        <label htmlFor="reglas" className="sr-only">Mis reglas</label>
-        <textarea id="reglas" className="rules" value={reglas} onChange={(e) => { setReglas(e.target.value); setEstado(""); }} spellCheck />
-        <div className="row actions">
-          <button className="btn" onClick={guardar} disabled={!cambiado || estado === "guardando"}>
-            {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
-          </button>
-          {reglas !== REGLAS_INICIALES && (
-            <button className="btn ghost" onClick={() => { setReglas(REGLAS_INICIALES); setEstado(""); }}>Volver a las reglas de partida</button>
-          )}
-          <span role="status" className={estado === "error" ? "verr" : "vok"}>
-            {estado === "ok" ? "✓ Reglas guardadas" : estado === "error" ? "⚠ No se pudieron guardar. Inténtalo otra vez." : cambiado ? "Tienes cambios sin guardar" : ""}
-          </span>
-        </div>
+        {editando ? (
+          <>
+            <label htmlFor="reglas" className="sr-only">Mis reglas</label>
+            <textarea id="reglas" className="rules" value={reglas} onChange={(e) => { setReglas(e.target.value); setEstado(""); }} spellCheck autoFocus />
+            <div className="row actions">
+              <button className="btn" onClick={guardar} disabled={!cambiado || estado === "guardando"}>
+                {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
+              </button>
+              <button className="btn ghost" onClick={() => { setReglas(guardadas); setEstado(""); setEditando(false); }}>Cancelar</button>
+              {reglas !== REGLAS_INICIALES && (
+                <button className="linkbtn" onClick={() => { setReglas(REGLAS_INICIALES); setEstado(""); }}>Volver a las reglas de partida</button>
+              )}
+            </div>
+            <p role="status" className={estado === "error" ? "verr" : "hint"}>
+              {estado === "error" ? "⚠ No se pudieron guardar. Inténtalo otra vez." : cambiado ? "Tienes cambios sin guardar" : ""}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className={`rules-view${todas ? " all" : ""}`} id="reglas-texto">{guardadas}</p>
+            <div className="row actions">
+              <button className="btn" onClick={() => { setEditando(true); setTodas(true); }}>Editar reglas</button>
+              <button className="btn ghost" aria-expanded={todas} aria-controls="reglas-texto" onClick={() => setTodas(!todas)}>
+                {todas ? "Ver menos" : "Ver todas"}
+              </button>
+              {estado === "ok" && <span role="status" className="vok">✓ Reglas guardadas</span>}
+            </div>
+          </>
+        )}
       </section>
 
       <h2 id="ia-h">Armar mi semana con IA</h2>

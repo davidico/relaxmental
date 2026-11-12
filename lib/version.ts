@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.2";
+export const VERSION = "1.3";
 export const VERSION_FECHA = "12 de noviembre de 2026";
 export const NOVEDADES = [
+  "Tus reglas se leen tranquilas y se cambian con «Editar reglas»",
+  "El círculo de las tareas de hoy vuelve a ser redondo",
   "Perfil vuelve a abrir todos los días",
   "Sin internet la app sigue funcionando: tus cambios esperan en el teléfono y se suben solos al volver",
   "El celular y la computadora se ponen al día al abrir la app, sin pisarse",
