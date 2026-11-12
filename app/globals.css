@@ -862,3 +862,9 @@ img.brandmark.logo{background:none;padding:0;object-fit:cover;display:block}
   .hy-head{padding-right:200px}
   body:has(.hy) .fab:not(.round){display:none}
 }
+
+/* Aviso de sin conexión: texto + botón para reintentar */
+.banner.offline{align-items:center;flex-wrap:wrap;background:var(--gold-soft);color:var(--ink);border-color:color-mix(in srgb,var(--gold) 45%,transparent);font-weight:500}
+.banner.offline::before{content:"⟳";color:var(--gold-ink);font-weight:700}
+.banner.offline>span{flex:1 1 220px}
+.banner.offline .btn{flex:none;min-height:44px}

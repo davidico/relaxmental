@@ -31,7 +31,7 @@ interface D1Result<T> { results: T[] }
 interface D1Prepared {
   bind(...v: unknown[]): D1Prepared;
   all<T = Record<string, unknown>>(): Promise<D1Result<T>>;
-  run(): Promise<unknown>;
+  run(): Promise<{ meta?: { changes?: number } }>;
 }
 interface D1Database {
   prepare(sql: string): D1Prepared;
@@ -45,7 +45,19 @@ const json = (data: unknown, status = 200) =>
 /* ---------- Verificación del token de Cloudflare Access ---------- */
 
 const b64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/").padEnd(s.length + ((4 - (s.length % 4)) % 4), "=")), (c) => c.charCodeAt(0));
-let certCache: { at: number; keys: JsonWebKey[] & { kid?: string }[] } | null = null;
+let certCache: { at: number; keys: (JsonWebKey & { kid?: string })[] } | null = null;
+
+/** Claves públicas de Access. Se renuevan cada hora, o antes si llega una clave nueva (como mucho 1 vez por minuto). */
+async function accessKeys(env: Env, kid: string) {
+  const fresh = certCache && Date.now() - certCache.at < 3600_000;
+  const known = certCache?.keys.some((k) => k.kid === kid);
+  if (!fresh || (!known && Date.now() - certCache!.at > 60_000)) {
+    const r = await fetch(`https://${env.ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`);
+    const keys = r.ok ? ((await r.json()) as { keys?: (JsonWebKey & { kid?: string })[] }).keys : undefined;
+    if (Array.isArray(keys) && keys.length) certCache = { at: Date.now(), keys }; // una respuesta mala no se guarda
+  }
+  return certCache?.keys ?? [];
+}
 
 async function accessEmail(req: Request, env: Env): Promise<string | null> {
   if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) return null;
@@ -58,11 +70,7 @@ async function accessEmail(req: Request, env: Env): Promise<string | null> {
     const header = JSON.parse(new TextDecoder().decode(b64url(h))) as { kid: string; alg: string };
     const payload = JSON.parse(new TextDecoder().decode(b64url(p))) as { aud: string | string[]; exp: number; iss: string; email?: string };
     if (header.alg !== "RS256") return null;
-    if (!certCache || Date.now() - certCache.at > 3600_000) {
-      const r = await fetch(`https://${env.ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`);
-      certCache = { at: Date.now(), keys: ((await r.json()) as { keys: never[] }).keys };
-    }
-    const jwk = certCache.keys.find((k) => (k as { kid?: string }).kid === header.kid);
+    const jwk = (await accessKeys(env, header.kid)).find((k) => k.kid === header.kid);
     if (!jwk) return null;
     const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
     const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64url(s), new TextEncoder().encode(`${h}.${p}`));
@@ -79,6 +87,9 @@ async function accessEmail(req: Request, env: Env): Promise<string | null> {
 async function api(req: Request, env: Env, url: URL): Promise<Response> {
   const email = await accessEmail(req, env);
   if (!email) return json({ error: "no_auth" }, 401);
+  /* Escrituras solo desde la propia app (otra web no puede mandar datos con tu sesión) */
+  const origin = req.headers.get("origin");
+  if (req.method !== "GET" && origin && origin !== url.origin) return json({ error: "origin" }, 403);
   const [, , tabla, id] = url.pathname.split("/").map(decodeURIComponent); // /api/<tabla>/<id>
 
   if (url.pathname === "/api/me") return json({ email });
@@ -101,7 +112,7 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     return json({ ok: true });
   }
   if (url.pathname === "/api/push/test" && req.method === "POST") {
-    const sent = await notifyUser(env, email, { title: "¡Avisos activados!", body: "Te avisaré al empezar cada bloque de tu día.", tag: "test", url: "/hoy" });
+    const { sent } = await notifyUser(env, email, { title: "¡Avisos activados!", body: "Te avisaré al empezar cada bloque de tu día.", tag: "test", url: "/hoy" });
     return json({ ok: true, sent });
   }
 
@@ -181,16 +192,18 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
 async function notifyUser(env: Env, email: string, data: Record<string, string>) {
   const { results } = await env.DB.prepare("SELECT endpoint, data FROM push_subs WHERE user_email = ?").bind(email).all<{ endpoint: string; data: string }>();
   let sent = 0;
+  let failed = 0;
   for (const r of results) {
     try {
       const status = await sendPush(env.DB, JSON.parse(r.data) as Sub, data, APP);
       if (status === 404 || status === 410) await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ?").bind(r.endpoint).run();
       else if (status < 300) sent++;
+      else if (status === 429 || status >= 500) failed++; // el servicio de avisos falló: se puede reintentar
     } catch {
-      /* un teléfono que falla no frena a los demás */
+      failed++; /* un teléfono que falla no frena a los demás */
     }
   }
-  return sent;
+  return { sent, failed };
 }
 
 /** Fecha y minuto del día en Berlín */
@@ -204,26 +217,40 @@ function berlinNow(d = new Date()) {
 }
 const toMin = (hm: string) => Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
 
+const isBloque = (b: unknown): b is Bloque =>
+  !!b && typeof (b as Bloque).s === "string" && /^\d{2}:\d{2}/.test((b as Bloque).s) && typeof (b as Bloque).t === "string";
+
+async function tickUser(env: Env, user_email: string, date: string, min: number) {
+  const { results: own } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'dias' AND id = ?").bind(user_email, date).all<{ data: string }>();
+  const saved: unknown = own[0] ? JSON.parse(own[0].data) : null;
+  const blocks: Bloque[] = Array.isArray(saved) ? saved.filter(isBloque) : scheduleFor(LABORES, date);
+  const due = blocks.filter((b) => toMin(b.s) <= min && min - toMin(b.s) < 10);
+  for (const b of due) {
+    // La marca se pone de forma atómica: si dos ejecuciones coinciden, solo una avisa
+    const key = `${date} ${b.s}`;
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes === 0) continue;
+    const next = blocks.find((x) => toMin(x.s) > toMin(b.s));
+    const { sent, failed } = await notifyUser(env, user_email, {
+      title: `${b.s} · ${b.t}`,
+      body: [b.sub, next ? `Hasta las ${b.e}. Luego: ${next.t}` : `Hasta las ${b.e}`].filter(Boolean).join("\n"),
+      tag: "bloque",
+      url: "/hoy",
+    });
+    // Si no llegó a ningún teléfono por un fallo pasajero, se quita la marca y se reintenta el minuto siguiente
+    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  }
+}
+
 /** Cada minuto: si un bloque empezó hace menos de 10 min y no se avisó, se avisa (una sola vez). */
 async function tick(env: Env) {
   const { date, min } = berlinNow();
   const { results: users } = await env.DB.prepare("SELECT DISTINCT user_email FROM push_subs").all<{ user_email: string }>();
   for (const { user_email } of users) {
-    const { results: own } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'dias' AND id = ?").bind(user_email, date).all<{ data: string }>();
-    const blocks: Bloque[] = own[0] ? JSON.parse(own[0].data) : scheduleFor(LABORES, date);
-    const due = blocks.filter((b) => toMin(b.s) <= min && min - toMin(b.s) < 10);
-    for (const b of due) {
-      const key = `${date} ${b.s} ${b.t}`;
-      const { results: done } = await env.DB.prepare("SELECT 1 FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).all();
-      if (done.length) continue;
-      await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
-      const next = blocks.find((x) => toMin(x.s) > toMin(b.s));
-      await notifyUser(env, user_email, {
-        title: `${b.s} · ${b.t}`,
-        body: [b.sub, next ? `Hasta las ${b.e}. Luego: ${next.t}` : `Hasta las ${b.e}`].filter(Boolean).join("\n"),
-        tag: "bloque",
-        url: "/hoy",
-      });
+    try {
+      await tickUser(env, user_email, date, min);
+    } catch {
+      /* un dato raro de una persona no deja sin avisos a las demás */
     }
   }
   if (min === 3) await env.DB.prepare("DELETE FROM push_sent WHERE created_at < datetime('now', '-3 days')").bind().run();
@@ -240,7 +267,8 @@ export default {
       try {
         return await api(req, env, url);
       } catch (e) {
-        return json({ error: "server", detail: String(e) }, 500);
+        console.error(e);
+        return json({ error: "server" }, 500);
       }
     }
     return env.ASSETS.fetch(req);

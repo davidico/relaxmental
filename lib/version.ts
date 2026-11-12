@@ -1,7 +1,13 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.1";
-export const VERSION_FECHA = "11 de noviembre de 2026";
+export const VERSION = "1.2";
+export const VERSION_FECHA = "12 de noviembre de 2026";
 export const NOVEDADES = [
+  "Perfil vuelve a abrir todos los días",
+  "Sin internet la app sigue funcionando: tus cambios esperan en el teléfono y se suben solos al volver",
+  "El celular y la computadora se ponen al día al abrir la app, sin pisarse",
+  "Tus carpetas y hábitos borrados ya no vuelven solos",
+  "Avisos más fiables: no se pierden ni llegan dos veces",
+  "Si dejas la app abierta de noche, por la mañana ya es el día nuevo",
   "Pantalla Hoy nueva: el bloque de ahora manda, lo que ya pasó se pliega y las labores salen en dorado",
   "Logo nuevo: de la cabeza al papel",
   "Verde oliva y dorado",

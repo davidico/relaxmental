@@ -48,7 +48,7 @@ function FocusBar({ task, onClose }: { task: Tarea; onClose: () => void }) {
 
 function Frame({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const { mode, email, error, carpetas } = useData();
+  const { mode, email, error, carpetas, offline, pendientes, retry } = useData();
   const tops = carpetas.filter((c) => !c.parent).sort((a, b) => a.orden - b.orden);
   const [hash, setHash] = useState("");
   useEffect(() => {
@@ -64,7 +64,8 @@ function Frame({ children }: { children: ReactNode }) {
   const topOfHash = hc ? (hc.parent ?? hc.id) : "";
   const [focus, setFocus] = useState<Tarea | null>(null);
   const wide = path === "/semana";
-  const status = mode === "cloud" ? "Guardado en la nube" : mode === "local" ? "Guardado en este navegador" : "Cargando…";
+  const status =
+    mode === "local" ? "Guardado en este navegador" : mode === "loading" ? "Cargando…" : offline ? "Sin conexión" : pendientes ? "Guardando…" : "Guardado en la nube";
 
   return (
     <FocusCtx.Provider value={setFocus}>
@@ -78,7 +79,16 @@ function Frame({ children }: { children: ReactNode }) {
             </Link>
           </span>
         </div>
-        {error && <div className="banner" role="alert">{error}</div>}
+        {mode === "cloud" && offline && (
+          <div className="banner offline" role="status">
+            <span>
+              Sin conexión o tu sesión caducó.{" "}
+              {pendientes ? `Tienes ${pendientes} ${pendientes === 1 ? "cambio guardado" : "cambios guardados"} en este teléfono` : "Lo que hagas se guarda en este teléfono"} y se subirá solo al volver.
+            </span>
+            <button className="btn sm" onClick={retry}>Reintentar</button>
+          </div>
+        )}
+        {error && !offline && <div className="banner" role="alert">{error}</div>}
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
       {mode !== "loading" && <QuickTask />}

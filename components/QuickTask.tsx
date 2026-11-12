@@ -28,12 +28,14 @@ type Mode = "task" | "note" | null;
  * - Móvil: "+" que abre dos opciones: Nueva tarea / Nueva nota.
  */
 export default function QuickTask() {
-  const { save, carpetas } = useData();
+  const { save, carpetas, hoy } = useData();
   const wide = useWide();
   const [menu, setMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const [done, setDone] = useState(false);
   const [f, setF] = useState({ title: "", step: "", due: today() });
+  /* Si la app quedó abierta pasada la medianoche, "hoy" pasa al día nuevo */
+  useEffect(() => setF((x) => (x.due && x.due < hoy ? { ...x, due: hoy } : x)), [hoy]);
   const [n, setN] = useState({ folder: "ideas", title: "", html: "", text: "" });
 
   useEffect(() => {

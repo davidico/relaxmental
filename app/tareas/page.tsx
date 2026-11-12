@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { today } from "@/lib/dates";
 import { DueChoice, TaskRow, splitTasks } from "@/components/ui";
 
 export default function Tareas() {
-  const { tareas, save } = useData();
+  const { tareas, save, hoy: dia } = useData();
   const [f, setF] = useState({ title: "", step: "", due: today() });
+  /* Si la app quedó abierta pasada la medianoche, "hoy" pasa al día nuevo */
+  useEffect(() => setF((x) => (x.due && x.due < dia ? { ...x, due: dia } : x)), [dia]);
   const { hoy, luego } = splitTasks(tareas);
   const done = tareas.filter((x) => x.done);
 

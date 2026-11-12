@@ -59,7 +59,8 @@ export default function Perfil() {
 
   const lunes = addD(mondayOf(today()), semana === "proxima" ? 7 : 0);
   const fechas = Array.from({ length: 7 }, (_, i) => addD(lunes, i)).filter((f) => f >= today());
-  const rango = `${pd(fechas[0]).getDate()} al ${pd(fechas[6]).getDate()} de ${MES[pd(fechas[6]).getMonth()]}`;
+  const ultimo = addD(lunes, 6); // domingo (fechas puede tener menos de 7 días si la semana ya empezó)
+  const rango = `${pd(fechas[0] ?? lunes).getDate()} al ${pd(ultimo).getDate()} de ${MES[pd(ultimo).getMonth()]}`;
   const editados = fechas.filter((f) => dias[f]).length;
 
   const proponer = async () => {
