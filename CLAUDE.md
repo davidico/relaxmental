@@ -2,6 +2,8 @@
 
 App personal de David para organizar su vida: plan del día hora por hora según sus labores en la iglesia, tareas con "primer paso", hábitos con rachas, segundo cerebro (notas con carpetas, editor rico y dictado por voz), avisos push y un perfil con reglas para que la IA arme la semana. David vive en Berlín, habla español y no es programador: respóndele en español, corto y sin jerga.
 
+El repositorio es **público**: no subas datos personales de David (salud, familia, correos, rutina detallada) a archivos nuevos.
+
 - Web: https://relaxmental.davidcueva-dico.workers.dev (detrás de Cloudflare Access: código por correo o cuenta de Cloudflare; sesión de 1 mes)
 - Cada push a `main` lo publica solo Cloudflare Workers Builds (`npm run build` + `npx wrangler deploy`, 1–2 min). David quiere que sus cambios se publiquen: termina con commit y push a `main` salvo que pida otra cosa.
 - Versión actual en `lib/version.ts` (sube 1.1 → 1.2… y añade novedades en cada entrega). Se ve en Perfil › Acerca de.
