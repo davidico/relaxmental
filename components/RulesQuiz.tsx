@@ -15,7 +15,7 @@ const BASE = [
   "¿Qué no quieres que aparezca nunca en tu horario?",
 ];
 
-type Estado = { preguntas: string[]; respuestas: string[]; mensaje: string; i: number };
+type Estado = { preguntas: string[]; respuestas: string[]; mensaje: string; i: number; horario?: string };
 const KEY = "mi-semana-preguntas";
 const leer = (): Estado | null => {
   try {
@@ -39,32 +39,57 @@ export const hayPreguntasPendientes = () => !!leer();
  */
 export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: string; onClose: () => void; onGuardar: (texto: string) => Promise<boolean> }) {
   const [e, setE] = useState<Estado | null>(null);
-  const [fase, setFase] = useState<"cargando" | "preguntas" | "armando" | "revisar" | "error">("cargando");
+  const [fase, setFase] = useState<"cargando" | "foto" | "preguntas" | "armando" | "revisar" | "error">("cargando");
+  const [horario, setHorario] = useState("");
+  const [leyendo, setLeyendo] = useState<"" | "leyendo" | "error">("");
   const [nuevas, setNuevas] = useState("");
   const [guardando, setGuardando] = useState(false);
   const caja = useRef<HTMLTextAreaElement>(null);
 
-  /* Retomar lo que había, o pedir preguntas nuevas */
+  /* Retomar lo que había; si no, primero el paso de la foto del horario */
   useEffect(() => {
     const prev = leer();
     if (prev?.preguntas?.length) {
       setE(prev);
       setFase("preguntas");
-      return;
+    } else setFase("foto");
+  }, []);
+
+  const pedirPreguntas = async (hor: string) => {
+    setFase("cargando");
+    let ps: string[] = [];
+    try {
+      const r = await fetch("/api/ai/preguntas", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reglas, horario: hor }) });
+      if (r.ok) ps = ((await r.json()) as { preguntas?: string[] }).preguntas ?? [];
+    } catch {}
+    if (ps.length < 3) ps = BASE;
+    const nuevo = { preguntas: ps, respuestas: ps.map(() => ""), mensaje: "", i: 0, horario: hor };
+    setE(nuevo);
+    escribir(nuevo);
+    setFase("preguntas");
+  };
+
+  /* Foto del horario: se achica en el teléfono y la IA la pasa a texto */
+  const subirFoto = async (f: File) => {
+    setLeyendo("leyendo");
+    try {
+      const bmp = await createImageBitmap(f);
+      const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+      const imagen = c.toDataURL("image/jpeg", 0.85);
+      const r = await fetch("/api/ai/horario", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ imagen }) });
+      if (!r.ok) throw new Error();
+      const t = ((await r.json()) as { texto?: string }).texto ?? "";
+      if (!t.trim()) throw new Error();
+      setHorario((h) => [h.trim(), t.trim()].filter(Boolean).join("\n\n"));
+      setLeyendo("");
+    } catch {
+      setLeyendo("error");
     }
-    (async () => {
-      let ps: string[] = [];
-      try {
-        const r = await fetch("/api/ai/preguntas", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reglas }) });
-        if (r.ok) ps = ((await r.json()) as { preguntas?: string[] }).preguntas ?? [];
-      } catch {}
-      if (ps.length < 3) ps = BASE;
-      const nuevo = { preguntas: ps, respuestas: ps.map(() => ""), mensaje: "", i: 0 };
-      setE(nuevo);
-      escribir(nuevo);
-      setFase("preguntas");
-    })();
-  }, [reglas]);
+  };
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -80,6 +105,48 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
       escribir(n);
       return n;
     });
+
+  if (fase === "foto")
+    return (
+      <div className="nv" role="dialog" aria-modal="true" aria-labelledby="rq-fh">
+        <div className="nv-bar ke-bar">
+          <button className="nv-ib ke-ib" aria-label="Cerrar" onClick={onClose}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+          <h2 className="nv-h">Armar mis reglas</h2>
+        </div>
+        <div className="nv-body">
+          <div className="nv-paper rq">
+            <h3 id="rq-fh" className="rq-p">¿Tu semana cambia según un horario?</h3>
+            <p className="hint">
+              Si trabajas por turnos o tienes un horario que cambia, sube una foto o captura y lo tengo en cuenta. Tus labores de la iglesia ya las conozco: no hace falta.
+            </p>
+            {leyendo === "leyendo" ? (
+              <p className="vwork"><span className="spin" aria-hidden="true" /> Leyendo tu horario…</p>
+            ) : (
+              <label className="btn ghost rq-foto">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="2" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6l1.5-2h5L16 6" /></svg>
+                {horario ? "Subir otra foto" : "Subir foto del horario"}
+                <input type="file" accept="image/*" className="sr-only" onChange={(x) => { const f = x.target.files?.[0]; x.target.value = ""; if (f) void subirFoto(f); }} />
+              </label>
+            )}
+            {leyendo === "error" && <p className="verr" role="alert">⚠ No pude leer la foto. Prueba con otra más nítida, o escríbelo abajo.</p>}
+            {(horario || leyendo === "error") && (
+              <>
+                <label htmlFor="rq-hor" className="flabel">Esto entendí de tu horario (corrígelo si hace falta):</label>
+                <textarea id="rq-hor" className="rq-r" rows={8} value={horario} onChange={(x) => setHorario(x.target.value)} />
+              </>
+            )}
+            <div className="rq-nav">
+              <span style={{ flex: 1 }} />
+              <button className="btn" onClick={() => void pedirPreguntas(horario.trim())} disabled={leyendo === "leyendo"}>
+                {horario.trim() ? "Seguir con las preguntas" : "No, empezar las preguntas"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
 
   if (!e || fase === "cargando")
     return (
@@ -106,7 +173,7 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
       const r = await fetch("/api/ai/reglas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ reglas, respuestas: e.preguntas.map((p, k) => ({ p, r: e.respuestas[k] })), mensaje: e.mensaje }),
+        body: JSON.stringify({ reglas, respuestas: e.preguntas.map((p, k) => ({ p, r: e.respuestas[k] })), mensaje: e.mensaje, horario: e.horario ?? "" }),
       });
       if (!r.ok) throw new Error();
       const t = ((await r.json()) as { reglas?: string }).reglas ?? "";
@@ -164,6 +231,7 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
                 )}
               </div>
               <p className="hint">Tus respuestas se guardan en este teléfono: puedes cerrar y seguir después.</p>
+              <button className="linkbtn rq-reset" onClick={() => { escribir(null); setE(null); setHorario(""); setFase("foto"); }}>Empezar de nuevo con otras preguntas</button>
             </>
           )}
 

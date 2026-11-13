@@ -137,29 +137,79 @@ export async function planDay(
 }
 
 /** Preguntas para completar las reglas del horario (lo que falta o no está claro) */
-export async function preguntas(ai: AI, reglas: string): Promise<string[]> {
+export async function preguntas(ai: AI, o: { reglas: string; horario: string; labores: string }): Promise<string[]> {
+  const sistema =
+    "Ayudas a una persona a escribir las reglas de su horario semanal. Lee sus reglas y haz 8 preguntas cortas en español " +
+    "sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. " +
+    "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), sin repetir lo que ya está claro. " +
+    "IMPORTANTE: la app ya conoce sus labores de la iglesia por fecha y las añade sola; NO preguntes qué días va a la iglesia ni qué labor le toca. " +
+    "Si hay un horario variable (turnos), tampoco preguntes qué días trabaja: pregunta qué quiere hacer antes o después de cada turno.";
+  const usuario = `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(todavía no hay)"}\n\n${o.labores}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}`;
+  const limpia = (xs: unknown) =>
+    Array.isArray(xs) ? xs.map((x) => String(x).trim()).filter((x) => x.length > 5).slice(0, 10) : [];
+  try {
+    const r = await ai.run(LLM, {
+      messages: [
+        { role: "system", content: sistema + ' Responde SOLO con JSON: {"preguntas":["…","…"]}' },
+        { role: "user", content: usuario },
+      ],
+      response_format: { type: "json_schema", json_schema: { type: "object", properties: { preguntas: { type: "array", items: { type: "string" } } }, required: ["preguntas"] } },
+      max_tokens: 700,
+      temperature: 0.4,
+    });
+    const xs = limpia(parsed<{ preguntas: unknown }>(r)?.preguntas);
+    if (xs.length >= 3) return xs;
+  } catch {
+    /* si falla el modo JSON, se intenta con texto normal */
+  }
   const r = await ai.run(LLM, {
     messages: [
-      {
-        role: "system",
-        content:
-          "Ayudas a una persona a escribir las reglas de su horario semanal. Lee sus reglas y haz 8 preguntas cortas en español, de una en una, " +
-          "sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. " +
-          "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), sin repetir lo que ya está claro. " +
-          'Responde SOLO con JSON: {"preguntas":["…","…"]}',
-      },
-      { role: "user", content: `MIS REGLAS ACTUALES:\n${reglas.slice(0, 6000) || "(todavía no hay)"}` },
+      { role: "system", content: sistema + " Escribe solo las preguntas, una por línea, sin números ni nada más." },
+      { role: "user", content: usuario },
     ],
-    response_format: { type: "json_schema", json_schema: { type: "object", properties: { preguntas: { type: "array", items: { type: "string" } } }, required: ["preguntas"] } },
     max_tokens: 700,
     temperature: 0.4,
   });
-  const xs = parsed<{ preguntas: unknown }>(r)?.preguntas;
-  return Array.isArray(xs) ? xs.map((x) => String(x).trim()).filter((x) => x.length > 5).slice(0, 10) : [];
+  return limpia(
+    String(r.response ?? "")
+      .split("\n")
+      .map((l) => l.replace(/^\s*(\d+[.)-]|[-•*])\s*/, "").trim())
+      .filter((l) => l.endsWith("?")),
+  );
+}
+
+const VISION = "@cf/meta/llama-3.2-11b-vision-instruct";
+/** Lee la foto de un horario (turnos de trabajo, etc.) y lo pasa a texto */
+export async function leerHorario(ai: AI, imagen: string): Promise<string> {
+  const pedir = () =>
+    ai.run(VISION, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "Lees fotos de horarios y calendarios y los pasas a texto en español, sin inventar nada. " +
+            "Escribe una línea por día con fecha o día de la semana y el horario o turno (ej.: «Lunes 3: 8:00–16:00 (mañana)»). Si algo no se lee, di «no se lee».",
+        },
+        { role: "user", content: "Pasa a texto este horario." },
+      ],
+      image: imagen,
+      max_tokens: 1200,
+      temperature: 0.1,
+    });
+  let r: Record<string, unknown>;
+  try {
+    r = await pedir();
+  } catch (e) {
+    // La primera vez hay que aceptar la licencia de Meta para este modelo
+    if (!/agree|licen/i.test(String(e))) throw e;
+    await ai.run(VISION, { prompt: "agree" }).catch(() => {});
+    r = await pedir();
+  }
+  return String(r.response ?? "").trim();
 }
 
 /** Reescribe las reglas con las respuestas y el mensaje final */
-export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string }): Promise<string> {
+export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string }): Promise<string> {
   const qa = o.respuestas.filter((x) => x.r.trim()).map((x) => `P: ${x.p}\nR: ${x.r.trim()}`).join("\n\n");
   const r = await ai.run(LLM, {
     messages: [
@@ -169,9 +219,11 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
           "Reescribes las reglas del horario semanal de una persona, en español y en primera persona, como ella misma las escribiría. " +
           "Parte de sus reglas actuales y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). " +
           "No inventes nada que no esté en sus reglas o respuestas. Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
+          "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
+          "No escribas qué días le toca la iglesia: la app ya lo sabe. " +
           "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
       },
-      { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}` },
+      { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}` },
     ],
     max_tokens: 2500,
     temperature: 0.2,

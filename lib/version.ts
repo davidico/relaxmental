@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "2.2";
+export const VERSION = "2.3";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Preguntas para tus reglas: puedes subir una foto de un horario que cambia (turnos) y la IA lo tiene en cuenta; ya no pregunta por la iglesia",
   "Armar tus reglas con preguntas: respondes (escribiendo o dictando), dejas un mensaje y la IA las reescribe",
   "Al dictar, la pantalla no se apaga; y si se bloquea, se guarda lo que alcanzaste a dictar",
   "Dictar también en tus reglas del horario",
