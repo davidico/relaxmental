@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "2.9";
+export const VERSION = "2.10";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Nuevo color: azul petróleo, más calmado",
+  "Una sola línea dorada en lugar de la de puntos",
   "Fondo blanco: sin el tono crema verdoso",
   "Selector de hora propio: siempre cabe en la pantalla (el del teléfono se cortaba)",
   "Al editar un día, si un bloque termina a las 15:30 el siguiente empieza a las 15:30",

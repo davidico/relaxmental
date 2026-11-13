@@ -603,8 +603,8 @@ h2{letter-spacing:.06em}
 :root{
   --bg:#f5f4ee; --surface:#ffffff; --side:#ffffff; --rocio:#efeee5;
   --ink:#1f2316; --muted:#5c6150; --line:#e6e4d8; --field:#8b8f7a; --cell:#efeee6; --stone:#dedcce;
-  --primary:#4a5524; --primary-hover:#3c461c; --on-primary:#ffffff; --primary-edge:#4a5524;
-  --pine:#4a5524; --pine-soft:#eef0e1; --sage:#dfe4c6;
+  --primary:#2f5d62; --primary-hover:#244a4e; --on-primary:#ffffff; --primary-edge:#2f5d62;
+  --pine:#2f5d62; --pine-soft:#e6f0f0; --sage:#cfe2e2;
   --gold:#c9a548; --gold-soft:#f5ecd2; --gold-ink:#84661a;
   --deep:#1f2316;
   --shadow:0 1px 2px rgb(31 35 22 / .05), 0 8px 24px rgb(31 35 22 / .07);
@@ -613,8 +613,8 @@ h2{letter-spacing:.06em}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#12140d; --surface:#1b1e14; --side:#16180f; --rocio:#1f2217;
   --ink:#eeefe2; --muted:#aeb29c; --line:#2c3021; --field:#757a62; --cell:#23271a; --stone:#3a3f2c;
-  --primary:#b9c584; --primary-hover:#cbd59c; --on-primary:#12140d; --primary-edge:#b9c584;
-  --pine:#c5cf93; --pine-soft:#262b1a; --sage:#333a22;
+  --primary:#9ccbcc; --primary-hover:#b5dada; --on-primary:#12140d; --primary-edge:#9ccbcc;
+  --pine:#a8d2d2; --pine-soft:#1c2b2c; --sage:#24393a;
   --gold:#d9b65a; --gold-soft:#332b17; --gold-ink:#e2c272;
   --deep:#12140d;
   --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aeb29c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -622,21 +622,21 @@ h2{letter-spacing:.06em}
 :root[data-theme="dark"]{
   --bg:#12140d; --surface:#1b1e14; --side:#16180f; --rocio:#1f2217;
   --ink:#eeefe2; --muted:#aeb29c; --line:#2c3021; --field:#757a62; --cell:#23271a; --stone:#3a3f2c;
-  --primary:#b9c584; --primary-hover:#cbd59c; --on-primary:#12140d; --primary-edge:#b9c584;
-  --pine:#c5cf93; --pine-soft:#262b1a; --sage:#333a22;
+  --primary:#9ccbcc; --primary-hover:#b5dada; --on-primary:#12140d; --primary-edge:#9ccbcc;
+  --pine:#a8d2d2; --pine-soft:#1c2b2c; --sage:#24393a;
   --gold:#d9b65a; --gold-soft:#332b17; --gold-ink:#e2c272;
   --deep:#12140d;
   --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aeb29c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   color-scheme:dark}
 
 /* Tarjeta "ahora", marca y botón flotante en oliva con detalle dorado */
-.now{background:linear-gradient(135deg,#343d1a 0%,#4a5524 60%,#56622b 100%);box-shadow:0 10px 30px rgb(52 61 26 / .28)}
+.now{background:linear-gradient(135deg,#343d1a 0%,#2f5d62 60%,#56622b 100%);box-shadow:0 10px 30px rgb(40 82 87 / .28)}
 .now .lbl,.now small,.now .eyebrow{color:#e3c46f}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .now{background:linear-gradient(135deg,#262c13,#3a4320)}}
-:root[data-theme="dark"] .now{background:linear-gradient(135deg,#262c13,#3a4320)}
-.brandmark{background:linear-gradient(135deg,#3a4320,#56622b);color:#e3c46f}
-.fab:not(.round){box-shadow:0 10px 24px rgb(52 61 26 / .3)}
-.fab.round{box-shadow:0 10px 24px rgb(52 61 26 / .35)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .now{background:linear-gradient(135deg,#1d3a3d,#2a5054)}}
+:root[data-theme="dark"] .now{background:linear-gradient(135deg,#1d3a3d,#2a5054)}
+.brandmark{background:linear-gradient(135deg,#2a5054,#56622b);color:#e3c46f}
+.fab:not(.round){box-shadow:0 10px 24px rgb(40 82 87 / .3)}
+.fab.round{box-shadow:0 10px 24px rgb(40 82 87 / .35)}
 .dial-ico{background:var(--primary);color:var(--on-primary)}
 .seg button[aria-pressed="true"]{background:var(--pine-soft);border-color:var(--sage);color:var(--pine)}
 .brand{color:var(--pine)}
@@ -760,20 +760,20 @@ img.brandmark.logo{background:none;padding:0;object-fit:cover;display:block}
 }
 
 /* Ahora */
-.hy-now{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:24px;background:#3f4a1f;color:#f5f4ee;box-shadow:0 12px 28px rgb(52 61 26 / .28)}
+.hy-now{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:24px;background:#285257;color:#f5f4ee;box-shadow:0 12px 28px rgb(40 82 87 / .28)}
 .hy-now-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .hy-now-lbl{font-size:15px;font-weight:700;color:#e3c46f}
-.hy-now-left{font-size:15px;color:#dfe4c6;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hy-now-left{font-size:15px;color:#cfe2e2;font-variant-numeric:tabular-nums;white-space:nowrap}
 .hy-now h2{margin:0;font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-.02em;color:#f5f4ee;text-transform:none}
-.hy-now p{margin:0;font-size:16px;color:#dfe4c6}
+.hy-now p{margin:0;font-size:16px;color:#cfe2e2}
 .hy-bar{height:6px;border-radius:3px;background:rgb(245 244 238 / .18);overflow:hidden}
 .hy-bar i{display:block;height:100%;border-radius:3px;background:#e3c46f;transition:width .6s cubic-bezier(.16,1,.3,1)}
 .hy-next{display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid rgb(245 244 238 / .16);font-size:15px}
 .hy-next svg{color:#e3c46f;flex:none}
 .hy-next strong{color:#f5f4ee}
 @media (min-width:1000px){.hy-now{padding:28px;border-radius:28px;gap:18px}.hy-now h2{font-size:38px;letter-spacing:-.025em}.hy-now p{font-size:17px}.hy-bar{height:8px}}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hy-now{background:#2a3115;box-shadow:none;border:1px solid #3a4320}}
-:root[data-theme="dark"] .hy-now{background:#2a3115;box-shadow:none;border:1px solid #3a4320}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hy-now{background:#1f3a3c;box-shadow:none;border:1px solid #2a5054}}
+:root[data-theme="dark"] .hy-now{background:#1f3a3c;box-shadow:none;border:1px solid #2a5054}
 
 /* Secciones */
 .hy-sec{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -1272,3 +1272,9 @@ h1{font-weight:700;letter-spacing:-.02em}
   --bg:#1b1c18; --surface:#23241f; --side:#1f201b; --rocio:#26271f;
   --line:#34352d; --cell:#2b2c25; --stone:#3e3f36; --muted:#aaa596;
 }
+
+/* ---------- Versión 2.10: azul petróleo y una sola línea dorada ---------- */
+.hy-dots,.k-dots{height:2px;background:var(--dots);border-radius:1px}
+:root{--field:#8a8a84}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--field:#77776f}}
+:root[data-theme="dark"]{--field:#77776f}

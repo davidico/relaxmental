@@ -22,7 +22,7 @@ El repositorio es **público**: no subas datos personales de David (salud, famil
 - Íconos: `public/icon.svg` y PNGs. El manifest apunta a los íconos en jsDelivr con un sha fijo (la app está detrás de Access y Android necesita íconos públicos): si cambian, commit, luego actualizar el sha en `public/manifest.webmanifest` y otro commit.
 
 ## Diseño
-- Verde oliva oscuro `--primary #4a5524`, dorado `--gold #c9a548` (texto dorado `--gold-ink #84661a`), fondo marfil `#f5f4ee`, Plus Jakarta Sans. Tokens claro/oscuro en `app/globals.css` (al final está lo más nuevo).
+- Azul petróleo `--primary #2f5d62` (oscuro: `#9ccbcc`), dorado `--gold #c9a548` (texto dorado `--gold-ink #84661a`), fondo blanco, una línea dorada fina bajo los títulos. Letra: Atkinson Hyperlegible para el texto, Inter para títulos y números. Tokens claro/oscuro en `app/globals.css` (al final está lo más nuevo).
 - Buenas prácticas siempre: texto e inputs de 16px, objetivos de 44px, foco visible, errores con ícono + texto, contraste AA. David no quiere tener que señalar errores de UI: revísalos tú antes de publicar.
 - Usa la skill `impeccable` (en `.claude/skills/`) para trabajo de diseño. Para pantallas nuevas, David puede pedir primero un diseño en Claude Design.
 

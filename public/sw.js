@@ -47,9 +47,9 @@ function offline(path) {
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi Semana</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#ffffff;color:#1f2316;padding:24px;box-sizing:border-box}
 main{max-width:360px}h1{font-size:24px;margin:0 0 8px}p{color:#5c6150;margin:0 0 20px}
-a{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-radius:12px;background:#4a5524;color:#fff;font-weight:700;text-decoration:none;margin:0 8px 8px 0}
+a{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-radius:12px;background:#2f5d62;color:#fff;font-weight:700;text-decoration:none;margin:0 8px 8px 0}
 a.g{background:#fff;color:#1f2316;border:1px solid #e6e4d8}
-@media (prefers-color-scheme:dark){body{background:#12140d;color:#eeefe2}p{color:#aeb29c}a{background:#b9c584;color:#12140d}a.g{background:#1b1e14;color:#eeefe2;border-color:#2c3021}}</style></head>
+@media (prefers-color-scheme:dark){body{background:#12140d;color:#eeefe2}p{color:#aeb29c}a{background:#9ccbcc;color:#12140d}a.g{background:#1b1e14;color:#eeefe2;border-color:#2c3021}}</style></head>
 <body><main><h1>No se pudo abrir</h1><p>Puede que no haya internet o que tu sesión haya caducado. Vuelve a intentarlo; si te pide entrar, inicia sesión otra vez.</p>
 <a href="${path}">Reintentar</a><a class="g" href="/hoy">Ir a Hoy</a></main></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
