@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.9";
+export const VERSION = "1.10";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Calendario: el día de hoy vuelve a estar centrado en su círculo",
   "Fecha y hora de la tarea con un calendario, como en Google Tasks",
   "Al tocar «primer paso» el teclado no se cierra",
   "Nueva tarea como Google Tasks: un solo campo; el primer paso y la fecha y hora, si los quieres",

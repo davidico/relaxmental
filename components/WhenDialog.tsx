@@ -82,7 +82,7 @@ export default function WhenDialog({
               <button
                 key={c}
                 type="button"
-                className={`wd-day${c === hoy ? " hoy" : ""}`}
+                className={`wd-day${c === hoy ? " wd-hoy" : ""}`}
                 aria-pressed={c === sel}
                 aria-label={`${DIAS_LARGO[pd(c).getDay()]} ${pd(c).getDate()} de ${MES[pd(c).getMonth()]}${c === hoy ? ", hoy" : ""}`}
                 onClick={() => setSel(c)}
