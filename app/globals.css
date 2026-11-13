@@ -1403,3 +1403,4 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hy-atr-t .hy-step{font-weight:400}
 .hy-atr-b{display:flex;flex-wrap:wrap;gap:6px}
 .hy-atr-h.mayus::first-letter{text-transform:uppercase}
+.pl-pasados{justify-self:start;grid-column:1/-1;min-height:var(--tap)}

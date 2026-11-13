@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "3.5";
+export const VERSION = "3.6";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "El planner ya no muestra los días que pasaron (puedes verlos si quieres)",
   "Cada mañana, lo que quedó sin hacer te pregunta: Hoy, Otro día o Ya no",
   "Semana es ahora tu weekly planner: lo que te propones cada día, separado en Personal y Trabajo, y tus pendientes",
   "Lo del planner sale en Hoy para que lo marques (y en tu itinerario si tiene hora)",

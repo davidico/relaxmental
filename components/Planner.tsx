@@ -30,10 +30,26 @@ export function leerHora(texto: string): { title: string; hora?: string } {
 export default function Planner({ days, hoy }: { days: string[]; hoy: string }) {
   const { tareas } = useData();
   const pendientes = tareas.filter((x) => !x.done && !x.due).sort(orden);
+  /* Los días que ya pasaron se esconden (si toda la semana ya pasó, se ve entera como recuerdo) */
+  const [verPasados, setVerPasados] = useState(false);
+  const pasados = days.filter((d) => d < hoy);
+  const ocultar = !verPasados && pasados.length < days.length;
+  const visibles = ocultar ? days.filter((d) => d >= hoy) : days;
   return (
     <div className="pl">
       <div className="pl-dias">
-        {days.map((d, i) => {
+        {ocultar && pasados.length > 0 && (
+          <button className="linkbtn pl-pasados" onClick={() => setVerPasados(true)}>
+            Ver {pasados.length === 1 ? "el día que ya pasó" : `los ${pasados.length} días que ya pasaron`}
+          </button>
+        )}
+        {verPasados && pasados.length > 0 && pasados.length < days.length && (
+          <button className="linkbtn pl-pasados" onClick={() => setVerPasados(false)}>
+            Ocultar los días que ya pasaron
+          </button>
+        )}
+        {visibles.map((d) => {
+          const i = days.indexOf(d);
           const f = pd(d);
           const deDia = tareas.filter((x) => x.due === d).sort(orden);
           const tono = d === hoy ? "pl-hoy" : i >= 5 ? "suave" : "petroleo";
@@ -120,11 +136,11 @@ function Lista({ titulo, lado, due, items, days }: { titulo: string; lado: Lado;
 }
 
 function Editar({ x, days, onClose }: { x: Tarea; days: string[]; onClose: () => void }) {
-  const { save, remove } = useData();
+  const { save, remove, hoy } = useData();
   const [txt, setTxt] = useState(`${x.hora ? x.hora + " " : ""}${x.title}`);
   const [due, setDue] = useState(x.due);
   const [lado, setLado] = useState<Lado>(ladoDe(x));
-  const opciones = Array.from(new Set([...(x.due && !days.includes(x.due) ? [x.due] : []), ...days]));
+  const opciones = Array.from(new Set([...(x.due ? [x.due] : []), ...days.filter((d) => d >= hoy)])).sort();
   const guardar = () => {
     const t = leerHora(txt);
     if (!t.title) return;
