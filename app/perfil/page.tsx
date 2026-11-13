@@ -6,19 +6,21 @@ import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
 import VoiceButton from "@/components/VoiceButton";
-import RulesQuiz, { hayPreguntasPendientes } from "@/components/RulesQuiz";
-import { NOVEDADES, REGLAS_INICIALES, VERSION, VERSION_FECHA } from "@/lib/version";
+import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
+import { NOVEDADES, VERSION, VERSION_FECHA } from "@/lib/version";
 
 type Prop = { fecha: string; bloques?: Bloque[]; error?: boolean };
 
 export default function Perfil() {
-  const { email, mode, saveDia, dias } = useData();
+  const { email, mode, saveDia, dias, perfil, savePerfil } = useData();
   const cloud = mode === "cloud";
   const [reglas, setReglas] = useState("");
   const [guardadas, setGuardadas] = useState("");
   const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
   const [editando, setEditando] = useState(false);
   const [quiz, setQuiz] = useState(false);
+  const [quizModo, setQuizModo] = useState<Modo>("completar");
+  const [confirmCero, setConfirmCero] = useState(false);
   const [pendiente, setPendiente] = useState(false);
   useEffect(() => setPendiente(hayPreguntasPendientes()), [quiz]);
   const [todas, setTodas] = useState(false);
@@ -27,46 +29,37 @@ export default function Perfil() {
   const [trabajando, setTrabajando] = useState("");
   const [aplicado, setAplicado] = useState(false);
 
-  /* Cargar las reglas guardadas (o las de partida) */
+  /* Las reglas vienen del perfil (se guardan en la nube, o en el teléfono sin conexión) */
+  const txtPerfil = perfil.reglas?.text ?? "";
   useEffect(() => {
     if (mode === "loading") return;
-    const load = async () => {
-      let txt = "";
-      if (cloud) {
-        try {
-          const r = await fetch("/api/perfil/reglas");
-          txt = ((await r.json()) as { text?: string } | null)?.text ?? "";
-        } catch {}
-      } else {
-        try {
-          txt = localStorage.getItem("mi-semana-reglas") ?? "";
-        } catch {}
-      }
-      setReglas(txt || REGLAS_INICIALES);
-      setGuardadas(txt || REGLAS_INICIALES);
-    };
-    void load();
-  }, [mode, cloud]);
+    setGuardadas(txtPerfil);
+    setReglas((r) => (editando ? r : txtPerfil));
+  }, [mode, txtPerfil]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cambiado = reglas !== guardadas;
 
   const guardar = async (texto: string = reglas) => {
-    setEstado("guardando");
-    try {
-      if (cloud) {
-        const r = await fetch("/api/perfil/reglas", { method: "PUT", body: JSON.stringify({ text: texto, updated: new Date().toISOString() }) });
-        if (!r.ok) throw new Error();
-      } else localStorage.setItem("mi-semana-reglas", texto);
-      setReglas(texto);
-      setGuardadas(texto);
-      setEstado("ok");
-      setEditando(false);
-      return true;
-    } catch {
-      setEstado("error");
-      return false;
-    }
+    savePerfil("reglas", { text: texto, updated: new Date().toISOString() });
+    savePerfil("revision", { mes: new Date().toISOString().slice(0, 7) });
+    setReglas(texto);
+    setGuardadas(texto);
+    setEstado("ok");
+    setEditando(false);
+    return true;
   };
+  /* Empezar de cero: guarda una copia y vacía las reglas */
+  const deCero = () => {
+    if (guardadas.trim()) savePerfil("reglasRespaldo", { text: guardadas, updated: new Date().toISOString() });
+    savePerfil("reglas", { text: "", updated: new Date().toISOString() });
+    setReglas("");
+    setGuardadas("");
+    setTodas(false);
+    setConfirmCero(false);
+    setQuizModo("inicio");
+    setQuiz(true);
+  };
+
 
 
   const lunes = addD(mondayOf(today()), semana === "proxima" ? 7 : 0);
@@ -163,13 +156,18 @@ export default function Perfil() {
                 {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
               </button>
               <button className="btn ghost" onClick={() => { setReglas(guardadas); setEstado(""); setEditando(false); }}>Cancelar</button>
-              {reglas !== REGLAS_INICIALES && (
-                <button className="linkbtn" onClick={() => { setReglas(REGLAS_INICIALES); setEstado(""); }}>Volver a las reglas de partida</button>
-              )}
             </div>
             <p role="status" className={estado === "error" ? "verr" : "hint"}>
               {estado === "error" ? "⚠ No se pudieron guardar. Inténtalo otra vez." : cambiado ? "Tienes cambios sin guardar" : ""}
             </p>
+          </>
+        ) : todas && !guardadas.trim() ? (
+          <>
+            <p className="rules-view all">Aún no tienes reglas. Te hago unas preguntas y las escribo por ti.</p>
+            <div className="row actions">
+              <button className="btn" onClick={() => { setQuizModo("inicio"); setQuiz(true); }}>Empezar</button>
+              <button className="btn ghost" onClick={() => setEditando(true)}>Escribirlas yo</button>
+            </div>
           </>
         ) : todas ? (
           <>
@@ -177,15 +175,24 @@ export default function Perfil() {
             <div className="row actions">
               <button className="btn" onClick={() => setEditando(true)}>Editar reglas</button>
               {cloud && (
-                <button className="btn ghost" onClick={() => setQuiz(true)}>{pendiente ? "Seguir con las preguntas" : "Armar con preguntas"}</button>
+                <button className="btn ghost" onClick={() => { setQuizModo("completar"); setQuiz(true); }}>{pendiente ? "Seguir con las preguntas" : "Completar con preguntas"}</button>
               )}
               {estado === "ok" && <span role="status" className="vok">✓ Reglas guardadas</span>}
             </div>
+            {confirmCero ? (
+              <div className="confirm">
+                ¿Empezar de cero? Guardo una copia de tus reglas y te hago las preguntas desde el principio.
+                <button className="btn sm warn" onClick={deCero}>Empezar de cero</button>
+                <button className="btn sm ghost" onClick={() => setConfirmCero(false)}>No</button>
+              </div>
+            ) : (
+              <button className="linkbtn rq-reset" onClick={() => setConfirmCero(true)}>Empezar de cero</button>
+            )}
           </>
         ) : null}
         </div>
       </section>
-      {quiz && <RulesQuiz reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
+      {quiz && <RulesQuiz modo={quizModo} reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
 
       <h2 id="ia-h">Armar mi semana con IA</h2>
       <section className="card pad" aria-labelledby="ia-h">

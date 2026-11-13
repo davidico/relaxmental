@@ -36,6 +36,9 @@ interface DataCtx {
   habitos: Habito[];
   /** Carpetas del segundo cerebro (principales y subcarpetas) */
   carpetas: Carpeta[];
+  /** Ajustes y textos de la persona: reglas, revisión del mes, etc. */
+  perfil: Perfil;
+  savePerfil: (id: string, data: unknown) => void;
   /** Días que editaste a mano: fecha -> bloques */
   dias: Dias;
   /** Horario de un día: el que editaste, o el automático */
@@ -108,7 +111,13 @@ function migrateSections(carpetas: Carpeta[], notas: Nota[]): { save: Carpeta[];
 /** Dónde va una nota antigua según su tipo */
 export const FOLDER_OF_KIND: Record<Kind, string> = { profecia: "profecias", idea: "notas", predicacion: "notas", nota: "notas" };
 
-interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias }
+export type Perfil = {
+  reglas?: { text?: string; updated?: string };
+  /** Mes (AAAA-MM) en que revisaste si había cambios en tu horario */
+  revision?: { mes?: string };
+  [k: string]: unknown;
+};
+interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias; perfil?: Perfil }
 
 function readLocal(): Partial<Snapshot> {
   try {
@@ -168,6 +177,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [habitos, setHabitos] = useState<Habito[]>([]);
   const [carpetas, setCarpetas] = useState<Carpeta[]>([]);
   const [dias, setDias] = useState<Dias>({});
+  const [perfil, setPerfil] = useState<Perfil>({});
   const modeRef = useRef<Mode>("loading");
   const emailRef = useRef<string | null>(null);
   const outbox = useRef<Op[]>([]);
@@ -184,6 +194,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setHabitos(d.habitos ?? []);
     setCarpetas(d.carpetas ?? []);
     setDias(d.dias ?? {});
+    setPerfil(d.perfil ?? {});
   }, []);
 
   const setBox = useCallback((ops: Op[]) => {
@@ -293,6 +304,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setHabitos(local.habitos ?? seedHabits());
         setCarpetas(local.carpetas ?? []);
         setDias(local.dias ?? {});
+        setPerfil(local.perfil ?? {});
         setLoaded(true);
         setMode("local");
         return;
@@ -336,9 +348,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   /* Guardar en este teléfono: en modo navegador, todo; en modo nube, una copia para abrir sin internet */
   useEffect(() => {
-    if (mode === "local") writeJSON(LS, { tareas, notas, habitos, carpetas, dias });
-    else if (mode === "cloud" && (loaded || outbox.current.length)) writeJSON(CACHE, { email, data: { tareas, notas, habitos, carpetas, dias } });
-  }, [mode, loaded, email, tareas, notas, habitos, carpetas, dias]);
+    if (mode === "local") writeJSON(LS, { tareas, notas, habitos, carpetas, dias, perfil });
+    else if (mode === "cloud" && (loaded || outbox.current.length)) writeJSON(CACHE, { email, data: { tareas, notas, habitos, carpetas, dias, perfil } });
+  }, [mode, loaded, email, tareas, notas, habitos, carpetas, dias, perfil]);
 
   const save = useCallback(
     <T extends Table>(table: T, item: Row[T]) => {
@@ -394,7 +406,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, [sync]);
 
-  const value: DataCtx = { mode, email, error, offline, pendientes, retry, hoy, labores: LABORES, tareas, notas, habitos, carpetas, dias, planFor, saveDia, save, remove };
+  const savePerfil = useCallback(
+    (id: string, data: unknown) => {
+      setPerfil((p) => ({ ...p, [id]: data }));
+      if (modeRef.current === "cloud") enqueue({ path: `/api/perfil/${encodeURIComponent(id)}`, method: "PUT", body: JSON.stringify(data) });
+    },
+    [enqueue],
+  );
+
+  const value: DataCtx = { mode, email, error, offline, pendientes, retry, hoy, labores: LABORES, tareas, notas, habitos, carpetas, perfil, savePerfil, dias, planFor, saveDia, save, remove };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

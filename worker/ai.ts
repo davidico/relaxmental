@@ -137,11 +137,17 @@ export async function planDay(
 }
 
 /** Preguntas para completar las reglas del horario (lo que falta o no está claro) */
-export async function preguntas(ai: AI, o: { reglas: string; horario: string; labores: string }): Promise<string[]> {
+export async function preguntas(ai: AI, o: { reglas: string; horario: string; labores: string; modo?: string }): Promise<string[]> {
+  const tarea =
+    o.modo === "cambios"
+      ? "Es la revisión de inicio de mes. Haz 5 preguntas cortas en español para saber QUÉ CAMBIÓ este mes en su semana (horarios nuevos, cosas que ya no hace, cosas nuevas, fechas especiales). "
+      : o.modo === "inicio" || !o.reglas.trim()
+        ? "La persona empieza desde cero. Haz 10 preguntas cortas en español para conocer su semana: a qué hora se levanta y termina el día, trabajo o estudio, sus horas de más energía, familia, comidas, salud y ejercicio, fe o vida espiritual, aprender algo (idiomas, cursos), tareas de casa, descanso, y qué no quiere en su horario. "
+        : "Lee sus reglas y haz 8 preguntas cortas en español sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. ";
   const sistema =
-    "Ayudas a una persona a escribir las reglas de su horario semanal. Lee sus reglas y haz 8 preguntas cortas en español " +
-    "sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. " +
-    "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), sin repetir lo que ya está claro. " +
+    "Ayudas a una persona a escribir las reglas de su horario semanal. " +
+    tarea +
+    "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), una idea por pregunta, sin repetir lo que ya está claro. " +
     "IMPORTANTE: la app ya conoce sus labores de la iglesia por fecha y las añade sola; NO preguntes qué días va a la iglesia ni qué labor le toca. " +
     "Si hay un horario variable (turnos), tampoco preguntes qué días trabaja: pregunta qué quiere hacer antes o después de cada turno.";
   const usuario = `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(todavía no hay)"}\n\n${o.labores}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}`;
@@ -209,7 +215,7 @@ export async function leerHorario(ai: AI, imagen: string): Promise<string> {
 }
 
 /** Reescribe las reglas con las respuestas y el mensaje final */
-export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string }): Promise<string> {
+export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string; modo?: string }): Promise<string> {
   const qa = o.respuestas.filter((x) => x.r.trim()).map((x) => `P: ${x.p}\nR: ${x.r.trim()}`).join("\n\n");
   const r = await ai.run(LLM, {
     messages: [
@@ -217,7 +223,9 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
         role: "system",
         content:
           "Reescribes las reglas del horario semanal de una persona, en español y en primera persona, como ella misma las escribiría. " +
-          "Parte de sus reglas actuales y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). " +
+          (o.modo === "cambios"
+            ? "Es la revisión del mes: conserva sus reglas actuales y cambia SOLO lo que dicen sus respuestas y su mensaje. "
+            : "Parte de sus reglas actuales (si las hay) y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). ") +
           "No inventes nada que no esté en sus reglas o respuestas. Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
           "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
           "No escribas qué días le toca la iglesia: la app ya lo sabe. " +

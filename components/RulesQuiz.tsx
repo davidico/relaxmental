@@ -15,31 +15,41 @@ const BASE = [
   "¿Qué no quieres que aparezca nunca en tu horario?",
 ];
 
+export type Modo = "inicio" | "cambios" | "completar";
+/** Si cambió algo este mes */
+const CAMBIOS = [
+  "¿Qué cambió en tu semana este mes?",
+  "¿Tienes horas nuevas de trabajo o de estudio? ¿Cuáles?",
+  "¿Hay algo que ya no haces y quieres quitar del horario?",
+  "¿Hay algo nuevo que quieras añadir a tu semana?",
+  "¿Hay fechas especiales este mes (viajes, visitas, exámenes, fiestas)?",
+];
 type Estado = { preguntas: string[]; respuestas: string[]; mensaje: string; i: number; horario?: string };
-const KEY = "mi-semana-preguntas";
-const leer = (): Estado | null => {
+const key = (m: Modo) => `mi-semana-preguntas-2-${m}`;
+const leer = (m: Modo): Estado | null => {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "null");
+    return JSON.parse(localStorage.getItem(key(m)) || "null");
   } catch {
     return null;
   }
 };
-const escribir = (e: Estado | null) => {
+const escribirEn = (m: Modo, e: Estado | null) => {
   try {
-    if (e) localStorage.setItem(KEY, JSON.stringify(e));
-    else localStorage.removeItem(KEY);
+    if (e) localStorage.setItem(key(m), JSON.stringify(e));
+    else localStorage.removeItem(key(m));
   } catch {}
 };
-export const hayPreguntasPendientes = () => !!leer();
+export const hayPreguntasPendientes = (m: Modo = "completar") => !!leer(m);
 
 /**
  * Armar las reglas con preguntas: la IA pregunta lo que falta, respondes (escribiendo o dictando),
  * dejas un mensaje final y la IA reescribe tus reglas. Tú decides si las guardas.
  * Lo respondido se guarda en el teléfono por si se cierra la app.
  */
-export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: string; onClose: () => void; onGuardar: (texto: string) => Promise<boolean> }) {
+export default function RulesQuiz({ reglas, onClose, onGuardar, modo = "completar" }: { reglas: string; onClose: () => void; onGuardar: (texto: string) => Promise<boolean> | boolean; modo?: Modo }) {
+  const escribir = (e: Estado | null) => escribirEn(modo, e);
   const [e, setE] = useState<Estado | null>(null);
-  const [fase, setFase] = useState<"cargando" | "foto" | "preguntas" | "armando" | "revisar" | "error">("cargando");
+  const [fase, setFase] = useState<"cargando" | "hola" | "foto" | "preguntas" | "armando" | "revisar" | "error">("cargando");
   const [horario, setHorario] = useState("");
   const [leyendo, setLeyendo] = useState<"" | "leyendo" | "error">("");
   const [nuevas, setNuevas] = useState("");
@@ -48,21 +58,21 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
 
   /* Retomar lo que había; si no, primero el paso de la foto del horario */
   useEffect(() => {
-    const prev = leer();
+    const prev = leer(modo);
     if (prev?.preguntas?.length) {
       setE(prev);
       setFase("preguntas");
-    } else setFase("foto");
-  }, []);
+    } else setFase(modo === "inicio" ? "hola" : "foto");
+  }, [modo]);
 
   const pedirPreguntas = async (hor: string) => {
     setFase("cargando");
     let ps: string[] = [];
     try {
-      const r = await fetch("/api/ai/preguntas", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reglas, horario: hor }) });
+      const r = await fetch("/api/ai/preguntas", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reglas, horario: hor, modo }) });
       if (r.ok) ps = ((await r.json()) as { preguntas?: string[] }).preguntas ?? [];
     } catch {}
-    if (ps.length < 3) ps = BASE;
+    if (ps.length < 3) ps = modo === "cambios" ? CAMBIOS : BASE;
     const nuevo = { preguntas: ps, respuestas: ps.map(() => ""), mensaje: "", i: 0, horario: hor };
     setE(nuevo);
     escribir(nuevo);
@@ -106,6 +116,35 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
       return n;
     });
 
+  if (fase === "hola")
+    return (
+      <div className="nv" role="dialog" aria-modal="true" aria-labelledby="rq-hola">
+        <div className="nv-bar ke-bar">
+          <button className="nv-ib ke-ib" aria-label="Cerrar" onClick={onClose}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <div className="nv-body">
+          <div className="nv-paper rq">
+            <div className="hy-dots" aria-hidden="true" />
+            <h3 id="rq-hola" className="rq-p rq-big">Armemos tu semana</h3>
+            <p className="rq-lead">Te haré unas preguntas para conocer tu día: a qué hora empiezas, qué haces, qué te importa y qué te cuesta. Con eso escribo tus reglas y armo tu horario.</p>
+            <ul className="rq-pasos">
+              <li>Si tu horario cambia (turnos), subes una foto.</li>
+              <li>Respondes escribiendo o dictando. Puedes saltar preguntas.</li>
+              <li>Al final me dejas un mensaje con lo que quieras.</li>
+              <li>Revisas tus reglas y decides si las guardas.</li>
+            </ul>
+            <p className="hint">Son unos 10 minutos. Lo que respondas se guarda en el teléfono, así que puedes seguir después.</p>
+            <div className="rq-nav">
+              <span style={{ flex: 1 }} />
+              <button className="btn" onClick={() => setFase("foto")}>Empezar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
   if (fase === "foto")
     return (
       <div className="nv" role="dialog" aria-modal="true" aria-labelledby="rq-fh">
@@ -117,9 +156,11 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
         </div>
         <div className="nv-body">
           <div className="nv-paper rq">
-            <h3 id="rq-fh" className="rq-p">¿Tu semana cambia según un horario?</h3>
+            <h3 id="rq-fh" className="rq-p">{modo === "cambios" ? "¿Tienes un horario nuevo este mes?" : "¿Tu semana cambia según un horario?"}</h3>
             <p className="hint">
-              Si trabajas por turnos o tienes un horario que cambia, sube una foto o captura y lo tengo en cuenta. Tus labores de la iglesia ya las conozco: no hace falta.
+              {modo === "cambios"
+                ? "Si este mes tienes turnos u horarios nuevos, sube la foto o captura. Si no, sigue con las preguntas."
+                : "Si trabajas por turnos o tienes un horario que cambia, sube una foto o captura y lo tengo en cuenta."}
             </p>
             {leyendo === "leyendo" ? (
               <p className="vwork"><span className="spin" aria-hidden="true" /> Leyendo tu horario…</p>
@@ -173,7 +214,7 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
       const r = await fetch("/api/ai/reglas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ reglas, respuestas: e.preguntas.map((p, k) => ({ p, r: e.respuestas[k] })), mensaje: e.mensaje, horario: e.horario ?? "" }),
+        body: JSON.stringify({ reglas, respuestas: e.preguntas.map((p, k) => ({ p, r: e.respuestas[k] })), mensaje: e.mensaje, horario: e.horario ?? "", modo }),
       });
       if (!r.ok) throw new Error();
       const t = ((await r.json()) as { reglas?: string }).reglas ?? "";
@@ -201,7 +242,7 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
         <button className="nv-ib ke-ib" aria-label="Cerrar (tus respuestas se guardan)" onClick={onClose}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
-        <h2 id="rq-h" className="nv-h">{fase === "revisar" ? "Tus reglas nuevas" : "Armar mis reglas"}</h2>
+        <h2 id="rq-h" className="nv-h">{fase === "revisar" ? "Tus reglas nuevas" : modo === "cambios" ? "Cambios del mes" : "Armar mis reglas"}</h2>
         <span style={{ flex: 1 }} />
         {fase === "preguntas" && <span className="nv-count">{e.i + 1} de {total}</span>}
       </div>
@@ -267,4 +308,4 @@ export default function RulesQuiz({ reglas, onClose, onGuardar }: { reglas: stri
 }
 
 /** Empezar de cero (borra las respuestas guardadas) */
-export const borrarPreguntas = () => escribir(null);
+export const borrarPreguntas = (m: Modo = "completar") => escribirEn(m, null);

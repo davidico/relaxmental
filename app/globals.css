@@ -1176,3 +1176,13 @@ h1{font-weight:700;letter-spacing:-.02em}
 .rq-foto svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .rq-foto:focus-within{outline:3px solid var(--gold);outline-offset:2px}
 .rq-reset{align-self:flex-start;min-height:44px;color:var(--muted)}
+.rq-big{font-size:30px}
+.rq-lead{font-size:18px;line-height:1.55;margin:0}
+.rq-pasos{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:16px;line-height:1.45}
+
+/* ---------- Versión 2.4: bienvenida y revisión del mes ---------- */
+.hy-aviso{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;padding:18px;background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.hy-aviso p{margin:0;line-height:1.5}
+.hy-aviso>.btn{align-self:flex-start;min-height:48px}
+.hy-aviso .row.actions{margin-top:2px}
+.hy-aviso a.btn{text-decoration:none;display:inline-flex;align-items:center}

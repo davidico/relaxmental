@@ -163,13 +163,13 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
   }
 
   if (url.pathname === "/api/ai/preguntas" && req.method === "POST") {
-    const { reglas, horario } = (await req.json()) as { reglas?: string; horario?: string };
+    const { reglas, horario, modo } = (await req.json()) as { reglas?: string; horario?: string; modo?: string };
     const hoy = berlinNow().date;
     const prox = Object.keys(LABORES).filter((d) => d >= hoy).sort().slice(0, 6);
     const labores = prox.length
       ? `LA APP YA CONOCE SUS LABORES EN LA IGLESIA (ejemplo de las próximas):\n${prox.map((d) => `- ${d}: ${LABORES[d].join(", ")}`).join("\n")}`
       : "La app ya conoce sus labores en la iglesia por fecha.";
-    return json({ preguntas: await preguntas(env.AI, { reglas: String(reglas ?? ""), horario: String(horario ?? ""), labores }) });
+    return json({ preguntas: await preguntas(env.AI, { reglas: String(reglas ?? ""), horario: String(horario ?? ""), labores, modo: String(modo ?? "") }) });
   }
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };
@@ -179,9 +179,9 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     return json({ texto });
   }
   if (url.pathname === "/api/ai/reglas" && req.method === "POST") {
-    const b = (await req.json()) as { reglas?: string; respuestas?: { p?: string; r?: string }[]; mensaje?: string; horario?: string };
+    const b = (await req.json()) as { reglas?: string; respuestas?: { p?: string; r?: string }[]; mensaje?: string; horario?: string; modo?: string };
     const respuestas = (Array.isArray(b.respuestas) ? b.respuestas : []).slice(0, 20).map((x) => ({ p: String(x?.p ?? "").slice(0, 300), r: String(x?.r ?? "").slice(0, 3000) }));
-    const texto = await reescribirReglas(env.AI, { reglas: String(b.reglas ?? ""), respuestas, mensaje: String(b.mensaje ?? ""), horario: String(b.horario ?? "") });
+    const texto = await reescribirReglas(env.AI, { reglas: String(b.reglas ?? ""), respuestas, mensaje: String(b.mensaje ?? ""), horario: String(b.horario ?? ""), modo: String(b.modo ?? "") });
     if (!texto) return json({ error: "ai_empty" }, 502);
     return json({ reglas: texto });
   }

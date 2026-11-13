@@ -13,6 +13,7 @@ import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
 import PushBanner from "@/components/PushBanner";
+import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import VoiceButton from "@/components/VoiceButton";
 
 /* ---------- utilidades de texto ---------- */
@@ -59,6 +60,7 @@ export default function Hoy() {
       <PushBanner />
 
       <div className="hy-dots" aria-hidden="true" />
+      <ReglasAviso />
 
       <div className="hy-grid">
         <div className="hy-col">
@@ -183,6 +185,50 @@ function DayList({ blocks, minute, roles }: { blocks: Bloque[]; minute: number; 
       ) : (
         <p className="hy-empty">No queda nada en el plan de hoy.</p>
       )}
+    </>
+  );
+}
+
+/* ---------- Bienvenida (sin reglas) y revisión de cada mes ---------- */
+function ReglasAviso() {
+  const { mode, offline, perfil, savePerfil, hoy } = useData();
+  const [quiz, setQuiz] = useState<Modo | null>(null);
+  const [listo, setListo] = useState(false);
+  if (mode === "loading" || offline) return null;
+  const reglas = perfil.reglas?.text?.trim() ?? "";
+  const mes = hoy.slice(0, 7);
+  const revisado = perfil.revision?.mes === mes || (perfil.reglas?.updated ?? "").slice(0, 7) === mes;
+  const guardar = (t: string) => {
+    savePerfil("reglas", { text: t, updated: new Date().toISOString() });
+    savePerfil("revision", { mes });
+    if (quiz === "inicio") setListo(true);
+    return true;
+  };
+  return (
+    <>
+      {listo ? (
+        <section className="card pad hy-aviso" aria-live="polite">
+          <h2 className="hy-h">¡Tus reglas están listas!</h2>
+          <p>Ahora la IA puede armar tu semana con ellas.</p>
+          <Link className="btn" href="/perfil#ia-h">Armar mi semana</Link>
+        </section>
+      ) : !reglas ? (
+        <section className="card pad hy-aviso" aria-labelledby="hy-bienv">
+          <h2 id="hy-bienv" className="hy-h">Armemos tu semana</h2>
+          <p>Te hago unas preguntas sobre tu día (puedes dictar) y con eso armo tu horario. Unos 10 minutos.</p>
+          <button className="btn" onClick={() => setQuiz("inicio")}>Empezar</button>
+        </section>
+      ) : !revisado ? (
+        <section className="card pad hy-aviso" aria-labelledby="hy-mes">
+          <h2 id="hy-mes" className="hy-h">Nuevo mes: ¿hay cambios en tu horario?</h2>
+          <p>Si cambió algo (turnos, actividades, fechas especiales), lo ajustamos con unas preguntas.</p>
+          <div className="row actions">
+            <button className="btn" onClick={() => setQuiz("cambios")}>Sí, revisar</button>
+            <button className="btn ghost" onClick={() => savePerfil("revision", { mes })}>No, todo igual</button>
+          </div>
+        </section>
+      ) : null}
+      {quiz && <RulesQuiz modo={quiz} reglas={reglas} onClose={() => setQuiz(null)} onGuardar={guardar} />}
     </>
   );
 }
