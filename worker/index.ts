@@ -328,7 +328,7 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
       title: `${b.s} · ${b.t}`,
       body: [b.sub, next ? `Hasta las ${b.e}. Luego: ${next.t}` : `Hasta las ${b.e}`].filter(Boolean).join("\n"),
       tag: "bloque",
-      url: "/hoy",
+      url: /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(b.t) ? "/hoy#entreno" : "/hoy",
     });
     // Si no llegó a ningún teléfono por un fallo pasajero, se quita la marca y se reintenta el minuto siguiente
     if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, ds, toMin } from "@/lib/dates";
@@ -12,6 +12,7 @@ import { openTasks, toggleHecho } from "@/components/ui";
 import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
+import Entreno from "@/components/Entreno";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
@@ -35,6 +36,14 @@ export default function Hoy() {
   const evs = eventos[t] ?? [];
   const [editing, setEditing] = useState(false);
   const [verDia, setVerDia] = useState(false);
+  const [entreno, setEntreno] = useState(false);
+  /* El aviso del bloque de ejercicio abre directamente el entrenamiento (/hoy#entreno) */
+  useEffect(() => {
+    if (location.hash === "#entreno") {
+      setEntreno(true);
+      history.replaceState(null, "", location.pathname);
+    }
+  }, []);
 
   const hoyTxt = evs.length ? `Hoy: ${textoEventos(evs)}` : "";
 
@@ -61,7 +70,7 @@ export default function Hoy() {
 
       <div className="hy-grid">
         <div className="hy-col">
-          <NowCard blocks={blocks} minute={minute} />
+          <NowCard blocks={blocks} minute={minute} onEntreno={() => setEntreno(true)} />
           <OneTask day={t} />
           <HabitRings day={t} />
           <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
@@ -83,12 +92,14 @@ export default function Hoy() {
         </div>
       </div>
       {editing && <DayEditor date={t} onClose={() => setEditing(false)} />}
+      {entreno && <Entreno onClose={() => setEntreno(false)} />}
     </div>
   );
 }
 
 /* ---------- Ahora ---------- */
-function NowCard({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
+export const esEjercicio = (t: string) => /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(t);
+function NowCard({ blocks, minute, onEntreno }: { blocks: Bloque[]; minute: number; onEntreno: () => void }) {
   const { cur, nxt } = nowInfo(blocks, minute);
   if (!blocks.length)
     return (
@@ -130,6 +141,12 @@ function NowCard({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
       <div className="hy-bar" role="progressbar" aria-label="Avance del bloque" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
         <i style={{ width: `${pct}%` }} />
       </div>
+      {esEjercicio(b.t) && (
+        <button className="btn hy-entreno" onClick={onEntreno}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+          Empezar entrenamiento
+        </button>
+      )}
       {nxt && (
         <p className="hy-next">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
