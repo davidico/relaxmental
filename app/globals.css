@@ -1392,3 +1392,14 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hy-pro.hecho label{text-decoration:line-through;color:var(--muted)}
 .dia-form{display:flex;flex-direction:column;gap:10px}
 .dia-form .row.actions{justify-content:space-between;align-items:center}
+
+/* Lo que quedó sin hacer (3.5) */
+.hy-atr{background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,var(--line));border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.hy-atr-h{margin:0;font-family:var(--display);font-size:18px;font-weight:700}
+.hy-atr-p{margin:0;color:var(--muted)}
+.hy-atr-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hy-atr-l li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.hy-atr-t{font-weight:700;overflow-wrap:break-word}
+.hy-atr-t .hy-step{font-weight:400}
+.hy-atr-b{display:flex;flex-wrap:wrap;gap:6px}
+.hy-atr-h.mayus::first-letter{text-transform:uppercase}

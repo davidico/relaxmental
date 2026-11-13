@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData, newId } from "@/lib/data";
-import { DOW, MES, ds, toMin } from "@/lib/dates";
+import { DOW, MES, addD, ds, pd, toMin } from "@/lib/dates";
 import { nowInfo, textoEventos, type Bloque } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { sortHabits } from "@/lib/habits";
@@ -15,6 +15,7 @@ import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
+import WhenDialog from "@/components/WhenDialog";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
@@ -300,33 +301,29 @@ function OneTask({ day }: { day: string }) {
   const startFocus = useFocus();
   const porHora = (a: Tarea, b: Tarea) => (a.hora || "99").localeCompare(b.hora || "99") || a.created.localeCompare(b.created);
   const deHoy = tareas.filter((x) => x.due === day).sort(porHora);
-  const atrasadas = tareas.filter((x) => !x.done && x.due && x.due < day).sort((a, b) => a.due.localeCompare(b.due));
   const primera = deHoy.find((x) => !x.done);
   const hechas = deHoy.filter((x) => x.done).length;
   const otras = openTasks(tareas).filter((x) => !x.due || x.due > day).length;
-  const fila = (x: Tarea, tarde = false) => (
+  const fila = (x: Tarea) => (
     <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
       <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
       <span className="hy-task-b">
         <label htmlFor={`hy-${x.id}`}>{x.title}</label>
-        {x.hora && !tarde && <span className="hy-step">A las {x.hora}</span>}
+        {x.hora && <span className="hy-step">A las {x.hora}</span>}
         {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
       </span>
-      {tarde ? (
-        <button className="hy-start" onClick={() => save("tareas", { ...x, due: day, hora: undefined })} aria-label={`Pasar a hoy: ${x.title}`}>A hoy</button>
-      ) : (
-        x.id === primera?.id && (
-          <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
-            10 min
-          </button>
-        )
+      {x.id === primera?.id && (
+        <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+          10 min
+        </button>
       )}
     </li>
   );
   const grupos = (["personal", "trabajo"] as const).map((l) => ({ l, xs: deHoy.filter((x) => (x.lado === "trabajo" ? "trabajo" : "personal") === l) })).filter((g) => g.xs.length);
   return (
     <section aria-labelledby="hy-una" className="hy-sec">
+      <Atrasadas day={day} />
       <div className="hy-sechead">
         <h2 id="hy-una" className="hy-h">Lo que te propusiste hoy</h2>
         {deHoy.length > 0 && <span className="hy-count">{hechas} de {deHoy.length}</span>}
@@ -341,18 +338,61 @@ function OneTask({ day }: { day: string }) {
       ) : (
         <p className="hy-empty">Nada apuntado para hoy. <Link href="/semana">Ábrelo en tu planner</Link>.</p>
       )}
-      {atrasadas.length > 0 && (
-        <div className="hy-lado tarde">
-          <h3 className="hy-lado-h">De días anteriores</h3>
-          <ul className="hy-pros">{atrasadas.slice(0, 5).map((x) => fila(x, true))}</ul>
-        </div>
-      )}
       {otras > 0 && (
         <Link className="linkbtn hy-more" href="/semana">
           Ver tu semana ({otras} {otras === 1 ? "cosa más" : "cosas más"})
         </Link>
       )}
     </section>
+  );
+}
+
+/* ---------- Lo que quedó sin hacer: tú decides qué pasa con cada cosa ---------- */
+function Atrasadas({ day }: { day: string }) {
+  const { tareas, save, remove } = useData();
+  const [otroDia, setOtroDia] = useState<Tarea | null>(null);
+  const [todas, setTodas] = useState(false);
+  const xs = tareas.filter((x) => !x.done && x.due && x.due < day).sort((a, b) => b.due.localeCompare(a.due));
+  if (!xs.length) return null;
+  const ayer = addD(day, -1);
+  const soloAyer = xs.every((x) => x.due === ayer);
+  const vis = todas ? xs : xs.slice(0, 4);
+  return (
+    <div className="hy-atr" role="group" aria-labelledby="hy-atr-h">
+      <h3 id="hy-atr-h" className={`hy-atr-h${soloAyer ? "" : " mayus"}`}>
+        {soloAyer ? "Ayer " : ""}
+        {xs.length === 1 ? "quedó 1 cosa" : `quedaron ${xs.length} cosas`} sin hacer{soloAyer ? "" : " de otros días"}
+      </h3>
+      <p className="hy-atr-p">¿Qué hago con {xs.length === 1 ? "ella" : "cada una"}?</p>
+      <ul className="hy-atr-l">
+        {vis.map((x) => (
+          <li key={x.id}>
+            <span className="hy-atr-t">
+              {x.title}
+              {x.due !== ayer && <span className="hy-step"> · del {pd(x.due).getDate()} de {MES[pd(x.due).getMonth()]}</span>}
+            </span>
+            <div className="hy-atr-b">
+              <button className="btn sm" onClick={() => save("tareas", { ...x, due: day })} aria-label={`Pasar a hoy: ${x.title}`}>Hoy</button>
+              <button className="btn ghost sm" onClick={() => setOtroDia(x)} aria-label={`Pasar a otro día: ${x.title}`}>Otro día</button>
+              <button className="btn ghost sm" onClick={() => remove("tareas", x.id)} aria-label={`Ya no hacerlo: ${x.title}`}>Ya no</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {xs.length > vis.length && <button className="linkbtn" onClick={() => setTodas(true)}>Ver las {xs.length - vis.length} restantes</button>}
+      {otroDia && (
+        <WhenDialog
+          due={addD(day, 1)}
+          hora={otroDia.hora ?? ""}
+          hoy={day}
+          onCancel={() => setOtroDia(null)}
+          onDone={(due, hora) => {
+            save("tareas", { ...otroDia, due, hora: due && hora ? hora : undefined });
+            setOtroDia(null);
+          }}
+        />
+      )}
+    </div>
   );
 }
 
