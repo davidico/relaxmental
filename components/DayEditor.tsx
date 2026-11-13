@@ -10,7 +10,8 @@ import { cssC } from "./ui";
 
 /** Editor de un día: cambiar horas, títulos, borrar o añadir bloques */
 export default function DayEditor({ date, onClose }: { date: string; onClose: () => void }) {
-  const { planFor, dias, saveDia } = useData();
+  const { planFor, dias, saveDia, perfil, savePerfil } = useData();
+  const [tipo, setTipo] = useState(false);
   const [rows, setRows] = useState<Bloque[]>(() => planFor(date).map((b) => ({ ...b })));
   const edited = !!dias[date];
   const d = pd(date);
@@ -67,6 +68,10 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
               Volver al automático
             </button>
           )}
+          <label className="ed-tipo">
+            <input type="checkbox" checked={tipo} onChange={(e) => setTipo(e.target.checked)} />
+            <span>Usar también como mi {DOW[d.getDay()].toLowerCase()} típico</span>
+          </label>
           <span style={{ flex: 1 }} />
           {!valid && <span className="ed-warn" role="status">Revisa: cada bloque necesita nombre y terminar después de empezar.</span>}
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
@@ -76,6 +81,8 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
             onClick={() => {
               const clean = rows.map((b) => ({ ...b, t: b.t.trim(), sub: b.sub?.trim() || undefined })).sort((x, y) => toMin(x.s) - toMin(y.s));
               saveDia(date, clean);
+              /* Así la semana tipo aprende de tus días reales (sin los compromisos de esa fecha) */
+              if (tipo) savePerfil("plantilla", { ...(perfil.plantilla ?? {}), [String(d.getDay())]: clean.filter((b) => !b.evento) });
               onClose();
             }}
           >

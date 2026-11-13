@@ -10,7 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, leerHorario, planDay, preguntas, reescribirReglas, title, transcribe, type AI } from "./ai";
+import { aCompromisos, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -96,6 +96,20 @@ async function perfilDe(env: Env, email: string) {
   }
   return o;
 }
+/** Los días que la persona ajustó a mano (los últimos 30) */
+async function diasReales(env: Env, email: string) {
+  const { results } = await env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'dias' ORDER BY id DESC LIMIT 30")
+    .bind(email)
+    .all<{ id: string; data: string }>();
+  const out: { fecha: string; bloques: Bloque[] }[] = [];
+  for (const r of results) {
+    try {
+      const v = JSON.parse(r.data);
+      if (Array.isArray(v) && v.length) out.push({ fecha: r.id, bloques: v.filter(isBloque) });
+    } catch {}
+  }
+  return out;
+}
 const fechaMas = (f: string, n: number) => new Date(new Date(f + "T12:00:00Z").getTime() + n * 864e5).toISOString().slice(0, 10);
 
 /* ---------- API ---------- */
@@ -174,7 +188,9 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .filter((t) => !t.done && (!t.due || t.due <= fecha))
       .map((t) => t.title);
     const { eventos } = await perfilDe(env, email);
-    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas });
+    const reales = await diasReales(env, email);
+    const ejemplos = resumenDias(reales.filter((d) => d.fecha !== fecha), new Date(fecha + "T12:00:00Z").getUTCDay());
+    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
   }
@@ -198,10 +214,12 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       const dow = new Date(h + "T12:00:00Z").getUTCDay();
       return fechaMas(h, ((8 - dow) % 7) || 7);
     })();
+    const reales = await diasReales(env, email);
     const dias = await Promise.all(
       Array.from({ length: 7 }, (_, i) => fechaMas(lunes, i)).map(async (f) => {
+        const dow = new Date(f + "T12:00:00Z").getUTCDay();
         try {
-          return [String(new Date(f + "T12:00:00Z").getUTCDay()), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true })] as const;
+          return [String(dow), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true, ejemplos: resumenDias(reales, dow) })] as const;
         } catch {
           return [String(new Date(f + "T12:00:00Z").getUTCDay()), []] as const;
         }
@@ -231,7 +249,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
   if (url.pathname === "/api/ai/reglas" && req.method === "POST") {
     const b = (await req.json()) as { reglas?: string; respuestas?: { p?: string; r?: string }[]; mensaje?: string; horario?: string; modo?: string };
     const respuestas = (Array.isArray(b.respuestas) ? b.respuestas : []).slice(0, 20).map((x) => ({ p: String(x?.p ?? "").slice(0, 300), r: String(x?.r ?? "").slice(0, 3000) }));
-    const texto = await reescribirReglas(env.AI, { reglas: String(b.reglas ?? ""), respuestas, mensaje: String(b.mensaje ?? ""), horario: String(b.horario ?? ""), modo: String(b.modo ?? "") });
+    const ejemplos = resumenDias(await diasReales(env, email));
+    const texto = await reescribirReglas(env.AI, { reglas: String(b.reglas ?? ""), respuestas, mensaje: String(b.mensaje ?? ""), horario: String(b.horario ?? ""), modo: String(b.modo ?? ""), ejemplos });
     if (!texto) return json({ error: "ai_empty" }, 502);
     return json({ reglas: texto });
   }

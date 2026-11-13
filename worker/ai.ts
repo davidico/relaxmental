@@ -73,7 +73,7 @@ export function cleanBlocks(raw: unknown): Bloque[] {
 
 export async function planDay(
   ai: AI,
-  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean },
+  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean; ejemplos?: string },
 ): Promise<Bloque[]> {
   const d = new Date(o.fecha + "T12:00:00Z");
   const dow = d.getUTCDay();
@@ -86,12 +86,13 @@ export async function planDay(
     .filter(Boolean);
   const hoy = o.eventos[o.fecha] ?? [];
   const contexto = o.tipo
-    ? [`Arma un ${DIAS[dow]} TÍPICO de su semana (sin compromisos especiales): lo que hace normalmente ese día según sus reglas.`].join("\n\n")
+    ? [`Arma un ${DIAS[dow]} TÍPICO de su semana (sin compromisos especiales): lo que hace normalmente ese día según sus reglas y sus días reales.`, o.ejemplos ?? ""].filter(Boolean).join("\n\n")
     : [
         `Fecha: ${DIAS[dow]} ${o.fecha}.`,
         hoy.length ? `Compromisos FIJOS de hoy (respeta sus horas, no los muevas): ${hoy.map((e) => `${e.t}${e.s ? ` de ${e.s} a ${e.e ?? "?"}` : ""}${e.nota ? ` (${e.nota})` : ""}`).join("; ")}.` : "Hoy no tiene compromisos con fecha.",
         prox.length ? `Compromisos de los próximos 3 días (por si hay que prepararse):\n${prox.join("\n")}` : "",
         o.tareas.length ? `Tareas pendientes (elige 1 o 2 si encajan):\n${o.tareas.slice(0, 12).map((t) => "- " + t).join("\n")}` : "",
+        o.ejemplos ?? "",
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -123,6 +124,8 @@ export async function planDay(
         role: "system",
         content:
           "Eres el planificador del día de una persona. Sigue SUS REGLAS al pie de la letra; si dos reglas chocan, gana la más específica (la que nombra el día o la labor). " +
+          "Si te paso DÍAS REALES que ella ajustó a mano, son lo más fiable: imita sus horas, los nombres que usa, el orden y la duración de los bloques (sobre todo los del mismo día de la semana). " +
+          "No inventes actividades que no estén en sus reglas ni en sus días reales; nada genérico como «preparación para la noche» o «momento espiritual» si ella no lo dijo. " +
           "Cubre el día de la hora de levantarse a la de dormir sin huecos ni solapes, en bloques de 15 minutos o más, en orden. " +
           "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=trabajo o estudio, tukuna=proyecto propio o negocio, aleman=idiomas y aprendizaje, iglesia=fe, iglesia, Biblia y oración, familia=familia e hijos, salud=salud, ejercicio y descanso, casa=casa, cocina, papeleo y tareas, rutina=comidas y traslados. " +
           'Responde SOLO con JSON: {"bloques":[{"s":"07:00","e":"07:15","t":"…","a":"salud","sub":"…"}]}',
@@ -215,7 +218,7 @@ export async function leerHorario(ai: AI, imagen: string): Promise<string> {
 }
 
 /** Reescribe las reglas con las respuestas y el mensaje final */
-export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string; modo?: string }): Promise<string> {
+export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string; modo?: string; ejemplos?: string }): Promise<string> {
   const qa = o.respuestas.filter((x) => x.r.trim()).map((x) => `P: ${x.p}\nR: ${x.r.trim()}`).join("\n\n");
   const r = await ai.run(LLM, {
     messages: [
@@ -226,12 +229,14 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
           (o.modo === "cambios"
             ? "Es la revisión del mes: conserva sus reglas actuales y cambia SOLO lo que dicen sus respuestas y su mensaje. "
             : "Parte de sus reglas actuales (si las hay) y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). ") +
-          "No inventes nada que no esté en sus reglas o respuestas. Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
+          "No inventes NADA que no esté en sus reglas, respuestas, mensaje o días reales: ni actividades, ni horas, ni ejemplos («p. ej.»), ni fechas. Si una respuesta está vacía o no se entiende, no la uses. " +
+          "Si hay DÍAS REALES que ajustó a mano, úsalos como la mejor pista de cómo es su semana (horas, nombres y orden). " +
+          "Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
           "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
           "No escribas qué fechas concretas tiene compromisos (iglesia, turnos): la app ya las sabe. Sí puedes escribir qué hace antes o después de ellos. " +
           "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
       },
-      { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}` },
+      { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}${o.ejemplos ? `\n\n${o.ejemplos}` : ""}` },
     ],
     max_tokens: 2500,
     temperature: 0.2,
@@ -275,4 +280,20 @@ export async function aCompromisos(ai: AI, o: { texto: string; hoy: string; regl
     .map((x: Record<string, unknown>) => ({ fecha: String(x?.fecha ?? ""), t: String(x?.t ?? "").trim().slice(0, 80), s: hhmm(x?.s), e: hhmm(x?.e), nota: String(x?.nota ?? "").trim().slice(0, 140) || undefined }))
     .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.fecha) && x.t)
     .slice(0, 120);
+}
+
+/** Resume los días que la persona ajustó a mano, para que la IA aprenda de ellos */
+export function resumenDias(dias: { fecha: string; bloques: Bloque[] }[], dowObjetivo?: number) {
+  if (!dias.length) return "";
+  const orden = [...dias].sort((a, b) => {
+    // primero los del mismo día de la semana, luego los más recientes
+    const da = new Date(a.fecha + "T12:00:00Z").getUTCDay() === dowObjetivo ? 0 : 1;
+    const db = new Date(b.fecha + "T12:00:00Z").getUTCDay() === dowObjetivo ? 0 : 1;
+    return da - db || (a.fecha < b.fecha ? 1 : -1);
+  });
+  const lineas = orden.slice(0, 8).map(({ fecha, bloques }) => {
+    const d = DIAS[new Date(fecha + "T12:00:00Z").getUTCDay()];
+    return `${d} ${fecha}: ${bloques.map((b) => `${b.s}-${b.e} ${b.t}${b.sub ? ` (${b.sub})` : ""}`).join("; ")}`;
+  });
+  return `DÍAS REALES QUE AJUSTÓ A MANO (aprende de ellos):\n${lineas.join("\n")}`.slice(0, 5000);
 }

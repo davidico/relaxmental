@@ -1208,3 +1208,7 @@ h1{font-weight:700;letter-spacing:-.02em}
 .cmp-fila{min-width:0}.cmp-fila input{min-width:0;width:100%;box-sizing:border-box}
 .cmp-fila>label{min-width:0}.cmp-fila{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}@media (min-width:900px){.cmp-fila{grid-template-columns:160px minmax(0,1fr) 120px 120px 40px}}
 @media (max-width:899px){.cmp-fila label:first-of-type{grid-column:1/-1}.cmp-fila label:first-of-type input{max-width:220px}}
+
+/* ---------- Versión 2.6: aprender de tus días ---------- */
+.ed-tipo{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer;flex-basis:100%}
+.ed-tipo input{width:22px;height:22px;margin:0;flex:none;accent-color:var(--primary)}
