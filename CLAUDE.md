@@ -6,7 +6,7 @@ El repositorio es **público**: no subas datos personales de David (salud, famil
 
 - Web: https://relaxmental.davidcueva-dico.workers.dev (detrás de Cloudflare Access: código por correo o cuenta de Cloudflare; sesión de 1 mes)
 - Cada push a `main` lo publica solo Cloudflare Workers Builds (`npm run build` + `npx wrangler deploy`, 1–2 min). David quiere que sus cambios se publiquen: termina con commit y push a `main` salvo que pida otra cosa.
-- Versión actual en `lib/version.ts` (sube 1.1 → 1.2… y añade novedades en cada entrega). Se ve en Perfil › Acerca de.
+- Versión actual en `lib/version.ts` (sube 2.0 → 2.1… hasta 2.10; después de la .10 pasa a 3.0. Añade novedades en cada entrega). Se ve en Perfil › Acerca de.
 
 ## Stack
 - Next.js 16 App Router + TypeScript, exportación estática (`output: "export"` → `out/`). Sin servidor de Next.

@@ -1,5 +1,5 @@
-/** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.11";
+/** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
+export const VERSION = "2.0";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
   "Dictar también en tus reglas del horario",
