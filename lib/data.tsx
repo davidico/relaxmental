@@ -118,6 +118,10 @@ export type Perfil = {
   plantilla?: Plantilla;
   /** Compromisos con fecha */
   eventos?: Eventos;
+  /** Días ajustados a mano (lo propuesto y lo que quedó) */
+  historial?: unknown[];
+  /** Conclusiones de la IA sobre cómo armas tus días */
+  aprendizajes?: unknown[];
   [k: string]: unknown;
 };
 interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias; perfil?: Perfil }
@@ -402,7 +406,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     for (const n of notas) if (!n.folder) save("notas", { ...n, folder: FOLDER_OF_KIND[n.kind] ?? "general" });
   }, [mode, loaded, carpetas, notas, save, remove]);
 
-  const planFor = useCallback((date: string) => planDe(date, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos }), [dias, perfil.plantilla, perfil.eventos]);
+  const planFor = useCallback((date: string) => planDe(date, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos, tareas }), [dias, perfil.plantilla, perfil.eventos, tareas]);
   const retry = useCallback(() => {
     void sync().then((ok) => {
       if (!ok && navigator.onLine) location.reload(); // con internet pero sin sesión: recargar lleva al login

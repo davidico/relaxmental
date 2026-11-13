@@ -1315,3 +1315,15 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hb-head h1{margin-bottom:4px}
 .hb-entrenar{display:inline-flex;align-items:center;gap:8px;min-height:44px;flex:none}
 .hb-entrenar svg{width:16px;height:16px;fill:currentColor}
+.hy-entreno{background:#ffffff;color:#1f4347}.hy-entreno:hover{background:#eef5f5}
+
+/* ---------- Versión 3.2: aprender de tus días ---------- */
+.apr-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.apr-lista li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.apr-txt{margin:0;font-weight:700;line-height:1.4}
+.apr-lista .row.actions{margin-top:0}
+.apr-rearmar{display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}
+.apr-rearmar .btn{align-self:flex-start}
+.ed-tipo{font-size:14px;color:var(--muted);cursor:default}
+.hy-aviso a.btn{color:var(--on-primary)}
+.hy-grid .hy-aviso{order:3;margin-bottom:0}

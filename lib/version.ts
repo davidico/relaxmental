@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "3.1";
+export const VERSION = "3.2";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Las tareas con hora aparecen solas en tu itinerario del día",
+  "La IA aprende de cada día que ajustas y te propone conclusiones («Aprendí de tus días»): tú decides cuáles usar",
+  "Los domingos te ofrece armar la semana que viene",
   "Entrenar a cualquier hora: en el botón + y en Hábitos",
   "Entrenamiento con voz: series, trabajo y descanso; te dice «tres, dos, uno», «¡A trabajar!» y «Descanso»",
   "En tu bloque de ejercicio aparece «Empezar entrenamiento», y el aviso lo abre directo",

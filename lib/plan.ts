@@ -17,6 +17,8 @@ export interface Bloque {
   evento?: boolean;
   /** Antiguo: bloque de culto */
   church?: boolean;
+  /** Viene de una tarea con hora (id de la tarea) */
+  tarea?: string;
 }
 
 export interface Evento {
@@ -36,7 +38,11 @@ export const areaDeEvento = (t: string): Area => (/culto|iglesia|p[uú]lpito|pre
 
 /** Pone los compromisos con hora dentro del día y recorta lo que se cruza */
 export function mezclar(base: Bloque[], evs: Evento[]): Bloque[] {
-  const fijos: Bloque[] = evs.filter(conHora).map((e) => ({ s: e.s!, e: e.e!, t: e.t, a: areaDeEvento(e.t), ...(e.nota ? { sub: e.nota } : {}), evento: true }));
+  return encajar(base, evs.filter(conHora).map((e) => ({ s: e.s!, e: e.e!, t: e.t, a: areaDeEvento(e.t), ...(e.nota ? { sub: e.nota } : {}), evento: true })));
+}
+
+/** Mete bloques fijos en el día y recorta lo que se cruza con ellos */
+export function encajar(base: Bloque[], fijos: Bloque[]): Bloque[] {
   if (!fijos.length) return base;
   const out: Bloque[] = [];
   for (const b of base) {
@@ -59,12 +65,24 @@ export function mezclar(base: Bloque[], evs: Evento[]): Bloque[] {
   return [...out, ...fijos].sort((x, y) => toMin(x.s) - toMin(y.s));
 }
 
-/** El horario de una fecha: lo ajustado a mano, o la semana tipo con los compromisos de ese día */
-export function planDe(fecha: string, o: { dias?: Record<string, Bloque[]>; plantilla?: Plantilla; eventos?: Eventos }): Bloque[] {
+type TareaConHora = { id: string; title: string; step?: string; due: string; hora?: string; done: boolean };
+const hhmm = (m: number) => `${String(Math.floor(Math.min(m, 1439) / 60)).padStart(2, "0")}:${String(Math.min(m, 1439) % 60).padStart(2, "0")}`;
+
+/** Las tareas de esa fecha que tienen hora, como bloques de 30 minutos */
+export function bloquesDeTareas(fecha: string, tareas: TareaConHora[] = []): Bloque[] {
+  return tareas
+    .filter((t) => !t.done && t.due === fecha && t.hora && hm.test(t.hora))
+    .map((t) => ({ s: t.hora!, e: hhmm(toMin(t.hora!) + 30), t: t.title, a: "casa" as Area, sub: t.step ? `Tarea · ${t.step}` : "Tarea", tarea: t.id }));
+}
+
+/**
+ * El horario de una fecha: lo ajustado a mano, o la semana tipo con los compromisos de ese día.
+ * Encima van las tareas de ese día que tienen hora.
+ */
+export function planDe(fecha: string, o: { dias?: Record<string, Bloque[]>; plantilla?: Plantilla; eventos?: Eventos; tareas?: TareaConHora[] }): Bloque[] {
   const d = o.dias?.[fecha];
-  if (d) return d;
-  const base = o.plantilla?.[String(pd(fecha).getDay())] ?? [];
-  return mezclar(base, o.eventos?.[fecha] ?? []);
+  const base = d ? d.filter((b) => !b.tarea) : mezclar(o.plantilla?.[String(pd(fecha).getDay())] ?? [], o.eventos?.[fecha] ?? []);
+  return encajar(base, bloquesDeTareas(fecha, o.tareas));
 }
 
 /** Texto corto de los compromisos de un día: «Culto · Púlpito 18:30» */

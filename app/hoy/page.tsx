@@ -13,6 +13,7 @@ import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
+import Aprendizajes from "@/components/Aprendizajes";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
@@ -72,6 +73,8 @@ export default function Hoy() {
         <div className="hy-col">
           <NowCard blocks={blocks} minute={minute} onEntreno={() => setEntreno(true)} />
           <OneTask day={t} />
+          <SemanaAviso />
+          <Aprendizajes />
           <HabitRings day={t} />
           <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
             <button className="hy-allday" aria-expanded={verDia} aria-controls="hy-dia-lista" onClick={() => setVerDia(!verDia)}>
@@ -262,6 +265,30 @@ function ReglasAviso() {
       ) : null}
       {quiz && <RulesQuiz modo={quiz} reglas={reglas} onClose={() => setQuiz(null)} onGuardar={guardar} />}
     </>
+  );
+}
+
+/* ---------- Domingo: proponer la semana que viene ---------- */
+function SemanaAviso() {
+  const { mode, offline, perfil, savePerfil, hoy, dias } = useData();
+  const d = new Date(hoy + "T12:00:00");
+  const dow = d.getDay();
+  if (mode !== "cloud" || offline || dow !== 0 || !perfil.reglas?.text?.trim()) return null;
+  const lunes = (() => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + 1);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  })();
+  if ((perfil.semanaVista as string | undefined) === lunes || dias[lunes]) return null;
+  return (
+    <section className="card pad hy-aviso" aria-labelledby="sem-h">
+      <h2 id="sem-h" className="hy-h">¿Te armo la semana que viene?</h2>
+      <p>Uso tus reglas, lo que aprendí de tus días, tus compromisos y tus tareas. Tú revisas cada día antes de aplicarlo.</p>
+      <div className="row actions">
+        <Link className="btn" href="/perfil#ia-h" onClick={() => savePerfil("semanaVista", lunes)}>Sí, proponla</Link>
+        <button className="btn ghost" onClick={() => savePerfil("semanaVista", lunes)}>Ahora no</button>
+      </div>
+    </section>
   );
 }
 

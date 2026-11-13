@@ -10,7 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -238,6 +238,17 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const { reglas } = await perfilDe(env, email);
     const eventos = await aCompromisos(env.AI, { texto, hoy: berlinNow().date, reglas });
     return json({ eventos, texto });
+  }
+  /* Aprender de los días ajustados: conclusiones que se proponen a la persona */
+  if (url.pathname === "/api/ai/aprender" && req.method === "POST") {
+    const b = (await req.json()) as { historial?: { fecha?: string; antes?: unknown; despues?: unknown }[]; reglas?: string; decididas?: unknown };
+    const lista = (x: unknown) => (Array.isArray(x) ? x.map((y) => String(y).slice(0, 160)).slice(0, 40) : []);
+    const historial = (Array.isArray(b.historial) ? b.historial : [])
+      .filter((c) => typeof c?.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.fecha))
+      .slice(-12)
+      .map((c) => ({ fecha: c.fecha as string, antes: lista(c.antes), despues: lista(c.despues) }));
+    if (!historial.length) return json({ conclusiones: [] });
+    return json({ conclusiones: await conclusiones(env.AI, { historial, reglas: String(b.reglas ?? ""), decididas: lista(b.decididas) }) });
   }
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };

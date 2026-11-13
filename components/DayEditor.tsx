@@ -7,13 +7,15 @@ import type { Bloque } from "@/lib/plan";
 import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
 import HoraInput from "./HoraInput";
+import { aprender, registrarCambio } from "@/lib/aprender";
 
 
 /** Editor de un día: cambiar horas, títulos, borrar o añadir bloques */
 export default function DayEditor({ date, onClose }: { date: string; onClose: () => void }) {
   const { planFor, dias, saveDia, perfil, savePerfil } = useData();
-  const [tipo, setTipo] = useState(false);
-  const [rows, setRows] = useState<Bloque[]>(() => planFor(date).map((b) => ({ ...b })));
+  /* Las tareas con hora no se editan aquí (se cambian en la tarea) */
+  const tareasDia = planFor(date).filter((b) => b.tarea);
+  const [rows, setRows] = useState<Bloque[]>(() => planFor(date).filter((b) => !b.tarea).map((b) => ({ ...b })));
   const edited = !!dias[date];
   const d = pd(date);
 
@@ -75,6 +77,9 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
             );
           })}
           <button className="btn ghost sm" onClick={add} style={{ alignSelf: "flex-start" }}>+ Añadir bloque</button>
+          {tareasDia.length > 0 && (
+            <p className="hint">También este día, por tus tareas con hora: {tareasDia.map((b) => `${b.s} ${b.t}`).join(" · ")}. Se cambian en la tarea.</p>
+          )}
         </div>
 
         <div className="sheet-foot">
@@ -83,10 +88,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
               Volver al automático
             </button>
           )}
-          <label className="ed-tipo">
-            <input type="checkbox" checked={tipo} onChange={(e) => setTipo(e.target.checked)} />
-            <span>Usar también como mi {DOW[d.getDay()].toLowerCase()} típico</span>
-          </label>
+          <p className="ed-tipo">La app aprende de tus cambios y te propondrá mejoras para tus días.</p>
           <span style={{ flex: 1 }} />
           {!valid && <span className="ed-warn" role="status">Revisa: cada bloque necesita nombre y terminar después de empezar.</span>}
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
@@ -95,9 +97,11 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
             disabled={!valid}
             onClick={() => {
               const clean = rows.map((b) => ({ ...b, t: b.t.trim(), sub: b.sub?.trim() || undefined })).sort((x, y) => toMin(x.s) - toMin(y.s));
+              const propuesto = planFor(date).filter((b) => !b.tarea);
               saveDia(date, clean);
-              /* Así la semana tipo aprende de tus días reales (sin los compromisos de esa fecha) */
-              if (tipo) savePerfil("plantilla", { ...(perfil.plantilla ?? {}), [String(d.getDay())]: clean.filter((b) => !b.evento) });
+              /* La IA aprende de lo que cambiaste: guarda el cambio y busca conclusiones (en segundo plano) */
+              const hist = registrarCambio(perfil, savePerfil, date, propuesto, clean);
+              if (hist) void aprender(perfil, savePerfil, hist).catch(() => {});
               onClose();
             }}
           >

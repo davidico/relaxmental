@@ -299,3 +299,45 @@ export function resumenDias(dias: { fecha: string; bloques: Bloque[] }[], dowObj
   });
   return `DÍAS REALES QUE AJUSTÓ A MANO (aprende de ellos):\n${lineas.join("\n")}`.slice(0, 5000);
 }
+
+/** Analiza cómo la persona cambia lo que le propone la app y saca conclusiones (propuestas, no órdenes) */
+export async function conclusiones(
+  ai: AI,
+  o: { historial: { fecha: string; antes: string[]; despues: string[] }[]; reglas: string; decididas: string[] },
+): Promise<{ texto: string; regla: string }[]> {
+  const dias = o.historial
+    .map((c) => {
+      const d = DIAS[new Date(c.fecha + "T12:00:00Z").getUTCDay()];
+      return `${d} ${c.fecha}\nLA APP PROPUSO: ${c.antes.join("; ") || "(nada)"}\nLA PERSONA LO DEJÓ ASÍ: ${c.despues.join("; ")}`;
+    })
+    .join("\n\n");
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Analizas cómo una persona corrige el horario que le propone su app, para aprender cómo organiza de verdad su tiempo. " +
+          "Compara lo propuesto con lo que dejó y saca hasta 5 conclusiones CONCRETAS y útiles: horas que mueve, cosas que añade o quita siempre, cuánto duran sus bloques, qué hace ciertos días. " +
+          "Prefiere patrones que se repiten; si solo hay un día, saca solo lo muy claro de ese día de la semana. " +
+          "texto = la conclusión dicha a la persona, en segunda persona y corta (ej.: «Los viernes trabajas de 13:30 a 15:30»). " +
+          "regla = la misma idea escrita como regla de su horario, en primera persona (ej.: «Los viernes trabajo de 13:30 a 15:30.»). " +
+          "No repitas lo que ya dicen sus reglas ni lo ya decidido. No inventes nada que no salga de los cambios. " +
+          'Responde SOLO con JSON: {"conclusiones":[{"texto":"…","regla":"…"}]}',
+      },
+      { role: "user", content: `MIS DÍAS AJUSTADOS:\n${dias.slice(0, 9000)}\n\nMIS REGLAS ACTUALES:\n${o.reglas.slice(0, 3000) || "(ninguna)"}\n\nYA DECIDIDO (no repetir):\n${o.decididas.slice(-30).join("\n") || "(nada)"}` },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { type: "object", properties: { conclusiones: { type: "array", items: { type: "object", properties: { texto: { type: "string" }, regla: { type: "string" } }, required: ["texto", "regla"] } } }, required: ["conclusiones"] },
+    },
+    max_tokens: 900,
+    temperature: 0.2,
+  });
+  const xs = parsed<{ conclusiones: unknown }>(r)?.conclusiones;
+  return Array.isArray(xs)
+    ? xs
+        .map((x: Record<string, unknown>) => ({ texto: String(x?.texto ?? "").trim().slice(0, 200), regla: String(x?.regla ?? "").trim().slice(0, 300) }))
+        .filter((x) => x.texto && x.regla)
+        .slice(0, 5)
+    : [];
+}
