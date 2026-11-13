@@ -2,46 +2,26 @@
 
 import { useState } from "react";
 import { useData, newId } from "@/lib/data";
-import { MES, addD, fdate, mondayOf, pd, today } from "@/lib/dates";
-import { habitColor, last30, sortHabits, streak } from "@/lib/habits";
-import { useWide } from "@/lib/hooks";
-import { AREAS, areaColor, type Area, type Habito } from "@/lib/types";
-import { cssC, toggleHecho } from "@/components/ui";
+import { addD, fdate, today } from "@/lib/dates";
+import { bestStreak, sortHabits, streak } from "@/lib/habits";
+import { AREAS, type Area, type Habito } from "@/lib/types";
+import { toggleHecho } from "@/components/ui";
 
-/**
- * Mapa del hábito: empieza la semana en que lo creaste (o el primer día que lo marcaste)
- * y avanza hacia el futuro. Cuando hoy llega a la última columna, el mapa se desplaza.
- */
-function Heat({ h, weeks, color }: { h: Habito; weeks: number; color: string }) {
-  const t = today();
-  const first = [h.created?.slice(0, 10) || t, ...Object.keys(h.hechos)].sort()[0];
-  let start = mondayOf(first < t ? first : t);
-  const latest = addD(mondayOf(t), -(weeks - 1) * 7);
-  if (start < latest) start = latest; // hoy siempre dentro del mapa
-  const end = addD(start, weeks * 7 - 1);
-  const mes = (d: string) => `${MES[pd(d).getMonth()].slice(0, 3)} ${pd(d).getFullYear()}`;
+/** Los últimos 30 días, de izquierda (hace 29 días) a derecha (hoy) */
+function Mes({ h, t }: { h: Habito; t: string }) {
+  const dias = Array.from({ length: 30 }, (_, i) => addD(t, i - 29));
+  const n = dias.filter((d) => h.hechos[d]).length;
   return (
-    <div className="heat">
-      <div className="hm" style={{ ...cssC(color), ["--w" as string]: weeks }}>
-        {Array.from({ length: weeks * 7 }, (_, i) => {
-          const d = addD(start, i);
-          const cls = [d > t ? "fut" : h.hechos[d] ? "on" : "", d === t ? "tdy" : ""].filter(Boolean).join(" ");
-          return <i key={d} className={cls} title={fdate(d)} />;
-        })}
-      </div>
-      <div className="hlegend">
-        <span>{mes(start)}</span>
-        <span>lunes arriba · domingo abajo</span>
-        <span>{mes(end)}</span>
-      </div>
+    <div className="hb-mes" role="img" aria-label={`Últimos 30 días: ${n} hechos`}>
+      {dias.map((d) => (
+        <i key={d} className={h.hechos[d] ? "on" : d === t ? "tdy" : ""} title={fdate(d)} />
+      ))}
     </div>
   );
 }
 
 export default function Habitos() {
   const { habitos, save, remove } = useData();
-  const wide = useWide();
-  const weeks = wide ? 24 : 18;
   const t = today();
   const [confirm, setConfirm] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -51,28 +31,41 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Marca cada hábito cuando lo hagas. Cada cuadrito es un día y cada columna una semana.</p>
+      <p className="sub">Toca «Marcar hoy» cuando lo hagas. El número grande es cuántos días seguidos llevas.</p>
+      <div className="hy-dots" aria-hidden="true" />
       <div className="habgrid">
         {list.length ? (
           list.map((h) => {
             const on = !!h.hechos[t];
             const s = streak(h);
+            const best = bestStreak(h);
+            const frase = on
+              ? "Hoy ya está ✓"
+              : s > 0
+                ? "Hoy aún no: márcalo y sigue la racha"
+                : best > 0
+                  ? "Empieza otra vez hoy"
+                  : "Hoy es buen día para empezar";
             return (
-              <div className="card habit" key={h.id}>
-                <div className="hhead">
-                  <div className="hname">
-                    {h.name}
-                    <div className="hstats">
-                      <span><b>{s}</b> {s === 1 ? "día" : "días"} de racha</span>
-                      <span><b>{last30(h)}</b> de 30 días</span>
-                    </div>
+              <article className="card hb" key={h.id} aria-labelledby={`hb-${h.id}`}>
+                <div className="hb-top">
+                  <div className={`hb-num${s ? "" : " cero"}`}>
+                    <b>{s}</b>
+                    <span>{s === 1 ? "día" : "días"}</span>
                   </div>
-                  <div className="row" style={{ flex: "none", gap: 6 }}>
-                    <button className={`btn sm${on ? "" : " ghost"}`} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, t))}>
-                      {on ? "Hecho ✓" : "Marcar hoy"}
-                    </button>
-                    <button className="x" aria-label="Borrar hábito" onClick={() => setConfirm(h.id)}>✕</button>
+                  <div className="hb-txt">
+                    <h2 id={`hb-${h.id}`}>{h.name}</h2>
+                    <span>{frase}</span>
+                    {best > s && <span>Tu mejor racha: {best} días</span>}
                   </div>
+                  <button className={`btn sm hb-btn${on ? "" : " ghost"}`} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, t))}>
+                    {on ? "Hecho ✓" : "Marcar hoy"}
+                  </button>
+                </div>
+                <Mes h={h} t={t} />
+                <div className="hb-foot">
+                  <span>Últimos 30 días</span>
+                  <button className="linkbtn hb-del" onClick={() => setConfirm(h.id)}>Borrar</button>
                 </div>
                 {confirm === h.id && (
                   <div className="confirm">
@@ -81,8 +74,7 @@ export default function Habitos() {
                     <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
                   </div>
                 )}
-                <Heat h={h} weeks={weeks} color={habitColor(h, habitos)} />
-              </div>
+              </article>
             );
           })
         ) : (

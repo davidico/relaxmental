@@ -6,9 +6,9 @@ import { useData, newId } from "@/lib/data";
 import { DOW, MES, ds, toMin } from "@/lib/dates";
 import { nowInfo, preachesOn, rolesOn, type Bloque } from "@/lib/schedule";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
-import { habitColor, sortHabits, streak } from "@/lib/habits";
+import { sortHabits } from "@/lib/habits";
 import type { Tarea } from "@/lib/types";
-import { cssC, openTasks, toggleHecho } from "@/components/ui";
+import { openTasks, toggleHecho } from "@/components/ui";
 import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
@@ -32,6 +32,7 @@ export default function Hoy() {
   const blocks = planFor(t);
   const roles = rolesOn(labores, t);
   const [editing, setEditing] = useState(false);
+  const [verDia, setVerDia] = useState(false);
 
   const iglesia = preachesOn(labores, t)
     ? "hoy predicas"
@@ -57,20 +58,28 @@ export default function Hoy() {
       </header>
       <PushBanner />
 
+      <div className="hy-dots" aria-hidden="true" />
+
       <div className="hy-grid">
         <div className="hy-col">
           <NowCard blocks={blocks} minute={minute} />
+          <OneTask day={t} />
+          <HabitRings day={t} />
           <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
-            <div className="hy-sechead">
-              <h2 id="hy-dia">Tu día</h2>
-              <button className="linkbtn" onClick={() => setEditing(true)}>Editar hoy</button>
-            </div>
-            <DayList blocks={blocks} minute={minute} roles={roles} />
+            <button className="hy-allday" aria-expanded={verDia} aria-controls="hy-dia-lista" onClick={() => setVerDia(!verDia)}>
+              <span id="hy-dia">{verDia ? "Ocultar el día" : "Ver todo el día"}</span>
+              <span className="hy-allday-n">{blocks.length} bloques</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            {verDia && (
+              <div id="hy-dia-lista">
+                <DayList blocks={blocks} minute={minute} roles={roles} />
+                <button className="linkbtn" onClick={() => setEditing(true)}>Editar hoy</button>
+              </div>
+            )}
           </section>
         </div>
-        <div className="hy-col">
-          <TodayTasks day={t} />
-          <Habits day={t} />
+        <div className="hy-col hy-side">
           <Capture />
         </div>
       </div>
@@ -178,76 +187,66 @@ function DayList({ blocks, minute, roles }: { blocks: Bloque[]; minute: number; 
   );
 }
 
-/* ---------- Para hoy ---------- */
-function TodayTasks({ day }: { day: string }) {
+/* ---------- Lo único de hoy: una sola tarea a la vista ---------- */
+function OneTask({ day }: { day: string }) {
   const { tareas, save } = useData();
   const startFocus = useFocus();
   const open = openTasks(tareas);
-  const hoy = open.filter((x) => x.due && x.due <= day);
-  const hechasHoy = tareas.filter((x) => x.done && x.due === day);
-  const list: Tarea[] = [...hoy, ...hechasHoy];
+  // Primero lo atrasado, luego lo de hoy
+  const deHoy = open.filter((x) => x.due && x.due <= day).sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.created < b.created ? -1 : 1));
+  const x: Tarea | undefined = deHoy[0];
+  const resto = open.length - (x ? 1 : 0);
   return (
-    <section aria-labelledby="hy-tareas" className="hy-sec">
-      <div className="hy-sechead">
-        <h2 id="hy-tareas">Para hoy</h2>
-        <Link className="linkbtn" href="/tareas">Ver todas ({open.length})</Link>
-      </div>
-      {list.length ? (
-        <ul className="hy-tasks">
-          {list.map((x) => (
-            <li key={x.id} className={x.done ? "done" : ""}>
-              <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={(e) => save("tareas", { ...x, done: e.target.checked })} />
-              <span className="hy-task-b">
-                <label htmlFor={`hy-${x.id}`}>{x.title}</label>
-                {!x.done && x.due && x.due < day && <span className="hy-late">Atrasada</span>}
-                {!x.done && x.step && <span className="hy-step">Primer paso: {x.step}</span>}
-              </span>
-              {!x.done && (
-                <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
-                  10 min
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+    <section aria-labelledby="hy-una" className="hy-sec">
+      <h2 id="hy-una" className="hy-h">Lo único de hoy</h2>
+      {x ? (
+        <div className="hy-one">
+          <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={false} onChange={() => save("tareas", { ...x, done: true })} />
+          <span className="hy-task-b">
+            <label htmlFor={`hy-${x.id}`}>{x.title}</label>
+            {x.due < day && <span className="hy-late">Atrasada</span>}
+            {x.step && <span className="hy-step">Primer paso: {x.step}</span>}
+          </span>
+          <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+            10 min
+          </button>
+        </div>
       ) : (
-        <p className="hy-empty">
-          Nada para hoy.{open.length ? ` Tienes ${open.length} ${open.length === 1 ? "pendiente" : "pendientes"} para otro día.` : " Añade una con el botón +."}
-        </p>
+        <p className="hy-empty">Nada urgente hoy. Respira.</p>
+      )}
+      {resto > 0 && (
+        <Link className="linkbtn hy-more" href="/tareas">
+          {x ? `Ver ${resto === 1 ? "la otra tarea" : `las otras ${resto} tareas`}` : `Ver tus ${resto} tareas para otros días`}
+        </Link>
       )}
     </section>
   );
 }
 
-/* ---------- Hábitos ---------- */
-function Habits({ day }: { day: string }) {
+/* ---------- Hábitos como círculos ---------- */
+function HabitRings({ day }: { day: string }) {
   const { habitos, save } = useData();
   const list = sortHabits(habitos);
   const done = list.filter((h) => h.hechos[day]).length;
+  if (!list.length) return null;
   return (
     <section aria-labelledby="hy-hab" className="hy-sec">
       <div className="hy-sechead">
-        <h2 id="hy-hab">Hábitos</h2>
-        {list.length > 0 && <span className="hy-count">{done} de {list.length}</span>}
+        <h2 id="hy-hab" className="hy-h">Hábitos</h2>
+        <span className="hy-count">{done} de {list.length}</span>
       </div>
-      {list.length ? (
-        <div className="hy-habits">
-          {list.map((h) => {
-            const on = !!h.hechos[day];
-            const s = streak(h, day);
-            return (
-              <button key={h.id} aria-pressed={on} style={cssC(habitColor(h, habitos))} onClick={() => save("habitos", toggleHecho(h, day))}>
-                {on ? <Check size={18} color="#e3c46f" /> : <span className="hy-hdot" aria-hidden="true" />}
-                {h.name}
-                {s > 1 && <span className="hy-streak"> · {s} días</span>}
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="hy-empty">Añade tus hábitos en la sección <Link href="/habitos">Hábitos</Link>.</p>
-      )}
+      <div className="hy-rings">
+        {list.map((h) => {
+          const on = !!h.hechos[day];
+          return (
+            <button key={h.id} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, day))}>
+              <span className="hy-ring" aria-hidden="true">{on && <Check size={20} />}</span>
+              <span className="hy-ring-l">{h.name}</span>
+            </button>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -255,7 +254,7 @@ function Habits({ day }: { day: string }) {
 /* ---------- Sácalo de la cabeza (solo escritorio; en el celular está en el botón +) ---------- */
 function Capture() {
   const { carpetas, save } = useData();
-  const [folder, setFolder] = useState("ideas");
+  const [folder, setFolder] = useState("notas");
   const [text, setText] = useState("");
   const [saved, setSaved] = useState(false);
   const guardar = () => {

@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.4";
-export const VERSION_FECHA = "12 de noviembre de 2026";
+export const VERSION = "1.5";
+export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hoy nuevo, «una cosa a la vez»: lo de ahora, lo único de hoy y tus hábitos en círculos; el resto del día, al tocar",
+  "Hábitos con tu racha en grande y los últimos 30 días",
   "Estilo de papel, como tu hoja: letra Atkinson (fácil de leer) con títulos en Inter",
   "Cerebro por secciones: Notas a la vista, como Google Keep, con notas de texto o de lista",
   "Secciones privadas (Espiritual): no se ven al abrir Cerebro, solo desde el menú de secciones",

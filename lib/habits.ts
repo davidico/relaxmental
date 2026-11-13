@@ -30,3 +30,16 @@ export function habitColor(h: Habito, all: Habito[]) {
   const i = sortHabits(all).findIndex((x) => x.id === h.id);
   return HABIT_COLORS[(i < 0 ? 0 : i) % HABIT_COLORS.length];
 }
+
+/** La racha más larga de toda la historia del hábito */
+export function bestStreak(h: Habito) {
+  let best = 0;
+  let run = 0;
+  let prev = "";
+  for (const d of Object.keys(h.hechos).filter((k) => h.hechos[k]).sort()) {
+    run = prev && addD(prev, 1) === d ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = d;
+  }
+  return best;
+}
