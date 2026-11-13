@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 1.1, 1.2… */
-export const VERSION = "1.6";
+export const VERSION = "1.7";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Cerebro en cuadros: las tarjetas van seguidas, sin huecos entre meses",
   "Notas nuevas como en Google Keep: hoja limpia y opciones arriba a la derecha; al volver se guardan solas",
   "Buscar con ordenar y vista (cuadros o una debajo de otra) dentro de la barra",
   "Tarjetas parejas en Cerebro, en orden de izquierda a derecha",

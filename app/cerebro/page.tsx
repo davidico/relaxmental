@@ -98,7 +98,7 @@ export default function Cerebro() {
   const mezcla = new Set(list.map((n) => n.folder)).size > 1;
   const groups: { label: string; items: { n: Nota; i: number }[] }[] = [];
   list.forEach((n, i) => {
-    const label = orden === "az" || !n.created ? "" : monthLabel(n.created);
+    const label = vista === "grid" || orden === "az" || !n.created ? "" : monthLabel(n.created); // en cuadros, todo seguido
     const g = groups[groups.length - 1];
     if (g && g.label === label) g.items.push({ n, i });
     else groups.push({ label, items: [{ n, i }] });
