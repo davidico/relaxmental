@@ -21,13 +21,41 @@ export default function VoiceButton({ onText, onTitle, compact }: { onText: (par
   const audio = useRef<Blob | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelled = useRef(false);
+  /** La grabación se cortó sola (pantalla bloqueada, otra app usó el micrófono…) */
+  const [cortada, setCortada] = useState(false);
+  const wake = useRef<{ release: () => Promise<void> } | null>(null);
 
   useEffect(() => () => stopAll(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Mientras se graba, la pantalla no se apaga sola. Si la app pasa a segundo plano
+     (pantalla bloqueada), se corta y se pasa a texto lo grabado hasta ese momento. */
+  async function pedirPantalla() {
+    try {
+      const wl = (navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }).wakeLock;
+      if (wl) wake.current = await wl.request("screen");
+    } catch {}
+  }
+  function soltarPantalla() {
+    wake.current?.release().catch(() => {});
+    wake.current = null;
+  }
+  useEffect(() => {
+    if (st !== "rec") return;
+    const vis = () => {
+      if (document.visibilityState === "hidden" && rec.current?.state === "recording") {
+        setCortada(true);
+        stop();
+      }
+    };
+    document.addEventListener("visibilitychange", vis);
+    return () => document.removeEventListener("visibilitychange", vis);
+  }, [st]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function stopAll() {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
     rec.current?.stream.getTracks().forEach((t) => t.stop());
+    soltarPantalla();
   }
 
   async function start() {
@@ -41,10 +69,20 @@ export default function VoiceButton({ onText, onTitle, compact }: { onText: (par
     }
     parts.current = [];
     cancelled.current = false;
+    setCortada(false);
+    void pedirPantalla();
+    /* Si el sistema corta el micrófono, guardar lo grabado */
+    stream.getAudioTracks().forEach((t) => (t.onended = () => {
+      if (rec.current?.state === "recording") {
+        setCortada(true);
+        stop();
+      }
+    }));
     const r = new MediaRecorder(stream);
     r.ondataavailable = (e) => e.data.size && parts.current.push(e.data);
     r.onstop = () => {
       stream.getTracks().forEach((t) => t.stop());
+      soltarPantalla();
       if (cancelled.current) return setSt("idle");
       audio.current = new Blob(parts.current, { type: r.mimeType || "audio/webm" });
       void transcribe();
@@ -112,7 +150,7 @@ export default function VoiceButton({ onText, onTitle, compact }: { onText: (par
     return (
       <button type="button" className="nv-ib ke-ib" aria-label="Dictar" title="Dictar" onClick={start}>{mic}</button>
     );
-  if (compact && st === "done")
+  if (compact && st === "done" && !cortada)
     return (
       <>
         <button type="button" className="nv-ib ke-ib" aria-label="Dictar otra vez" title="Dictar" onClick={start}>{mic}</button>
@@ -147,7 +185,8 @@ export default function VoiceButton({ onText, onTitle, compact }: { onText: (par
           {compact && <button type="button" className="btn ghost sm" onClick={() => setSt("idle")}>Cerrar</button>}
           {st === "denied" && <span className="verr">⚠ El micrófono está bloqueado. Permítelo en los ajustes del navegador.</span>}
           {st === "error" && <span className="verr">⚠ {prog || "Este navegador no puede grabar audio."}</span>}
-          {st === "done" && <span className="vok">✓ Texto añadido. Revísalo antes de guardar.</span>}
+          {st === "done" && !cortada && <span className="vok">✓ Texto añadido. Revísalo antes de guardar.</span>}
+          {st === "done" && cortada && <span className="vwarn-txt">⚠ La grabación se cortó (se bloqueó la pantalla). Lo dictado hasta ahí ya está añadido: toca «Dictar» para seguir.</span>}
         </>
       )}
     </div>

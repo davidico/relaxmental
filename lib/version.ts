@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "2.0";
+export const VERSION = "2.1";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Al dictar, la pantalla no se apaga; y si se bloquea, se guarda lo que alcanzaste a dictar",
   "Dictar también en tus reglas del horario",
   "Calendario: el día de hoy vuelve a estar centrado en su círculo",
   "Fecha y hora de la tarea con un calendario, como en Google Tasks",

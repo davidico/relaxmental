@@ -1160,3 +1160,4 @@ h1{font-weight:700;letter-spacing:-.02em}
 .ts-hint{margin:0;font-size:14px}
 /* Calendario: el número siempre centrado en su círculo */
 .wd-day{display:grid;place-items:center;padding:0;line-height:1;min-height:0}
+.vwarn-txt{color:var(--gold-ink);font-weight:600;font-size:15px}
