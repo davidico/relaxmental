@@ -55,22 +55,19 @@ const LS = "mi-semana-v1";
 export const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
 
+/* Para una cuenta nueva: hábitos generales (cada persona los cambia en Hábitos) */
 const DEFAULT_HABITS: Array<Pick<Habito, "name" | "area">> = [
-  { name: "Pastillas", area: "salud" },
-  { name: "Escudriñar la Biblia", area: "iglesia" },
-  { name: "Alemán", area: "aleman" },
   { name: "Ejercicio", area: "salud" },
-  { name: "Tiempo con mi bebé", area: "familia" },
+  { name: "Leer", area: "casa" },
+  { name: "Dormir a tiempo", area: "salud" },
 ];
 const seedHabits = (): Habito[] =>
   DEFAULT_HABITS.map((h, i) => ({ ...h, id: newId(), orden: i, hechos: {}, created: new Date().toISOString() }));
 
-/* Secciones de inicio del segundo cerebro: Notas a la vista; Espiritual privada con Sueños y Profecías */
+/* Secciones de inicio del segundo cerebro para una cuenta nueva: Notas a la vista y el Diario privado */
 const DEFAULT_FOLDERS: Array<Omit<Carpeta, "created">> = [
   { id: "notas", name: "Notas", parent: null, area: "trabajo", orden: 0, v: 2 },
-  { id: "espiritual", name: "Espiritual", parent: null, area: "iglesia", orden: 1, privada: true },
-  { id: "suenos", name: "Sueños", parent: "espiritual", area: "iglesia", orden: 0 },
-  { id: "profecias", name: "Profecías", parent: "espiritual", area: "iglesia", orden: 1 },
+  { id: "diario", name: "Diario", parent: null, area: "familia", orden: 1, privada: true },
 ];
 const seedFolders = (): Carpeta[] => DEFAULT_FOLDERS.map((f) => ({ ...f, created: new Date().toISOString() }));
 

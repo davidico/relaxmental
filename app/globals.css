@@ -1429,3 +1429,4 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hm-b{display:flex;gap:6px}
 .hm-box .row.actions{margin-top:0}
 .pl-dia{display:flex;flex-direction:column}.pl-lados{flex:none}.pl-tareas{flex:1}
+.hy-empty a{color:var(--pine);font-weight:700;text-underline-offset:3px}
