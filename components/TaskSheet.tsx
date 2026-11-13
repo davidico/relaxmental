@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate } from "@/lib/dates";
-import { DueChoice } from "./ui";
+import WhenDialog from "./WhenDialog";
 
 /**
  * Nueva tarea, como Google Tasks: un solo campo. Debajo, íconos para añadir el primer paso
@@ -20,6 +20,7 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
   const [verCuando, setVerCuando] = useState(false);
   const [guardadas, setGuardadas] = useState(0);
   const titleRef = useRef<HTMLInputElement>(null);
+  const stepRef = useRef<HTMLInputElement>(null);
   const [permiso, setPermiso] = useState<NotificationPermission | "no">("default");
 
   useEffect(() => {
@@ -60,33 +61,44 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
         {verPaso && (
           <>
             <label htmlFor="ts-step" className="sr-only">Primer paso</label>
-            <input id="ts-step" className="ts-step" enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
+            <input ref={stepRef} id="ts-step" className="ts-step" autoFocus enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
           </>
         )}
-        {verCuando && (
-          <div className="ts-when">
-            <DueChoice id="ts-due" value={due} onChange={setDue} />
-            <div className="ts-hora">
-              <label htmlFor="ts-h">Hora</label>
-              <input id="ts-h" type="time" value={hora} disabled={!due} onChange={(e) => setHora(e.target.value)} />
-              {hora && <button type="button" className="linkbtn" onClick={() => setHora("")}>Quitar hora</button>}
-            </div>
-            {hora && permiso !== "granted" && (
-              <p className="hint">Para que te avise a esa hora, activa los avisos en la pantalla Hoy.</p>
-            )}
-          </div>
-        )}
+        {hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
         <div className="ts-bar">
-          <button type="button" className="nv-ib ke-ib" aria-label="Añadir primer paso" title="Primer paso" aria-pressed={verPaso} onClick={() => setVerPaso(!verPaso)}>
+          <button
+            type="button"
+            className="nv-ib ke-ib"
+            aria-label="Añadir primer paso"
+            title="Primer paso"
+            aria-pressed={verPaso}
+            onPointerDown={(e) => e.preventDefault() /* no quitar el foco: el teclado sigue abierto */}
+            onClick={() => {
+              if (verPaso && !step.trim()) {
+                setVerPaso(false);
+                titleRef.current?.focus();
+              } else if (verPaso) stepRef.current?.focus();
+              else setVerPaso(true);
+            }}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
           </button>
-          <button type="button" className="nv-ib ke-ib" aria-label="Fecha y hora" title="Fecha y hora" aria-pressed={verCuando} onClick={() => setVerCuando(!verCuando)}>
+          <button type="button" className="nv-ib ke-ib" aria-label="Fecha y hora" title="Fecha y hora" aria-pressed={verCuando} onClick={() => setVerCuando(true)}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
           </button>
-          <button type="button" className="ts-chip" onClick={() => setVerCuando(!verCuando)}>{cuando}</button>
+          <button type="button" className="ts-chip" onClick={() => setVerCuando(true)}>{cuando}</button>
           <span style={{ flex: 1 }} />
           <button type="submit" className="ts-save" disabled={!title.trim()}>Guardar</button>
         </div>
+        {verCuando && (
+          <WhenDialog
+            due={due}
+            hora={hora}
+            hoy={hoy}
+            onCancel={() => { setVerCuando(false); titleRef.current?.focus(); }}
+            onDone={(d, h) => { setDue(d); setHora(h); setVerCuando(false); titleRef.current?.focus(); }}
+          />
+        )}
         <p className="ts-ok" role="status">{guardadas > 0 ? `✓ ${guardadas === 1 ? "Tarea guardada" : `${guardadas} tareas guardadas`}. Escribe otra o toca fuera para cerrar.` : ""}</p>
       </form>
     </div>
