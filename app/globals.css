@@ -1258,3 +1258,17 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hora-grid button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);font-weight:700}
 .hora-grid button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
 .cmp-fila .hora-btn{width:100%}
+
+/* ---------- Versión 2.9: fondo blanco (sin tono crema) en modo claro ---------- */
+:root{
+  --bg:#ffffff; --surface:#ffffff; --side:#ffffff; --rocio:#f4f4f2;
+  --line:#e6e6e2; --cell:#efefec; --stone:#dcdcd6; --muted:#5e5e58;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1b1c18; --surface:#23241f; --side:#1f201b; --rocio:#26271f;
+  --line:#34352d; --cell:#2b2c25; --stone:#3e3f36; --muted:#aaa596;
+}}
+:root[data-theme="dark"]{
+  --bg:#1b1c18; --surface:#23241f; --side:#1f201b; --rocio:#26271f;
+  --line:#34352d; --cell:#2b2c25; --stone:#3e3f36; --muted:#aaa596;
+}

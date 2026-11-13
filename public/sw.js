@@ -45,7 +45,7 @@ self.addEventListener("fetch", (e) => {
 /* Si no hay red ni copia guardada: una pantalla en español con salida, en vez del error en blanco */
 function offline(path) {
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi Semana</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#f5f4ee;color:#1f2316;padding:24px;box-sizing:border-box}
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:#ffffff;color:#1f2316;padding:24px;box-sizing:border-box}
 main{max-width:360px}h1{font-size:24px;margin:0 0 8px}p{color:#5c6150;margin:0 0 20px}
 a{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;border-radius:12px;background:#4a5524;color:#fff;font-weight:700;text-decoration:none;margin:0 8px 8px 0}
 a.g{background:#fff;color:#1f2316;border:1px solid #e6e4d8}

@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   // Con el teclado abierto, la pantalla se encoge (así la barra de arriba de las notas no se esconde)
   interactiveWidget: "resizes-content",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f5ee" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#1b1c18" },
   ],
 };
