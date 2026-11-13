@@ -6,6 +6,7 @@ import { addD, fdate, today } from "@/lib/dates";
 import { bestStreak, sortHabits, streak } from "@/lib/habits";
 import { AREAS, type Area, type Habito } from "@/lib/types";
 import { toggleHecho } from "@/components/ui";
+import Entreno from "@/components/Entreno";
 
 /** Los últimos 30 días, de izquierda (hace 29 días) a derecha (hoy) */
 function Mes({ h, t }: { h: Habito; t: string }) {
@@ -24,13 +25,20 @@ export default function Habitos() {
   const { habitos, save, remove } = useData();
   const t = today();
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [entreno, setEntreno] = useState(false);
   const [name, setName] = useState("");
   const [area, setArea] = useState<Area>("salud");
   const list = sortHabits(habitos);
 
   return (
     <>
-      <h1>Hábitos</h1>
+      <div className="hb-head">
+        <h1>Hábitos</h1>
+        <button className="btn hb-entrenar" onClick={() => setEntreno(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg> Entrenar
+        </button>
+      </div>
+      {entreno && <Entreno onClose={() => setEntreno(false)} />}
       <p className="sub">Toca el círculo cuando lo hagas. El número grande es cuántos días seguidos llevas.</p>
       <div className="hy-dots" aria-hidden="true" />
       <div className="habgrid">

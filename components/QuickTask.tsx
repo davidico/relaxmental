@@ -7,8 +7,9 @@ import { useWide } from "@/lib/hooks";
 import { DueChoice } from "./ui";
 import NoteView from "./NoteView";
 import TaskSheet from "./TaskSheet";
+import Entreno from "./Entreno";
 
-type Mode = "task" | "note" | null;
+type Mode = "task" | "note" | "entreno" | null;
 
 /**
  * Botón flotante.
@@ -62,6 +63,9 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
           {menu && <div className="dial-backdrop" onClick={() => setMenu(false)} />}
           {menu && (
             <div className="dial" role="menu">
+              <button role="menuitem" onClick={() => open("entreno")}>
+                <span className="dial-ico" aria-hidden="true">▶</span> Entrenar
+              </button>
               <button role="menuitem" onClick={() => open("note")}>
                 <span className="dial-ico" aria-hidden="true">✎</span> Nueva nota
               </button>
@@ -76,6 +80,7 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
         </>
       )}
 
+      {mode === "entreno" && <Entreno onClose={close} />}
       {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
       {mode === "task" && <TaskSheet onClose={close} />}
     </>

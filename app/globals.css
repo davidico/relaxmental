@@ -1311,3 +1311,7 @@ h1{font-weight:700;letter-spacing:-.02em}
 .en-btn{min-height:64px;width:100%;border-radius:16px;border:none;background:#fff;color:#1b1c18;font:inherit;font-family:var(--display);font-size:22px;font-weight:800;cursor:pointer}
 .en-btn:focus-visible,.en-x:focus-visible{outline:3px solid #f7d98a;outline-offset:3px}
 @media (min-width:900px){.en-run{left:104px}}
+.hb-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hb-head h1{margin-bottom:4px}
+.hb-entrenar{display:inline-flex;align-items:center;gap:8px;min-height:44px;flex:none}
+.hb-entrenar svg{width:16px;height:16px;fill:currentColor}
