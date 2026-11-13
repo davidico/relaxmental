@@ -19,6 +19,17 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
   const edited = !!dias[date];
   const d = pd(date);
 
+  /* Con el teclado abierto, la cabecera y el pie se encogen para dejar sitio a lo que escribes */
+  const [teclado, setTeclado] = useState(false);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const r = () => setTeclado(vv.height < window.innerHeight * 0.78);
+    r();
+    vv.addEventListener("resize", r);
+    return () => vv.removeEventListener("resize", r);
+  }, []);
+
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     addEventListener("keydown", k);
@@ -51,7 +62,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-labelledby="ed-title" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet">
+      <div className={`sheet ed-sheet${teclado ? " kb" : ""}`}>
         <div className="sheet-head">
           <div>
             <h2 id="ed-title" className="sheet-title">Editar {DOW[d.getDay()].toLowerCase()} {d.getDate()} de {MES[d.getMonth()]}</h2>
@@ -80,16 +91,15 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
           {tareasDia.length > 0 && (
             <p className="hint">También este día, por tus tareas con hora: {tareasDia.map((b) => `${b.s} ${b.t}`).join(" · ")}. Se cambian en la tarea.</p>
           )}
-        </div>
-
-        <div className="sheet-foot">
+          <p className="ed-tipo">La app aprende de tus cambios y te propondrá mejoras para tus días.</p>
           {edited && (
-            <button className="btn ghost" onClick={() => { saveDia(date, null); onClose(); }}>
+            <button className="btn ghost sm" style={{ alignSelf: "flex-start" }} onClick={() => { saveDia(date, null); onClose(); }}>
               Volver al automático
             </button>
           )}
-          <p className="ed-tipo">La app aprende de tus cambios y te propondrá mejoras para tus días.</p>
-          <span style={{ flex: 1 }} />
+        </div>
+
+        <div className="sheet-foot">
           {!valid && <span className="ed-warn" role="status">Revisa: cada bloque necesita nombre y terminar después de empezar.</span>}
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
           <button

@@ -1327,3 +1327,13 @@ h1{font-weight:700;letter-spacing:-.02em}
 .ed-tipo{font-size:14px;color:var(--muted);cursor:default}
 .hy-aviso a.btn{color:var(--on-primary)}
 .hy-grid .hy-aviso{order:3;margin-bottom:0}
+
+/* Editor del día: el pie solo con Cancelar y Guardar; con teclado abierto, todo más compacto */
+.ed-sheet .sheet-foot{justify-content:flex-end;flex-wrap:nowrap}
+.ed-sheet .sheet-foot .ed-warn{flex:1;min-width:0}
+.ed-list .ed-tipo{margin:6px 0 0}
+.ed-sheet.kb .sheet-head{padding-top:8px;padding-bottom:6px}
+.ed-sheet.kb .sheet-title{font-size:18px}
+.ed-sheet.kb .sheet-head .sub{display:none}
+.ed-sheet.kb .sheet-foot{padding-top:6px;padding-bottom:6px}
+.ed-sheet.kb .sheet-foot .ed-warn{font-size:14px}
