@@ -76,7 +76,8 @@ export function HabitChips({ date }: { date: string }) {
   );
 }
 
-export const openTasks = (t: Tarea[]) => t.filter((x) => !x.done).sort((a, b) => ((a.due || "9") < (b.due || "9") ? -1 : 1));
+export const openTasks = (t: Tarea[]) =>
+  t.filter((x) => !x.done).sort((a, b) => ((a.due || "9") + (a.hora || "99") < (b.due || "9") + (b.hora || "99") ? -1 : 1));
 /** Pendientes para hoy (incluye las atrasadas) y el resto */
 export function splitTasks(t: Tarea[], day = today()) {
   const open = openTasks(t);
@@ -115,7 +116,7 @@ export function TaskRow({ x }: { x: Tarea }) {
           {x.due && !x.done && x.due < t ? (
             <span className="chip late">Atrasada · {fdate(x.due)}</span>
           ) : x.due ? (
-            <span className="chip" style={cssC(x.due === t ? "var(--sage)" : "var(--stone)")}>{x.due === t ? "Hoy" : fdate(x.due)}</span>
+            <span className="chip" style={cssC(x.due === t ? "var(--sage)" : "var(--stone)")}>{x.due === t ? "Hoy" : fdate(x.due)}{x.hora ? ` · ${x.hora}` : ""}</span>
           ) : null}
           {x.area && x.area in AREAS && <span className="chip" style={cssC(areaColor(x.area))}>{AREAS[x.area as keyof typeof AREAS]}</span>}
           {!x.done && (

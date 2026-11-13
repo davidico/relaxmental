@@ -240,6 +240,30 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
     // Si no llegó a ningún teléfono por un fallo pasajero, se quita la marca y se reintenta el minuto siguiente
     if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
   }
+
+  /* Tareas con hora: aviso a esa hora (una sola vez) */
+  const { results: ts } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(user_email).all<{ data: string }>();
+  for (const r of ts) {
+    let x: { id?: string; title?: string; step?: string; due?: string; hora?: string; done?: boolean } | null = null;
+    try {
+      x = JSON.parse(r.data);
+    } catch {
+      continue;
+    }
+    if (!x || x.done || x.due !== date || typeof x.hora !== "string" || !/^\d{2}:\d{2}$/.test(x.hora) || typeof x.title !== "string") continue;
+    const m = toMin(x.hora);
+    if (!(m <= min && min - m < 10)) continue;
+    const key = `tarea ${x.id} ${date} ${x.hora}`;
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes === 0) continue;
+    const { sent, failed } = await notifyUser(env, user_email, {
+      title: `${x.hora} · ${x.title}`,
+      body: x.step ? `Tarea. Primer paso: ${x.step}` : "Es la hora de esta tarea.",
+      tag: `tarea-${x.id}`,
+      url: "/hoy",
+    });
+    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  }
 }
 
 /** Cada minuto: si un bloque empezó hace menos de 10 min y no se avisó, se avisa (una sola vez). */

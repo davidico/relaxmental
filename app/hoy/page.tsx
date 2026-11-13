@@ -193,7 +193,7 @@ function OneTask({ day }: { day: string }) {
   const startFocus = useFocus();
   const open = openTasks(tareas);
   // Primero lo atrasado, luego lo de hoy
-  const deHoy = open.filter((x) => x.due && x.due <= day).sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.created < b.created ? -1 : 1));
+  const deHoy = open.filter((x) => x.due && x.due <= day).sort((a, b) => (a.due + (a.hora || "99") < b.due + (b.hora || "99") ? -1 : a.due + (a.hora || "99") > b.due + (b.hora || "99") ? 1 : a.created < b.created ? -1 : 1));
   const x: Tarea | undefined = deHoy[0];
   const resto = open.length - (x ? 1 : 0);
   return (
@@ -205,6 +205,7 @@ function OneTask({ day }: { day: string }) {
           <span className="hy-task-b">
             <label htmlFor={`hy-${x.id}`}>{x.title}</label>
             {x.due < day && <span className="hy-late">Atrasada</span>}
+            {x.hora && x.due === day && <span className="hy-step">A las {x.hora}</span>}
             {x.step && <span className="hy-step">Primer paso: {x.step}</span>}
           </span>
           <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>

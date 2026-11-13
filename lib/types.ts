@@ -7,6 +7,8 @@ export interface Tarea {
   step: string;
   area?: Area | ""; // tareas antiguas; las nuevas no llevan categoría
   due: string; // AAAA-MM-DD o ""
+  /** Hora del aviso (HH:MM), opcional */
+  hora?: string;
   done: boolean;
   created: string;
 }

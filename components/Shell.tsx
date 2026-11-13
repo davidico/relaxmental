@@ -63,6 +63,22 @@ function Frame({ children }: { children: ReactNode }) {
   const hc = carpetas.find((c) => c.id === hash.split("/")[0]);
   const topOfHash = hc ? (hc.parent ?? hc.id) : "";
   const [focus, setFocus] = useState<Tarea | null>(null);
+  /* Alto visible real (sin el teclado), para que las hojas a pantalla completa no se escondan */
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const set = () => {
+      document.documentElement.style.setProperty("--vvh", `${vv.height}px`);
+      document.documentElement.style.setProperty("--vvt", `${vv.offsetTop}px`);
+    };
+    set();
+    vv.addEventListener("resize", set);
+    vv.addEventListener("scroll", set);
+    return () => {
+      vv.removeEventListener("resize", set);
+      vv.removeEventListener("scroll", set);
+    };
+  }, []);
   const wide = path === "/semana";
   const status =
     mode === "local" ? "Guardado en este navegador" : mode === "loading" ? "Cargando…" : offline ? "Sin conexión" : pendientes ? "Guardando…" : "Guardado en la nube";

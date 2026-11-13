@@ -6,6 +6,7 @@ import { today } from "@/lib/dates";
 import { useWide } from "@/lib/hooks";
 import { DueChoice } from "./ui";
 import NoteView from "./NoteView";
+import TaskSheet from "./TaskSheet";
 
 type Mode = "task" | "note" | null;
 
@@ -76,34 +77,7 @@ export default function QuickTask() {
       )}
 
       {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
-      {mode === "task" && (
-        <div className="modal" role="dialog" aria-modal="true" aria-labelledby="qt-title" onClick={(e) => e.target === e.currentTarget && close()}>
-          <div className="sheet" style={{ maxWidth: 560 }}>
-            <div className="sheet-head">
-              <h2 id="qt-title" className="sheet-title">Nueva tarea</h2>
-              <button className="x" aria-label="Cerrar" onClick={close}>✕</button>
-            </div>
-              <form
-                className="add sheet-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!f.title.trim()) return;
-                  save("tareas", { id: newId(), title: f.title.trim(), step: f.step.trim(), due: f.due, done: false, created: new Date().toISOString() });
-                  setF({ ...f, title: "", step: "" });
-                  setDone(true);
-                }}
-              >
-                <input id="qt-name" autoFocus required placeholder="Qué hay que hacer" value={f.title} onChange={(e) => { setF({ ...f, title: e.target.value }); setDone(false); }} />
-                <input id="qt-step" placeholder="Primer paso de 2 minutos (opcional)" value={f.step} onChange={(e) => setF({ ...f, step: e.target.value })} />
-                <DueChoice id="qt-due" value={f.due} onChange={(due) => setF({ ...f, due })} />
-                <div className="row" style={{ alignItems: "center" }}>
-                  <button className="btn" type="submit" style={{ flex: "none" }}>Guardar tarea</button>
-                  {done && <span className="saved" role="status">Guardada ✓ Puedes añadir otra.</span>}
-                </div>
-              </form>
-          </div>
-        </div>
-      )}
+      {mode === "task" && <TaskSheet onClose={close} />}
     </>
   );
 }
