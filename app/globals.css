@@ -1186,3 +1186,25 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hy-aviso>.btn{align-self:flex-start;min-height:48px}
 .hy-aviso .row.actions{margin-top:2px}
 .hy-aviso a.btn{text-decoration:none;display:inline-flex;align-items:center}
+
+/* ---------- Versión 2.5: compromisos y semana tipo ---------- */
+.rules-h{margin:0 0 6px;font-size:17px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.cmp{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.cmp .hint,.st-box .hint{margin:0}
+.cmp-rev{display:flex;flex-direction:column;gap:10px}
+.cmp-fila{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;position:relative}
+.cmp-fila label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700;color:var(--muted)}
+.cmp-fila .cmp-t{grid-column:1/-1}
+.cmp-x{position:absolute;top:4px;right:4px}
+.cmp-fila label:first-of-type{padding-right:40px}
+.cmp-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cmp-lista li{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line);align-items:start}
+.cmp-dia{font-weight:700;font-size:15px;padding-top:9px}
+.cmp-evs{display:flex;flex-direction:column}
+.cmp-ev{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:15px;line-height:1.35}
+.st-box{display:flex;flex-direction:column;gap:8px;padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.st-h2{margin-bottom:10px}
+@media (min-width:900px){.cmp-fila{grid-template-columns:160px 1fr 120px 120px 40px;align-items:end}.cmp-fila .cmp-t{grid-column:auto}.cmp-x{position:static}.cmp-fila label:first-of-type{padding-right:0}}
+.cmp-fila{min-width:0}.cmp-fila input{min-width:0;width:100%;box-sizing:border-box}
+.cmp-fila>label{min-width:0}.cmp-fila{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}@media (min-width:900px){.cmp-fila{grid-template-columns:160px minmax(0,1fr) 120px 120px 40px}}
+@media (max-width:899px){.cmp-fila label:first-of-type{grid-column:1/-1}.cmp-fila label:first-of-type input{max-width:220px}}

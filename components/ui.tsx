@@ -2,7 +2,7 @@
 
 import { useData } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
-import type { Bloque } from "@/lib/schedule";
+import type { Bloque } from "@/lib/plan";
 import { AREAS, areaColor, type Habito, type Tarea } from "@/lib/types";
 import { habitColor, sortHabits, streak } from "@/lib/habits";
 import { toMin } from "@/lib/dates";

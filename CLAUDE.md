@@ -15,7 +15,8 @@ El repositorio es **público**: no subas datos personales de David (salud, famil
 - Sin sesión la app guarda en localStorage (`mi-semana-v1`); así se prueba en local.
 
 ## Piezas clave
-- `lib/schedule.ts`: horario automático por reglas. `data/labores.json`: labores de la iglesia por fecha (David manda capturas de "Mi mes" de Labores Berlín).
+- `lib/plan.ts`: el horario de cada persona, sin nada fijo en el código: `perfil/plantilla` (semana tipo, la arma la IA con sus reglas en `/api/ai/plantilla`), `perfil/eventos` (compromisos con fecha: iglesia, turnos…; se suben con foto en Perfil › Mis compromisos vía `/api/ai/compromisos`) y `dias` (días ajustados a mano). `planDe()` lo junta; lo usan la app y los avisos del Worker.
+- Perfil (D1 `items`, tabla `perfil`): `reglas`, `revision` (mes revisado), `plantilla`, `eventos`, `reglasRespaldo`. La app sirve para cualquiera: no escribas rutinas ni datos de nadie en el código.
 - `app/hoy/page.tsx` (pantalla principal, diseñada en Claude Design), `app/cerebro`, `app/tareas`, `app/habitos`, `app/semana`, `app/perfil`.
 - `components/QuickTask.tsx` (botón +), `VoiceButton.tsx`, `PushBanner.tsx`, `DayEditor.tsx`, `RichEditor.tsx`.
 - Íconos: `public/icon.svg` y PNGs. El manifest apunta a los íconos en jsDelivr con un sha fijo (la app está detrás de Access y Android necesita íconos públicos): si cambian, commit, luego actualizar el sha en `public/manifest.webmanifest` y otro commit.

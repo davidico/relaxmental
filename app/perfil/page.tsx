@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
-import type { Bloque } from "@/lib/schedule";
+import type { Bloque } from "@/lib/plan";
 import VoiceButton from "@/components/VoiceButton";
+import Compromisos from "@/components/Compromisos";
+import { armarPlantilla } from "@/lib/imagen";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
 import { NOVEDADES, VERSION, VERSION_FECHA } from "@/lib/version";
 
@@ -19,6 +21,16 @@ export default function Perfil() {
   const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
   const [editando, setEditando] = useState(false);
   const [quiz, setQuiz] = useState(false);
+  const [tipo, setTipo] = useState<"" | "armando" | "ok" | "error">("");
+  const armarTipo = async () => {
+    setTipo("armando");
+    try {
+      savePerfil("plantilla", await armarPlantilla(guardadas));
+      setTipo("ok");
+    } catch {
+      setTipo("error");
+    }
+  };
   const [quizModo, setQuizModo] = useState<Modo>("completar");
   const [confirmCero, setConfirmCero] = useState(false);
   const [pendiente, setPendiente] = useState(false);
@@ -144,7 +156,7 @@ export default function Perfil() {
         {estado === "ok" && !todas && <p role="status" className="vok">✓ Reglas guardadas</p>}
         <div id="reglas-zona">
         {(todas || editando) && <p className="hint">
-          Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las usa para armar tu semana. Tus labores de la iglesia y tus tareas pendientes se añaden solas.
+          Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las usa para armar tu semana. Tus compromisos con fecha y tus tareas pendientes se añaden solos.
         </p>}
         {editando ? (
           <>
@@ -194,12 +206,31 @@ export default function Perfil() {
       </section>
       {quiz && <RulesQuiz modo={quizModo} reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
 
+      <Compromisos />
+
       <h2 id="ia-h">Armar mi semana con IA</h2>
       <section className="card pad" aria-labelledby="ia-h">
         {!cloud ? (
           <p className="hint">Para usar la IA tienes que haber iniciado sesión.</p>
         ) : (
           <>
+            <div className="st-box">
+              <h3 className="rules-h">Mi semana tipo</h3>
+              <p className="hint">
+                {perfil.plantilla && Object.keys(perfil.plantilla).length
+                  ? "Ya tienes tu semana tipo: un día típico de lunes a domingo. Tus compromisos se añaden encima."
+                  : "Un día típico de lunes a domingo, armado con tus reglas. Es la base de tu horario."}
+              </p>
+              <div className="row actions">
+                <button className="btn" onClick={armarTipo} disabled={tipo === "armando" || !guardadas.trim()}>
+                  {tipo === "armando" ? "Armando tu semana…" : perfil.plantilla ? "Volver a armarla" : "Armar mi semana tipo"}
+                </button>
+                {!guardadas.trim() && <span className="hint">Primero escribe tus reglas.</span>}
+                {tipo === "ok" && <span className="vok" role="status">✓ Semana tipo lista</span>}
+                {tipo === "error" && <span className="verr" role="alert">⚠ No se pudo armar. Inténtalo otra vez.</span>}
+              </div>
+            </div>
+            <h3 className="rules-h st-h2">Ajustar una semana concreta</h3>
             <div className="row actions">
               <label htmlFor="semana" className="sr-only">Semana</label>
               <select id="semana" value={semana} onChange={(e) => { setSemana(e.target.value as typeof semana); setProps(null); }} style={{ width: "auto" }}>

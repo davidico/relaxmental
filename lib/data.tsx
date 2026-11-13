@@ -1,9 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { Carpeta, Habito, Kind, Labores, Nota, Tarea } from "./types";
-import { scheduleFor, type Bloque } from "./schedule";
-import laboresBase from "@/data/labores.json";
+import type { Carpeta, Habito, Kind, Nota, Tarea } from "./types";
+import { planDe, type Bloque, type Eventos, type Plantilla } from "./plan";
 import { today } from "./dates";
 
 /**
@@ -30,7 +29,8 @@ interface DataCtx {
   retry: () => void;
   /** Fecha de hoy; cambia sola a medianoche aunque la app siga abierta */
   hoy: string;
-  labores: Labores;
+  /** Compromisos con fecha de esta persona (iglesia, turnos…) */
+  eventos: Eventos;
   tareas: Tarea[];
   notas: Nota[];
   habitos: Habito[];
@@ -51,7 +51,6 @@ interface DataCtx {
 
 const Ctx = createContext<DataCtx | null>(null);
 const LS = "mi-semana-v1";
-const LABORES = (laboresBase as { dias: Labores }).dias;
 
 export const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -115,6 +114,10 @@ export type Perfil = {
   reglas?: { text?: string; updated?: string };
   /** Mes (AAAA-MM) en que revisaste si había cambios en tu horario */
   revision?: { mes?: string };
+  /** Semana tipo (día de la semana -> bloques) */
+  plantilla?: Plantilla;
+  /** Compromisos con fecha */
+  eventos?: Eventos;
   [k: string]: unknown;
 };
 interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias; perfil?: Perfil }
@@ -399,7 +402,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     for (const n of notas) if (!n.folder) save("notas", { ...n, folder: FOLDER_OF_KIND[n.kind] ?? "general" });
   }, [mode, loaded, carpetas, notas, save, remove]);
 
-  const planFor = useCallback((date: string) => dias[date] ?? scheduleFor(LABORES, date), [dias]);
+  const planFor = useCallback((date: string) => planDe(date, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos }), [dias, perfil.plantilla, perfil.eventos]);
   const retry = useCallback(() => {
     void sync().then((ok) => {
       if (!ok && navigator.onLine) location.reload(); // con internet pero sin sesión: recargar lleva al login
@@ -414,7 +417,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [enqueue],
   );
 
-  const value: DataCtx = { mode, email, error, offline, pendientes, retry, hoy, labores: LABORES, tareas, notas, habitos, carpetas, perfil, savePerfil, dias, planFor, saveDia, save, remove };
+  const value: DataCtx = { mode, email, error, offline, pendientes, retry, hoy, eventos: perfil.eventos ?? {}, tareas, notas, habitos, carpetas, perfil, savePerfil, dias, planFor, saveDia, save, remove };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

@@ -17,7 +17,6 @@ lib/
   schedule.ts       Las reglas que arman tu día hora por hora  ← el corazón
   data.tsx          Carga y guarda datos (API de D1 o navegador)
   habits.ts         Rachas y estadísticas
-data/labores.json   Tus labores de la iglesia por fecha
 worker/index.ts     API (/api) que guarda en D1 y verifica el login de Access
 migrations/        Tablas de la base de datos D1
 wrangler.jsonc      Configuración de Cloudflare (web + API + D1 + Access)
@@ -59,4 +58,3 @@ Abre la web en Chrome → menú ⋮ → **Añadir a pantalla de inicio**.
 - Notificaciones push en cada bloque del horario (service worker + Web Push + cron de Vercel).
 - Editar el horario base desde la app.
 - Importar las labores directamente desde Labores Berlín.
-- Labores por persona (ahora `data/labores.json` es común).

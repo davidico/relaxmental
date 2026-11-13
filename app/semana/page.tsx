@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
-import { preachesOn, rolesOn } from "@/lib/schedule";
+
 import DayEditor from "@/components/DayEditor";
 import { areaColor } from "@/lib/types";
 import { cssC } from "@/components/ui";
 
 export default function Semana() {
-  const { labores, planFor, dias } = useData();
+  const { eventos, planFor, dias } = useData();
   const [editing, setEditing] = useState<string | null>(null);
   // El domingo por la tarde ya interesa la semana siguiente (revisión semanal)
   const [off, setOff] = useState(() => (new Date().getDay() === 0 && new Date().getHours() >= 14 ? 1 : 0));
@@ -23,11 +23,7 @@ export default function Semana() {
       ? `Semana del ${a.getDate()} al ${b.getDate()} de ${MES[b.getMonth()]}`
       : `Semana del ${a.getDate()} de ${MES[a.getMonth()]} al ${b.getDate()} de ${MES[b.getMonth()]}`;
   const rel = off === 0 ? "Esta semana" : off === 1 ? "Próxima" : off === -1 ? "Anterior" : "Volver a hoy";
-  const nLab = days.filter((x) => rolesOn(labores, x).length).length;
-  const pred = days
-    .filter((x) => preachesOn(labores, x))
-    .map((x) => `el ${DOW[pd(x).getDay()].toLowerCase()} ${pd(x).getDate()}`)
-    .join(" y ");
+  const nLab = days.filter((x) => eventos[x]?.length).length;
 
   return (
     <>
@@ -39,7 +35,7 @@ export default function Semana() {
           <button className="ib" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>›</button>
         </div>
       </div>
-      <p className="sub">{nLab} día{nLab === 1 ? "" : "s"} con labor en la iglesia{pred ? ` · predicas ${pred}` : ""}</p>
+      <p className="sub">{nLab ? `${nLab} día${nLab === 1 ? "" : "s"} con compromisos` : "Sin compromisos esta semana"}</p>
       <div className="weekgrid">
         {days.map((x) => {
           const d = pd(x);
@@ -47,7 +43,7 @@ export default function Semana() {
           const head = (
             <>
               <b>{DOW[d.getDay()]} {d.getDate()}</b>
-              {preachesOn(labores, x) ? <span className="pill">Predicas</span> : rolesOn(labores, x).length ? <span className="pill">Culto</span> : <span className="pill free">Noche libre</span>}
+              {eventos[x]?.length ? <span className="pill">{eventos[x][0].t.split(" · ")[0]}</span> : null}
               {dias[x] && x >= t && <span className="pill mine">Editado</span>}
             </>
           );

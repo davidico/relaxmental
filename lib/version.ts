@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "2.4";
+export const VERSION = "2.5";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Cada persona tiene su propio horario: una semana tipo armada por la IA con sus reglas",
+  "Mis compromisos: sube una foto (iglesia, turnos, citas) y se añaden solos a tu día",
+  "La app ya no trae ningún horario escrito de antemano: sirve para cualquiera",
   "Bienvenida para empezar de cero: unas preguntas y la app escribe tus reglas",
   "Cada mes la app te pregunta si cambió tu horario",
   "«Empezar de cero» en tus reglas (guarda una copia de las anteriores)",

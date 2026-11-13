@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, MES, pd, toMin } from "@/lib/dates";
-import type { Bloque } from "@/lib/schedule";
+import type { Bloque } from "@/lib/plan";
 import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
 

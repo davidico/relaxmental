@@ -8,12 +8,10 @@
  * hacerse pasar por otra persona, y cada usuario solo ve sus propias filas.
  */
 
-import { scheduleFor, type Bloque } from "../lib/schedule";
-import laboresBase from "../data/labores.json";
+import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { leerHorario, planDay, preguntas, reescribirReglas, title, transcribe, type AI } from "./ai";
+import { aCompromisos, leerHorario, planDay, preguntas, reescribirReglas, title, transcribe, type AI } from "./ai";
 
-const LABORES = (laboresBase as { dias: Record<string, string[]> }).dias;
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
 interface Env {
@@ -81,6 +79,24 @@ async function accessEmail(req: Request, env: Env): Promise<string | null> {
     return null;
   }
 }
+
+/* ---------- Perfil de cada persona: semana tipo, compromisos y reglas ---------- */
+async function perfilDe(env: Env, email: string) {
+  const { results } = await env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id IN ('plantilla', 'eventos', 'reglas')")
+    .bind(email)
+    .all<{ id: string; data: string }>();
+  const o: { plantilla: Plantilla; eventos: Eventos; reglas: string } = { plantilla: {}, eventos: {}, reglas: "" };
+  for (const r of results) {
+    try {
+      const v = JSON.parse(r.data);
+      if (r.id === "plantilla" && v && typeof v === "object") o.plantilla = v;
+      if (r.id === "eventos" && v && typeof v === "object") o.eventos = v;
+      if (r.id === "reglas") o.reglas = String(v?.text ?? "");
+    } catch {}
+  }
+  return o;
+}
+const fechaMas = (f: string, n: number) => new Date(new Date(f + "T12:00:00Z").getTime() + n * 864e5).toISOString().slice(0, 10);
 
 /* ---------- API ---------- */
 
@@ -157,7 +173,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .map((r) => JSON.parse(r.data) as { title: string; done?: boolean; due?: string })
       .filter((t) => !t.done && (!t.due || t.due <= fecha))
       .map((t) => t.title);
-    const bloques = await planDay(env.AI, { reglas, fecha, labores: LABORES, tareas });
+    const { eventos } = await perfilDe(env, email);
+    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
   }
@@ -165,11 +182,44 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
   if (url.pathname === "/api/ai/preguntas" && req.method === "POST") {
     const { reglas, horario, modo } = (await req.json()) as { reglas?: string; horario?: string; modo?: string };
     const hoy = berlinNow().date;
-    const prox = Object.keys(LABORES).filter((d) => d >= hoy).sort().slice(0, 6);
+    const { eventos } = await perfilDe(env, email);
+    const prox = Object.keys(eventos).filter((d) => d >= hoy).sort().slice(0, 6);
     const labores = prox.length
-      ? `LA APP YA CONOCE SUS LABORES EN LA IGLESIA (ejemplo de las próximas):\n${prox.map((d) => `- ${d}: ${LABORES[d].join(", ")}`).join("\n")}`
-      : "La app ya conoce sus labores en la iglesia por fecha.";
+      ? `LA APP YA CONOCE SUS COMPROMISOS CON FECHA (ejemplo de los próximos):\n${prox.map((d) => `- ${d}: ${eventos[d].map((e) => e.t + (e.nota ? ` (${e.nota})` : "")).join(", ")}`).join("\n")}`
+      : "";
     return json({ preguntas: await preguntas(env.AI, { reglas: String(reglas ?? ""), horario: String(horario ?? ""), labores, modo: String(modo ?? "") }) });
+  }
+  /* Semana tipo: un día típico por cada día de la semana, armado con sus reglas */
+  if (url.pathname === "/api/ai/plantilla" && req.method === "POST") {
+    const { reglas } = (await req.json()) as { reglas?: string };
+    if (!reglas?.trim()) return json({ error: "bad_input" }, 400);
+    const lunes = (() => {
+      const h = berlinNow().date;
+      const dow = new Date(h + "T12:00:00Z").getUTCDay();
+      return fechaMas(h, ((8 - dow) % 7) || 7);
+    })();
+    const dias = await Promise.all(
+      Array.from({ length: 7 }, (_, i) => fechaMas(lunes, i)).map(async (f) => {
+        try {
+          return [String(new Date(f + "T12:00:00Z").getUTCDay()), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true })] as const;
+        } catch {
+          return [String(new Date(f + "T12:00:00Z").getUTCDay()), []] as const;
+        }
+      }),
+    );
+    const plantilla = Object.fromEntries(dias);
+    if (dias.every(([, b]) => !b.length)) return json({ error: "ai_empty" }, 502);
+    return json({ plantilla });
+  }
+  /* Compromisos con fecha desde una foto (turnos, labores de la iglesia, calendario) */
+  if (url.pathname === "/api/ai/compromisos" && req.method === "POST") {
+    const { imagen } = (await req.json()) as { imagen?: string };
+    if (!imagen || !/^data:image\/(jpeg|png|webp);base64,/.test(imagen) || imagen.length > 6_000_000) return json({ error: "bad_image" }, 400);
+    const texto = await leerHorario(env.AI, imagen);
+    if (!texto) return json({ error: "ai_empty" }, 502);
+    const { reglas } = await perfilDe(env, email);
+    const eventos = await aCompromisos(env.AI, { texto, hoy: berlinNow().date, reglas });
+    return json({ eventos, texto });
   }
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };
@@ -247,7 +297,7 @@ const isBloque = (b: unknown): b is Bloque =>
 async function tickUser(env: Env, user_email: string, date: string, min: number) {
   const { results: own } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'dias' AND id = ?").bind(user_email, date).all<{ data: string }>();
   const saved: unknown = own[0] ? JSON.parse(own[0].data) : null;
-  const blocks: Bloque[] = Array.isArray(saved) ? saved.filter(isBloque) : scheduleFor(LABORES, date);
+  const blocks: Bloque[] = Array.isArray(saved) ? saved.filter(isBloque) : planDe(date, await perfilDe(env, user_email));
   const due = blocks.filter((b) => toMin(b.s) <= min && min - toMin(b.s) < 10);
   for (const b of due) {
     // La marca se pone de forma atómica: si dos ejecuciones coinciden, solo una avisa

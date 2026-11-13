@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import VoiceButton from "./VoiceButton";
+import { achicar } from "@/lib/imagen";
 
 /** Por si la IA no responde: preguntas generales */
 const BASE = [
@@ -83,13 +84,7 @@ export default function RulesQuiz({ reglas, onClose, onGuardar, modo = "completa
   const subirFoto = async (f: File) => {
     setLeyendo("leyendo");
     try {
-      const bmp = await createImageBitmap(f);
-      const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(bmp.width * k);
-      c.height = Math.round(bmp.height * k);
-      c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
-      const imagen = c.toDataURL("image/jpeg", 0.85);
+      const imagen = await achicar(f);
       const r = await fetch("/api/ai/horario", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ imagen }) });
       if (!r.ok) throw new Error();
       const t = ((await r.json()) as { texto?: string }).texto ?? "";

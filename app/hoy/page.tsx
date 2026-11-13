@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, ds, toMin } from "@/lib/dates";
-import { nowInfo, preachesOn, rolesOn, type Bloque } from "@/lib/schedule";
+import { nowInfo, textoEventos, type Bloque } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { sortHabits } from "@/lib/habits";
 import type { Tarea } from "@/lib/types";
@@ -14,6 +14,7 @@ import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
+import { armarPlantilla } from "@/lib/imagen";
 import VoiceButton from "@/components/VoiceButton";
 
 /* ---------- utilidades de texto ---------- */
@@ -26,20 +27,16 @@ const Check = ({ size = 16, color = "currentColor" }: { size?: number; color?: s
 );
 
 export default function Hoy() {
-  const { labores, planFor } = useData();
+  const { eventos, planFor } = useData();
   const now = useNow();
   const t = ds(now);
   const minute = now.getHours() * 60 + now.getMinutes();
   const blocks = planFor(t);
-  const roles = rolesOn(labores, t);
+  const evs = eventos[t] ?? [];
   const [editing, setEditing] = useState(false);
   const [verDia, setVerDia] = useState(false);
 
-  const iglesia = preachesOn(labores, t)
-    ? "hoy predicas"
-    : roles.length
-      ? `hoy te toca ${lista(roles.map((x) => x.toLowerCase().replace(/ \(inicia\)/, "")))}`
-      : "hoy no tienes labor en la iglesia";
+  const hoyTxt = evs.length ? `Hoy: ${textoEventos(evs)}` : "";
 
   return (
     <div className="hy">
@@ -53,8 +50,8 @@ export default function Hoy() {
           <span className="hy-month"> de {MES[now.getMonth()]}</span>
         </h1>
         <p className="sub">
-          <span className="hy-month-m">{MES[now.getMonth()][0].toUpperCase() + MES[now.getMonth()].slice(1)} · </span>
-          {iglesia[0].toUpperCase() + iglesia.slice(1)}
+          <span className="hy-month-m">{MES[now.getMonth()][0].toUpperCase() + MES[now.getMonth()].slice(1)}{hoyTxt ? " · " : ""}</span>
+          {hoyTxt}
         </p>
       </header>
       <PushBanner />
@@ -75,7 +72,7 @@ export default function Hoy() {
             </button>
             {verDia && (
               <div id="hy-dia-lista">
-                <DayList blocks={blocks} minute={minute} roles={roles} />
+                <DayList blocks={blocks} minute={minute} />
                 <button className="linkbtn" onClick={() => setEditing(true)}>Editar hoy</button>
               </div>
             )}
@@ -93,6 +90,14 @@ export default function Hoy() {
 /* ---------- Ahora ---------- */
 function NowCard({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
   const { cur, nxt } = nowInfo(blocks, minute);
+  if (!blocks.length)
+    return (
+      <section className="hy-now" aria-labelledby="hy-now-t">
+        <span className="hy-now-lbl">Sin horario todavía</span>
+        <h2 id="hy-now-t">Aquí verás lo que te toca ahora</h2>
+        <p>Cuando armes tu semana, cada bloque del día aparece aquí.</p>
+      </section>
+    );
   if (!cur && !nxt)
     return (
       <section className="hy-now" aria-labelledby="hy-now-t">
@@ -140,7 +145,7 @@ function NowCard({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
 }
 
 /* ---------- Tu día ---------- */
-function DayList({ blocks, minute, roles }: { blocks: Bloque[]; minute: number; roles: string[] }) {
+function DayList({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
   const [showPast, setShowPast] = useState(false);
   const past = blocks.filter((b) => toMin(b.e) <= minute);
   const visible = showPast ? blocks : blocks.filter((b) => toMin(b.e) > minute);
@@ -168,13 +173,11 @@ function DayList({ blocks, minute, roles }: { blocks: Bloque[]; minute: number; 
                   {isCur ? (
                     <span className="hy-tl-now">Ahora · hasta las {b.e}</span>
                   ) : (
-                    b.sub && !(b.church && roles.length) && <span className="hy-tl-s">{b.sub}</span>
+                    b.sub && !b.evento && <span className="hy-tl-s">{b.sub}</span>
                   )}
-                  {b.church && roles.length > 0 && (
+                  {b.evento && b.sub && !isCur && (
                     <span className="hy-roles">
-                      {roles.map((r) => (
-                        <span key={r} className="hy-role">{r}</span>
-                      ))}
+                      <span className="hy-role">{b.sub}</span>
                     </span>
                   )}
                 </span>
@@ -183,7 +186,7 @@ function DayList({ blocks, minute, roles }: { blocks: Bloque[]; minute: number; 
           })}
         </ol>
       ) : (
-        <p className="hy-empty">No queda nada en el plan de hoy.</p>
+        <p className="hy-empty">{blocks.length ? "No queda nada en el plan de hoy." : "Todavía no hay horario para hoy."}</p>
       )}
     </>
   );
@@ -194,9 +197,20 @@ function ReglasAviso() {
   const { mode, offline, perfil, savePerfil, hoy } = useData();
   const [quiz, setQuiz] = useState<Modo | null>(null);
   const [listo, setListo] = useState(false);
+  const [tipo, setTipo] = useState<"" | "armando" | "error">("");
   if (mode === "loading" || offline) return null;
   const reglas = perfil.reglas?.text?.trim() ?? "";
   const mes = hoy.slice(0, 7);
+  const armarTipo = async () => {
+    setTipo("armando");
+    try {
+      savePerfil("plantilla", await armarPlantilla(reglas));
+      setListo(false);
+      setTipo("");
+    } catch {
+      setTipo("error");
+    }
+  };
   const revisado = perfil.revision?.mes === mes || (perfil.reglas?.updated ?? "").slice(0, 7) === mes;
   const guardar = (t: string) => {
     savePerfil("reglas", { text: t, updated: new Date().toISOString() });
@@ -206,11 +220,12 @@ function ReglasAviso() {
   };
   return (
     <>
-      {listo ? (
+      {reglas && (listo || !perfil.plantilla) ? (
         <section className="card pad hy-aviso" aria-live="polite">
-          <h2 className="hy-h">¡Tus reglas están listas!</h2>
-          <p>Ahora la IA puede armar tu semana con ellas.</p>
-          <Link className="btn" href="/perfil#ia-h">Armar mi semana</Link>
+          <h2 className="hy-h">{listo ? "¡Tus reglas están listas!" : "Falta tu semana tipo"}</h2>
+          <p>Ahora armo tu semana tipo con ellas: un día típico de lunes a domingo. Tarda un poco.</p>
+          {tipo === "error" && <p className="verr" role="alert">⚠ No se pudo armar. Inténtalo otra vez.</p>}
+          <button className="btn" onClick={armarTipo} disabled={tipo === "armando"}>{tipo === "armando" ? "Armando tu semana…" : "Armar mi semana"}</button>
         </section>
       ) : !reglas ? (
         <section className="card pad hy-aviso" aria-labelledby="hy-bienv">

@@ -3,8 +3,7 @@
  * - Whisper large v3 turbo: pasa la voz a texto.
  * - Llama 3.3 70B: pone título a una nota y arma el horario de un día según las reglas de la persona.
  */
-import { SVC } from "../lib/schedule";
-import type { Bloque } from "../lib/schedule";
+import { textoEventos, type Bloque, type Eventos } from "../lib/plan";
 
 export interface AI {
   run(model: string, input: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -74,27 +73,28 @@ export function cleanBlocks(raw: unknown): Bloque[] {
 
 export async function planDay(
   ai: AI,
-  o: { reglas: string; fecha: string; labores: Record<string, string[]>; tareas: string[] },
+  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean },
 ): Promise<Bloque[]> {
   const d = new Date(o.fecha + "T12:00:00Z");
   const dow = d.getUTCDay();
   const prox = [1, 2, 3]
     .map((i) => {
       const x = new Date(d.getTime() + i * 864e5).toISOString().slice(0, 10);
-      const r = o.labores[x] ?? [];
-      return r.length ? `- ${DIAS[new Date(x + "T12:00:00Z").getUTCDay()]} ${x}: ${r.join(", ")}` : "";
+      const r = o.eventos[x] ?? [];
+      return r.length ? `- ${DIAS[new Date(x + "T12:00:00Z").getUTCDay()]} ${x}: ${textoEventos(r)}` : "";
     })
     .filter(Boolean);
-  const hoy = o.labores[o.fecha] ?? [];
-  const [svc, hora] = SVC[dow] ?? ["", ""];
-  const contexto = [
-    `Fecha: ${DIAS[dow]} ${o.fecha}.`,
-    hoy.length ? `Labores en la iglesia HOY: ${hoy.join(", ")} (culto de ${svc} a las ${hora}).` : "Hoy NO tiene labor en la iglesia.",
-    prox.length ? `Labores de los próximos 3 días:\n${prox.join("\n")}` : "Sin labores en los próximos 3 días.",
-    o.tareas.length ? `Tareas pendientes (elige 1 o 2 si encajan):\n${o.tareas.slice(0, 12).map((t) => "- " + t).join("\n")}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  const hoy = o.eventos[o.fecha] ?? [];
+  const contexto = o.tipo
+    ? [`Arma un ${DIAS[dow]} TÍPICO de su semana (sin compromisos especiales): lo que hace normalmente ese día según sus reglas.`].join("\n\n")
+    : [
+        `Fecha: ${DIAS[dow]} ${o.fecha}.`,
+        hoy.length ? `Compromisos FIJOS de hoy (respeta sus horas, no los muevas): ${hoy.map((e) => `${e.t}${e.s ? ` de ${e.s} a ${e.e ?? "?"}` : ""}${e.nota ? ` (${e.nota})` : ""}`).join("; ")}.` : "Hoy no tiene compromisos con fecha.",
+        prox.length ? `Compromisos de los próximos 3 días (por si hay que prepararse):\n${prox.join("\n")}` : "",
+        o.tareas.length ? `Tareas pendientes (elige 1 o 2 si encajan):\n${o.tareas.slice(0, 12).map((t) => "- " + t).join("\n")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
 
   const schema = {
     type: "object",
@@ -124,7 +124,7 @@ export async function planDay(
         content:
           "Eres el planificador del día de una persona. Sigue SUS REGLAS al pie de la letra; si dos reglas chocan, gana la más específica (la que nombra el día o la labor). " +
           "Cubre el día de la hora de levantarse a la de dormir sin huecos ni solapes, en bloques de 15 minutos o más, en orden. " +
-          "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=buscar trabajo, tukuna=su trabajo en Tukuna, aleman=alemán, iglesia=Biblia/predicación/culto, familia=bebé y familia, salud=pastillas/ejercicio/descanso, casa=cocinar/papeleo/tareas, rutina=comidas y traslados. " +
+          "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=trabajo o estudio, tukuna=proyecto propio o negocio, aleman=idiomas y aprendizaje, iglesia=fe, iglesia, Biblia y oración, familia=familia e hijos, salud=salud, ejercicio y descanso, casa=casa, cocina, papeleo y tareas, rutina=comidas y traslados. " +
           'Responde SOLO con JSON: {"bloques":[{"s":"07:00","e":"07:15","t":"…","a":"salud","sub":"…"}]}',
       },
       { role: "user", content: `MIS REGLAS:\n${o.reglas.slice(0, 6000)}\n\nDATOS DEL DÍA:\n${contexto}` },
@@ -148,7 +148,7 @@ export async function preguntas(ai: AI, o: { reglas: string; horario: string; la
     "Ayudas a una persona a escribir las reglas de su horario semanal. " +
     tarea +
     "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), una idea por pregunta, sin repetir lo que ya está claro. " +
-    "IMPORTANTE: la app ya conoce sus labores de la iglesia por fecha y las añade sola; NO preguntes qué días va a la iglesia ni qué labor le toca. " +
+    "IMPORTANTE: la app ya conoce sus compromisos con fecha (iglesia, turnos, citas) y los añade sola; NO preguntes qué días le tocan. " +
     "Si hay un horario variable (turnos), tampoco preguntes qué días trabaja: pregunta qué quiere hacer antes o después de cada turno.";
   const usuario = `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(todavía no hay)"}\n\n${o.labores}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}`;
   const limpia = (xs: unknown) =>
@@ -228,7 +228,7 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
             : "Parte de sus reglas actuales (si las hay) y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). ") +
           "No inventes nada que no esté en sus reglas o respuestas. Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
           "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
-          "No escribas qué días le toca la iglesia: la app ya lo sabe. " +
+          "No escribas qué fechas concretas tiene compromisos (iglesia, turnos): la app ya las sabe. Sí puedes escribir qué hace antes o después de ellos. " +
           "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
       },
       { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}` },
@@ -237,4 +237,42 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
     temperature: 0.2,
   });
   return String(r.response ?? "").trim();
+}
+
+/** Convierte el texto de una foto (turnos, labores, calendario) en compromisos con fecha */
+export async function aCompromisos(ai: AI, o: { texto: string; hoy: string; reglas: string }): Promise<{ fecha: string; t: string; s?: string; e?: string; nota?: string }[]> {
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Conviertes un horario o calendario (ya pasado a texto) en una lista de compromisos con fecha. Hoy es " + o.hoy + ". " +
+          "Si el texto no dice el año, usa el de hoy (o el siguiente si el mes ya pasó). Fecha en formato AAAA-MM-DD, horas en HH:MM (24 h). " +
+          "Si un compromiso no tiene hora en el texto pero las reglas de la persona dicen a qué hora suele ser (por ejemplo, el culto de ese día de la semana), úsala. Si no, déjalo sin hora. " +
+          "t = título corto (ej.: «Culto · Púlpito», «Turno de mañana»). nota = detalle breve si hay. No inventes fechas que no estén. " +
+          'Responde SOLO con JSON: {"eventos":[{"fecha":"2026-12-03","t":"…","s":"08:00","e":"16:00","nota":"…"}]}',
+      },
+      { role: "user", content: `TEXTO DEL HORARIO:\n${o.texto.slice(0, 6000)}\n\nMIS REGLAS (para las horas habituales):\n${o.reglas.slice(0, 3000) || "(ninguna)"}` },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        type: "object",
+        properties: { eventos: { type: "array", items: { type: "object", properties: { fecha: { type: "string" }, t: { type: "string" }, s: { type: "string" }, e: { type: "string" }, nota: { type: "string" } }, required: ["fecha", "t"] } } },
+        required: ["eventos"],
+      },
+    },
+    max_tokens: 2500,
+    temperature: 0.1,
+  });
+  const xs = parsed<{ eventos: unknown }>(r)?.eventos;
+  if (!Array.isArray(xs)) return [];
+  const hhmm = (x: unknown) => {
+    const v = String(x ?? "").trim().padStart(5, "0");
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : undefined;
+  };
+  return xs
+    .map((x: Record<string, unknown>) => ({ fecha: String(x?.fecha ?? ""), t: String(x?.t ?? "").trim().slice(0, 80), s: hhmm(x?.s), e: hhmm(x?.e), nota: String(x?.nota ?? "").trim().slice(0, 140) || undefined }))
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.fecha) && x.t)
+    .slice(0, 120);
 }

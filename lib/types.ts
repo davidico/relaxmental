@@ -59,8 +59,6 @@ export interface Habito {
   created: string;
 }
 
-/** Fecha (AAAA-MM-DD) -> labores en la iglesia ese día */
-export type Labores = Record<string, string[]>;
 
 export const AREAS: Record<Exclude<Area, "rutina">, string> = {
   trabajo: "Buscar trabajo",
