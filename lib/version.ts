@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "2.7";
+export const VERSION = "2.8";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Selector de hora propio: siempre cabe en la pantalla (el del teléfono se cortaba)",
+  "Al editar un día, si un bloque termina a las 15:30 el siguiente empieza a las 15:30",
   "Las preguntas incluyen tus medicinas o pastillas y su hora; la IA las pone en tu horario",
   "Revisión en computadora: Semana, Hoy y Perfil arreglados; novedades más cortas",
   "Al editar una lista, lo ya hecho se ve hecho",

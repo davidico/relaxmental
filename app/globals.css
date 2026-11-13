@@ -1240,3 +1240,21 @@ h1{font-weight:700;letter-spacing:-.02em}
 @media (min-width:900px){.weekgrid .daypast>summary{position:relative;padding-right:28px}.weekgrid .daypast .dp-caret{position:absolute;top:12px;right:0}}
 @media (max-width:899px){.cmp-lista li{grid-template-columns:minmax(0,1fr);gap:0;padding:10px 0}.cmp-dia{padding-top:0}.cmp-ev{min-height:40px}}
 @media (min-width:900px){.weekgrid .daypast>summary b{white-space:normal;overflow-wrap:anywhere}}
+
+/* ---------- Versión 2.8: selector de hora propio ---------- */
+.hora-btn{font:inherit;font-size:17px;font-variant-numeric:tabular-nums;min-height:44px;min-width:84px;padding:0 14px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;text-align:left}
+.hora-btn:hover{border-color:var(--muted)}
+.hora-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hora-btn.bad{border-color:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
+.hora-back{z-index:45}
+.hora-dlg{max-width:360px}
+.hora-ver{margin:4px 0 6px;text-align:center;font-family:var(--display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.hora-lbl{margin:6px 0 2px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.hora-grid{display:grid;gap:4px}
+.hora-grid.h{grid-template-columns:repeat(6,minmax(0,1fr))}
+.hora-grid.m{grid-template-columns:repeat(4,minmax(0,1fr))}
+.hora-grid button{min-height:44px;border:none;border-radius:10px;background:var(--rocio);color:var(--ink);font:inherit;font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
+.hora-grid button:hover{background:color-mix(in srgb,var(--primary) 18%,var(--rocio))}
+.hora-grid button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);font-weight:700}
+.hora-grid button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.cmp-fila .hora-btn{width:100%}

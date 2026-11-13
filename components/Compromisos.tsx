@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, addD, fdate, pd } from "@/lib/dates";
 import { achicar } from "@/lib/imagen";
+import HoraInput from "./HoraInput";
 import type { Evento, Eventos } from "@/lib/plan";
 
 type Fila = Evento & { fecha: string; k: number };
@@ -91,11 +92,11 @@ export default function Compromisos() {
               </label>
               <label>
                 <span>Desde</span>
-                <input type="time" value={f.s ?? ""} onChange={(x) => cambiar(f.k, { s: x.target.value || undefined })} />
+                <HoraInput label="Desde" value={f.s ?? ""} onChange={(v) => cambiar(f.k, { s: v })} vacio="Sin hora" />
               </label>
               <label>
                 <span>Hasta</span>
-                <input type="time" value={f.e ?? ""} onChange={(x) => cambiar(f.k, { e: x.target.value || undefined })} />
+                <HoraInput label="Hasta" value={f.e ?? ""} onChange={(v) => cambiar(f.k, { e: v })} vacio="Sin hora" />
               </label>
               <button type="button" className="nv-ib sm cmp-x" aria-label={`Quitar ${f.t || "compromiso"}`} onClick={() => setFilas((x) => x && x.filter((y) => y.k !== f.k))}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>

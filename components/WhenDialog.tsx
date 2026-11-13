@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MES, addD, ds, pd } from "@/lib/dates";
+import HoraInput from "./HoraInput";
 
 const DIAS = ["L", "M", "M", "J", "V", "S", "D"];
 const DIAS_LARGO = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -30,7 +31,6 @@ export default function WhenDialog({
     const d = pd(due || hoy);
     return new Date(d.getFullYear(), d.getMonth(), 1, 12);
   });
-  const horaRef = useRef<HTMLInputElement>(null);
   const caja = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,14 +45,6 @@ export default function WhenDialog({
     return () => removeEventListener("keydown", k, true);
   }, [onCancel]);
 
-  useEffect(() => {
-    if (!verHora || h) return;
-    const el = horaRef.current;
-    el?.focus();
-    try {
-      (el as HTMLInputElement & { showPicker?: () => void })?.showPicker?.();
-    } catch {}
-  }, [verHora]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Celdas del mes: empieza en lunes */
   const primero = ds(mes);
@@ -99,12 +91,11 @@ export default function WhenDialog({
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
           {verHora ? (
             <>
-              <label htmlFor="wd-h" className="sr-only">Hora</label>
-              <input id="wd-h" ref={horaRef} type="time" value={h} onChange={(e) => setH(e.target.value)} />
+              <HoraInput id="wd-h" label="Hora" value={h} onChange={setH} vacio="Elegir" />
               <button type="button" className="linkbtn" onClick={() => { setH(""); setVerHora(false); }}>Quitar</button>
             </>
           ) : (
-            <button type="button" className="wd-rowbtn" onClick={() => setVerHora(true)}>Fijar hora</button>
+            <button type="button" className="wd-rowbtn" onClick={() => { setVerHora(true); if (!h) setH("09:00"); }}>Fijar hora</button>
           )}
         </div>
 

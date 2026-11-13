@@ -6,6 +6,7 @@ import { DOW, MES, pd, toMin } from "@/lib/dates";
 import type { Bloque } from "@/lib/plan";
 import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
+import HoraInput from "./HoraInput";
 
 
 /** Editor de un día: cambiar horas, títulos, borrar o añadir bloques */
@@ -22,7 +23,21 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
     return () => removeEventListener("keydown", k);
   }, [onClose]);
 
-  const set = (i: number, patch: Partial<Bloque>) => setRows((r) => r.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+  const hhmm = (min: number) => `${String(Math.floor(Math.min(min, 1439) / 60)).padStart(2, "0")}:${String(Math.min(min, 1439) % 60).padStart(2, "0")}`;
+  /* Al cambiar el final de un bloque, el siguiente empieza a esa hora (y conserva lo que duraba) */
+  const set = (i: number, patch: Partial<Bloque>) =>
+    setRows((r) =>
+      r.map((b, j) => {
+        if (j === i) return { ...b, ...patch };
+        if (j === i + 1 && patch.e && toMin(patch.e) > toMin(r[i].s)) {
+          const dur = Math.max(15, toMin(b.e) - toMin(b.s));
+          const s = patch.e;
+          const e = toMin(b.e) > toMin(s) ? b.e : hhmm(toMin(s) + dur);
+          return { ...b, s, e };
+        }
+        return b;
+      }),
+    );
   const valid = rows.every((b) => b.t.trim() && b.s && b.e && toMin(b.e) > toMin(b.s));
 
   const add = () => {
@@ -49,9 +64,9 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
             return (
               <div className="ed-row" key={i} style={cssC(areaColor(b.a))}>
                 <div className="ed-times">
-                  <input type="time" id={`ed-s-${i}`} aria-label="Empieza" value={b.s} onChange={(e) => set(i, { s: e.target.value })} />
+                  <HoraInput id={`ed-s-${i}`} label="Empieza" value={b.s} onChange={(v) => set(i, { s: v })} />
                   <span aria-hidden="true">–</span>
-                  <input type="time" id={`ed-e-${i}`} aria-label="Termina" value={b.e} onChange={(e) => set(i, { e: e.target.value })} className={bad ? "bad" : ""} aria-invalid={bad ? true : undefined} />
+                  <HoraInput id={`ed-e-${i}`} label="Termina" value={b.e} onChange={(v) => set(i, { e: v })} invalid={!!bad} />
                 </div>
                 <input id={`ed-t-${i}`} className="ed-name" placeholder="Qué haces" value={b.t} onChange={(e) => set(i, { t: e.target.value })} />
                 <textarea id={`ed-sub-${i}`} className="ed-sub" rows={2} placeholder="Detalle (opcional): qué vas a hacer exactamente, notas…" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />
