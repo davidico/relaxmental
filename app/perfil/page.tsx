@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
+import VoiceButton from "@/components/VoiceButton";
 import { NOVEDADES, REGLAS_INICIALES, VERSION, VERSION_FECHA } from "@/lib/version";
 
 type Prop = { fecha: string; bloques?: Bloque[]; error?: boolean };
@@ -148,6 +149,7 @@ export default function Perfil() {
           <>
             <label htmlFor="reglas" className="sr-only">Mis reglas</label>
             <textarea id="reglas" className="rules" value={reglas} onChange={(e) => { setReglas(e.target.value); setEstado(""); }} spellCheck autoFocus />
+            <VoiceButton onText={(p) => { setReglas((r) => [r.trimEnd(), ...p].filter(Boolean).join("\n\n")); setEstado(""); }} />
             <div className="row actions">
               <button className="btn" onClick={guardar} disabled={!cambiado || estado === "guardando"}>
                 {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
