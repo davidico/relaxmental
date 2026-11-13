@@ -1403,4 +1403,13 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hy-atr-t .hy-step{font-weight:400}
 .hy-atr-b{display:flex;flex-wrap:wrap;gap:6px}
 .hy-atr-h.mayus::first-letter{text-transform:uppercase}
-.pl-pasados{justify-self:start;grid-column:1/-1;min-height:var(--tap)}
+.pl-cab.apagado{background:var(--cell);color:var(--muted)}
+.pl-dia.pasado{background:var(--cell);border-color:var(--line)}
+.pl-dia.pasado .pl-lado-h{color:var(--muted)}
+.pl-visto{align-items:baseline}
+.pl-visto .pl-txt{cursor:default;color:var(--muted);min-height:0;padding:6px 2px}
+.pl-visto .pl-txt:hover{background:none}
+.pl-visto.hecho .pl-txt{text-decoration:line-through}
+.pl-marca{width:24px;flex:none;text-align:center;color:var(--muted);font-weight:700}
+.pl-visto.hecho .pl-marca{color:var(--pine)}
+.pl-vacio{color:var(--muted);font-size:15px;padding:6px 2px}

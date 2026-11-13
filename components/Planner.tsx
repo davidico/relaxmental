@@ -30,37 +30,23 @@ export function leerHora(texto: string): { title: string; hora?: string } {
 export default function Planner({ days, hoy }: { days: string[]; hoy: string }) {
   const { tareas } = useData();
   const pendientes = tareas.filter((x) => !x.done && !x.due).sort(orden);
-  /* Los días que ya pasaron se esconden (si toda la semana ya pasó, se ve entera como recuerdo) */
-  const [verPasados, setVerPasados] = useState(false);
-  const pasados = days.filter((d) => d < hoy);
-  const ocultar = !verPasados && pasados.length < days.length;
-  const visibles = ocultar ? days.filter((d) => d >= hoy) : days;
   return (
     <div className="pl">
       <div className="pl-dias">
-        {ocultar && pasados.length > 0 && (
-          <button className="linkbtn pl-pasados" onClick={() => setVerPasados(true)}>
-            Ver {pasados.length === 1 ? "el día que ya pasó" : `los ${pasados.length} días que ya pasaron`}
-          </button>
-        )}
-        {verPasados && pasados.length > 0 && pasados.length < days.length && (
-          <button className="linkbtn pl-pasados" onClick={() => setVerPasados(false)}>
-            Ocultar los días que ya pasaron
-          </button>
-        )}
-        {visibles.map((d) => {
-          const i = days.indexOf(d);
+        {days.map((d, i) => {
           const f = pd(d);
           const deDia = tareas.filter((x) => x.due === d).sort(orden);
-          const tono = d === hoy ? "pl-hoy" : i >= 5 ? "suave" : "petroleo";
+          /* Los días que ya pasaron se ven, pero apagados y sin tocar */
+          const pasado = d < hoy;
+          const tono = d === hoy ? "pl-hoy" : pasado ? "apagado" : i >= 5 ? "suave" : "petroleo";
           return (
             <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${d < hoy ? " pasado" : ""}`} aria-labelledby={`pl-${d}`}>
               <h2 id={`pl-${d}`} className={`pl-cab ${tono}`}>
-                {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : ""}`}
+                {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : pasado ? " · Ya pasó" : ""}`}
               </h2>
               <div className="pl-lados">
                 {LADOS.map((l) => (
-                  <Lista key={l.id} titulo={l.label} lado={l.id} due={d} items={deDia.filter((x) => ladoDe(x) === l.id)} days={days} />
+                  <Lista key={l.id} titulo={l.label} lado={l.id} due={d} items={deDia.filter((x) => ladoDe(x) === l.id)} days={days} soloVer={pasado} />
                 ))}
               </div>
             </section>
@@ -76,7 +62,7 @@ export default function Planner({ days, hoy }: { days: string[]; hoy: string }) 
   );
 }
 
-function Lista({ titulo, lado, due, items, days }: { titulo: string; lado: Lado; due: string; items: Tarea[]; days: string[] }) {
+function Lista({ titulo, lado, due, items, days, soloVer = false }: { titulo: string; lado: Lado; due: string; items: Tarea[]; days: string[]; soloVer?: boolean }) {
   const { save } = useData();
   const [nuevo, setNuevo] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -91,8 +77,17 @@ function Lista({ titulo, lado, due, items, days }: { titulo: string; lado: Lado;
     <div className={`pl-lado ${lado}`}>
       {titulo && <h3 className="pl-lado-h">{titulo}</h3>}
       <ul className="pl-items">
+        {soloVer && !items.length && <li className="pl-vacio">Nada</li>}
         {items.map((x) =>
-          abierto === x.id ? (
+          soloVer ? (
+            <li key={x.id} className={`pl-visto${x.done ? " hecho" : ""}`}>
+              <span className="pl-marca" aria-hidden="true">{x.done ? "✓" : "○"}</span>
+              <span className="pl-txt">
+                {x.hora && <b>{x.hora}</b>} {x.title}
+                <span className="sr-only">{x.done ? " (hecho)" : " (sin hacer)"}</span>
+              </span>
+            </li>
+          ) : abierto === x.id ? (
             <li key={x.id}>
               <Editar x={x} days={days} onClose={() => setAbierto(null)} />
             </li>
@@ -106,7 +101,7 @@ function Lista({ titulo, lado, due, items, days }: { titulo: string; lado: Lado;
           ),
         )}
       </ul>
-      {nuevo === null ? (
+      {soloVer ? null : nuevo === null ? (
         <button className="pl-add" onClick={() => setNuevo("")} aria-label={titulo ? `Añadir en ${titulo}` : "Añadir pendiente"}>
           + Añadir
         </button>
