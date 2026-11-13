@@ -18,7 +18,7 @@ export default function Tareas() {
       <div>
           <h2>Para hoy · {hoy.length}</h2>
           <div className="card">{hoy.length ? hoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. ¡Bien!</div>}</div>
-          <h2>Te faltan · {luego.length}</h2>
+          <h2>Próximas · {luego.length}</h2>
           <div className="card">{luego.length ? luego.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}</div>
           {done.length > 0 && (
             <>

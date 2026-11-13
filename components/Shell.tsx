@@ -107,7 +107,7 @@ function Frame({ children }: { children: ReactNode }) {
         {error && !offline && <div className="banner" role="alert">{error}</div>}
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
-      {mode !== "loading" && <QuickTask />}
+      {mode !== "loading" && <QuickTask enPagina={path === "/tareas"} />}
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
         <div className="side-brand">

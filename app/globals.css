@@ -1212,3 +1212,31 @@ h1{font-weight:700;letter-spacing:-.02em}
 /* ---------- Versión 2.6: aprender de tus días ---------- */
 .ed-tipo{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px;cursor:pointer;flex-basis:100%}
 .ed-tipo input{width:22px;height:22px;margin:0;flex:none;accent-color:var(--primary)}
+
+/* ---------- Versión 2.7: revisión de UX en computadora ---------- */
+/* Hoy: «Nueva tarea» alineado con el título (no se monta sobre el perfil) */
+@media (min-width:1000px){.hy-head{min-height:56px}.hy-newtask{top:2px;bottom:auto}}
+/* Semana: días pasados plegados en columnas estrechas */
+.weekgrid .daypast{align-self:start}
+@media (min-width:900px){
+  .weekgrid .daypast>summary{flex-direction:column;align-items:flex-start;flex-wrap:wrap;gap:4px;padding:10px 0 8px}
+  .weekgrid .daypast .dp-n{margin-left:0}
+  .weekgrid .daypast .dp-caret{align-self:flex-start}
+}
+/* Perfil: aire entre tarjetas y fechas en una línea */
+.card.profile+.rules-card{margin-top:14px}
+@media (min-width:900px){.cmp-lista li{grid-template-columns:190px 1fr}}
+.cmp-dia{white-space:nowrap}
+@media (max-width:899px){.cmp-dia{white-space:normal}}
+.nov-mas{margin-top:10px}
+.nov-mas summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--pine)}
+.nov-mas ul{margin:4px 0 0}
+/* Notas: lo ya hecho se ve hecho también al editar */
+.ne-box.ok{background:var(--primary);border-color:var(--primary)}
+.ne-list input.ok{text-decoration:line-through;color:var(--muted)}
+/* Preguntas: título y texto más juntos */
+.rq-p{margin:0}
+@media (min-width:1000px){.hy-head{margin-top:14px}}
+@media (min-width:900px){.weekgrid .daypast>summary{position:relative;padding-right:28px}.weekgrid .daypast .dp-caret{position:absolute;top:12px;right:0}}
+@media (max-width:899px){.cmp-lista li{grid-template-columns:minmax(0,1fr);gap:0;padding:10px 0}.cmp-dia{padding-top:0}.cmp-ev{min-height:40px}}
+@media (min-width:900px){.weekgrid .daypast>summary b{white-space:normal;overflow-wrap:anywhere}}

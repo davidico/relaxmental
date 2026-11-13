@@ -53,7 +53,7 @@ export default function Compromisos() {
   };
 
   const proximas = Object.keys(eventos).filter((f) => f >= hoy).sort();
-  const visibles = verTodos ? proximas : proximas.filter((f) => f <= addD(hoy, 30));
+  const visibles = verTodos ? proximas : proximas.filter((f) => f <= addD(hoy, 30)).slice(0, 8);
 
   return (
     <section className="card pad cmp" aria-labelledby="cmp-h">

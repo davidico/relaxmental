@@ -126,6 +126,7 @@ export async function planDay(
           "Eres el planificador del día de una persona. Sigue SUS REGLAS al pie de la letra; si dos reglas chocan, gana la más específica (la que nombra el día o la labor). " +
           "Si te paso DÍAS REALES que ella ajustó a mano, son lo más fiable: imita sus horas, los nombres que usa, el orden y la duración de los bloques (sobre todo los del mismo día de la semana). " +
           "No inventes actividades que no estén en sus reglas ni en sus días reales; nada genérico como «preparación para la noche» o «momento espiritual» si ella no lo dijo. " +
+          "Si sus reglas dicen que toma medicinas o pastillas, pon un bloque corto (5-15 min, área salud) a la hora exacta, con el nombre en el detalle. " +
           "Cubre el día de la hora de levantarse a la de dormir sin huecos ni solapes, en bloques de 15 minutos o más, en orden. " +
           "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=trabajo o estudio, tukuna=proyecto propio o negocio, aleman=idiomas y aprendizaje, iglesia=fe, iglesia, Biblia y oración, familia=familia e hijos, salud=salud, ejercicio y descanso, casa=casa, cocina, papeleo y tareas, rutina=comidas y traslados. " +
           'Responde SOLO con JSON: {"bloques":[{"s":"07:00","e":"07:15","t":"…","a":"salud","sub":"…"}]}',
@@ -143,9 +144,9 @@ export async function planDay(
 export async function preguntas(ai: AI, o: { reglas: string; horario: string; labores: string; modo?: string }): Promise<string[]> {
   const tarea =
     o.modo === "cambios"
-      ? "Es la revisión de inicio de mes. Haz 5 preguntas cortas en español para saber QUÉ CAMBIÓ este mes en su semana (horarios nuevos, cosas que ya no hace, cosas nuevas, fechas especiales). "
+      ? "Es la revisión de inicio de mes. Haz 5 preguntas cortas en español para saber QUÉ CAMBIÓ este mes en su semana (horarios nuevos, cosas que ya no hace, cosas nuevas, fechas especiales, y si cambió algo en sus medicinas o pastillas). "
       : o.modo === "inicio" || !o.reglas.trim()
-        ? "La persona empieza desde cero. Haz 10 preguntas cortas en español para conocer su semana: a qué hora se levanta y termina el día, trabajo o estudio, sus horas de más energía, familia, comidas, salud y ejercicio, fe o vida espiritual, aprender algo (idiomas, cursos), tareas de casa, descanso, y qué no quiere en su horario. "
+        ? "La persona empieza desde cero. Haz 10 preguntas cortas en español para conocer su semana: a qué hora se levanta y termina el día, trabajo o estudio, sus horas de más energía, familia, comidas, medicinas o pastillas que toma (cuáles y a qué hora; pregúntalo siempre), salud y ejercicio, fe o vida espiritual, aprender algo (idiomas, cursos), tareas de casa, descanso, y qué no quiere en su horario. "
         : "Lee sus reglas y haz 8 preguntas cortas en español sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. ";
   const sistema =
     "Ayudas a una persona a escribir las reglas de su horario semanal. " +
@@ -231,6 +232,7 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
             : "Parte de sus reglas actuales (si las hay) y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). ") +
           "No inventes NADA que no esté en sus reglas, respuestas, mensaje o días reales: ni actividades, ni horas, ni ejemplos («p. ej.»), ni fechas. Si una respuesta está vacía o no se entiende, no la uses. " +
           "Si hay DÍAS REALES que ajustó a mano, úsalos como la mejor pista de cómo es su semana (horas, nombres y orden). " +
+          "Si toma medicinas o pastillas, ponlas con su hora exacta en una sección «MEDICINAS» (la app las convierte en avisos). " +
           "Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
           "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
           "No escribas qué fechas concretas tiene compromisos (iglesia, turnos): la app ya las sabe. Sí puedes escribir qué hace antes o después de ellos. " +

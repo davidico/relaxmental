@@ -15,7 +15,7 @@ type Mode = "task" | "note" | null;
  * - Escritorio: "+ Nueva tarea" (la captura de notas está en el panel).
  * - Móvil: "+" que abre dos opciones: Nueva tarea / Nueva nota.
  */
-export default function QuickTask() {
+export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) {
   const { save, hoy } = useData();
   const wide = useWide();
   const [menu, setMenu] = useState(false);
@@ -53,7 +53,7 @@ export default function QuickTask() {
 
   return (
     <>
-      {wide ? (
+      {wide && enPagina ? null : wide ? (
         <button className="fab" onClick={() => open("task")} aria-label="Nueva tarea">
           <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nueva tarea
         </button>

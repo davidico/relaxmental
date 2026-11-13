@@ -11,6 +11,7 @@ const BASE = [
   "¿Qué cosas tienen que estar todos los días sí o sí?",
   "¿Qué días son distintos y qué cambia en ellos?",
   "¿Cuándo quieres tiempo para la familia sin móvil?",
+  "¿Tomas alguna medicina o pastilla? ¿Cuál y a qué hora?",
   "¿Cuándo y cuántas veces por semana quieres hacer ejercicio?",
   "¿Qué tareas te cuesta empezar y a qué hora te vendría mejor hacerlas?",
   "¿Qué no quieres que aparezca nunca en tu horario?",
@@ -24,6 +25,7 @@ const CAMBIOS = [
   "¿Hay algo que ya no haces y quieres quitar del horario?",
   "¿Hay algo nuevo que quieras añadir a tu semana?",
   "¿Hay fechas especiales este mes (viajes, visitas, exámenes, fiestas)?",
+  "¿Cambió algo en tus medicinas o pastillas (cuáles o a qué hora)?",
 ];
 type Estado = { preguntas: string[]; respuestas: string[]; mensaje: string; i: number; horario?: string };
 const key = (m: Modo) => `mi-semana-preguntas-2-${m}`;

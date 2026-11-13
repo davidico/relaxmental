@@ -312,10 +312,11 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
             <ul className="ne-list" aria-label="Elementos de la lista">
               {d.items.map((it, i) => (
                 <li key={it.id}>
-                  <span className="ne-box" aria-hidden="true" />
+                  <span className={`ne-box${it.ok ? " ok" : ""}`} aria-hidden="true" />
                   <label htmlFor={`ne-i-${it.id}`} className="sr-only">Elemento {i + 1}</label>
                   <input
                     id={`ne-i-${it.id}`}
+                    className={it.ok ? "ok" : undefined}
                     value={it.t}
                     placeholder="Elemento"
                     autoFocus={focusId === it.id || (!note && i === 0)}

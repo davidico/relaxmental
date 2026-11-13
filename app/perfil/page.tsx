@@ -312,8 +312,14 @@ export default function Perfil() {
           </div>
         </div>
         <ul>
-          {NOVEDADES.map((n) => <li key={n}>{n}</li>)}
+          {NOVEDADES.slice(0, 6).map((n) => <li key={n}>{n}</li>)}
         </ul>
+        {NOVEDADES.length > 6 && (
+          <details className="nov-mas">
+            <summary>Ver todas las novedades ({NOVEDADES.length})</summary>
+            <ul>{NOVEDADES.slice(6).map((n) => <li key={n}>{n}</li>)}</ul>
+          </details>
+        )}
       </section>
     </>
   );
