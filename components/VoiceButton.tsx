@@ -12,7 +12,7 @@ type St = "idle" | "asking" | "rec" | "work" | "error" | "denied" | "done";
 const MAX = 15 * 60; // 15 minutos
 const CHUNK = 45; // segundos por trozo enviado a Whisper
 
-export default function VoiceButton({ onText, onTitle }: { onText: (paragraphs: string[]) => void; onTitle?: (text: string) => void }) {
+export default function VoiceButton({ onText, onTitle, compact }: { onText: (paragraphs: string[]) => void; onTitle?: (text: string) => void; /** Solo el ícono; el estado sale abajo, flotando */ compact?: boolean }) {
   const [st, setSt] = useState<St>("idle");
   const [secs, setSecs] = useState(0);
   const [prog, setProg] = useState("");
@@ -108,9 +108,21 @@ export default function VoiceButton({ onText, onTitle }: { onText: (paragraphs: 
     </svg>
   );
 
+  if (compact && st === "idle")
+    return (
+      <button type="button" className="nv-ib ke-ib" aria-label="Dictar" title="Dictar" onClick={start}>{mic}</button>
+    );
+  if (compact && st === "done")
+    return (
+      <>
+        <button type="button" className="nv-ib ke-ib" aria-label="Dictar otra vez" title="Dictar" onClick={start}>{mic}</button>
+        <span className="sr-only" role="status">Texto añadido</span>
+      </>
+    );
+  const fl = compact ? " float" : "";
   if (st === "rec")
     return (
-      <div className="voice rec" role="status" aria-live="polite">
+      <div className={`voice rec${fl}`} role="status" aria-live="polite">
         <span className="vdot" aria-hidden="true" />
         <span className="vtime">Grabando · {mmss}</span>
         {secs >= MAX - 60 && <span className="vwarn">Queda 1 minuto</span>}
@@ -120,7 +132,7 @@ export default function VoiceButton({ onText, onTitle }: { onText: (paragraphs: 
       </div>
     );
   return (
-    <div className="voice" role={st === "error" || st === "denied" ? "alert" : "status"} aria-live="polite">
+    <div className={`voice${fl}`} role={st === "error" || st === "denied" ? "alert" : "status"} aria-live="polite">
       {st === "work" || st === "asking" ? (
         <span className="vwork"><span className="spin" aria-hidden="true" /> {st === "asking" ? "Pidiendo el micrófono…" : prog}</span>
       ) : st === "error" && audio.current ? (
@@ -132,6 +144,7 @@ export default function VoiceButton({ onText, onTitle }: { onText: (paragraphs: 
       ) : (
         <>
           <button type="button" className="iconbtn vbtn" onClick={start}>{mic} Dictar</button>
+          {compact && <button type="button" className="btn ghost sm" onClick={() => setSt("idle")}>Cerrar</button>}
           {st === "denied" && <span className="verr">⚠ El micrófono está bloqueado. Permítelo en los ajustes del navegador.</span>}
           {st === "error" && <span className="verr">⚠ {prog || "Este navegador no puede grabar audio."}</span>}
           {st === "done" && <span className="vok">✓ Texto añadido. Revísalo antes de guardar.</span>}

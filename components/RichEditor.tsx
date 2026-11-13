@@ -21,6 +21,8 @@ export default function RichEditor({
   onSubmit,
   big,
   id,
+  bare,
+  tools = true,
 }: {
   value: string;
   onChange: (html: string, text: string) => void;
@@ -29,6 +31,10 @@ export default function RichEditor({
   onSubmit?: () => void;
   big?: boolean;
   id?: string;
+  /** Sin borde, como una hoja (estilo Keep) */
+  bare?: boolean;
+  /** Mostrar la barra de formato */
+  tools?: boolean;
 }) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -62,8 +68,8 @@ export default function RichEditor({
   }, [value, editor]);
 
   return (
-    <div className="rich">
-      {editor && <Toolbar editor={editor} />}
+    <div className={`rich${bare ? " bare" : ""}`}>
+      {editor && tools && <Toolbar editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   );

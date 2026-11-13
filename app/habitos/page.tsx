@@ -31,7 +31,7 @@ export default function Habitos() {
   return (
     <>
       <h1>Hábitos</h1>
-      <p className="sub">Toca «Marcar hoy» cuando lo hagas. El número grande es cuántos días seguidos llevas.</p>
+      <p className="sub">Toca el círculo cuando lo hagas. El número grande es cuántos días seguidos llevas.</p>
       <div className="hy-dots" aria-hidden="true" />
       <div className="habgrid">
         {list.length ? (
@@ -58,8 +58,8 @@ export default function Habitos() {
                     <span>{frase}</span>
                     {best > s && <span>Tu mejor racha: {best} días</span>}
                   </div>
-                  <button className={`btn sm hb-btn${on ? "" : " ghost"}`} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, t))}>
-                    {on ? "Hecho ✓" : "Marcar hoy"}
+                  <button className="hb-check" aria-pressed={on} aria-label={on ? `${h.name}: hecho hoy. Tocar para desmarcar` : `Marcar ${h.name} como hecho hoy`} onClick={() => save("habitos", toggleHecho(h, t))}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
                   </button>
                 </div>
                 <Mes h={h} t={t} />

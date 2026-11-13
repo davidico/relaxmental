@@ -29,6 +29,7 @@ function useHashSel() {
   return [sel, go] as const;
 }
 
+const ORDEN = { nuevas: "Más recientes", viejas: "Más antiguas", az: "Por título (A–Z)" } as const;
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const monthLabel = (iso: string) => {
   const d = new Date(iso);
@@ -61,6 +62,8 @@ export default function Cerebro() {
   const [sel, go] = useHashSel();
   const [q, setQ] = useState("");
   const [orden, setOrden] = usePref<"nuevas" | "viejas" | "az">("cerebro-orden", "nuevas");
+  const [vista, setVista] = usePref<"grid" | "una">("cerebro-vista2", "grid");
+  const [ordMenu, setOrdMenu] = useState(false);
   const [abierta, setAbierta] = useState<number | null>(null);
   const [nueva, setNueva] = useState<"texto" | "lista" | null>(null);
   const [secMenu, setSecMenu] = useState(false);
@@ -91,6 +94,8 @@ export default function Cerebro() {
           ? (a.created < b.created ? -1 : 1)
           : (b.created < a.created ? -1 : 1),
     );
+  /* El nombre de la carpeta en la tarjeta solo hace falta si la lista mezcla carpetas */
+  const mezcla = new Set(list.map((n) => n.folder)).size > 1;
   const groups: { label: string; items: { n: Nota; i: number }[] }[] = [];
   list.forEach((n, i) => {
     const label = orden === "az" || !n.created ? "" : monthLabel(n.created);
@@ -234,26 +239,47 @@ export default function Cerebro() {
         </div>
       )}
 
-      <div className="k-tools">
-        <label htmlFor="q" className="sr-only">Buscar en {sec.name}</label>
-        <input id="q" type="search" className="search" placeholder={`Buscar en ${sub?.name ?? sec.name}…`} value={q} onChange={(e) => setQ(e.target.value)} />
-        <label className="sr-only" htmlFor="n-orden">Ordenar</label>
-        <select id="n-orden" value={orden} onChange={(e) => setOrden(e.target.value as typeof orden)}>
-          <option value="nuevas">Recientes</option>
-          <option value="viejas">Antiguas</option>
-          <option value="az">A–Z</option>
-        </select>
+      <div className="k-search">
+        <svg className="k-sico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+        <label htmlFor="q" className="sr-only">Buscar en {sub?.name ?? sec.name}</label>
+        <input id="q" type="search" placeholder={`Buscar en ${sub?.name ?? sec.name}`} value={q} onChange={(e) => setQ(e.target.value)} />
+        <button className="k-sbtn" aria-label={vista === "grid" ? "Ver una debajo de otra" : "Ver en cuadros"} title={vista === "grid" ? "Una debajo de otra" : "Cuadros"} onClick={() => setVista(vista === "grid" ? "una" : "grid")}>
+          {vista === "grid" ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="2" /><rect x="4" y="13" width="16" height="7" rx="2" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
+          )}
+        </button>
+        <div className="nv-more">
+          <button className="k-sbtn" aria-label={`Ordenar: ${ORDEN[orden]}`} title="Ordenar" aria-haspopup="menu" aria-expanded={ordMenu} onClick={() => setOrdMenu(!ordMenu)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4" /></svg>
+          </button>
+          {ordMenu && (
+            <>
+              <div className="dial-backdrop clear" onClick={() => setOrdMenu(false)} />
+              <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setOrdMenu(false)}>
+                <p className="k-menulabel">Ordenar</p>
+                {(Object.keys(ORDEN) as (keyof typeof ORDEN)[]).map((k) => (
+                  <button key={k} role="menuitemradio" aria-checked={orden === k} autoFocus={orden === k} onClick={() => { setOrden(k); setOrdMenu(false); }}>
+                    <span>{ORDEN[k]}</span>
+                    {orden === k && <svg className="ke-ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {list.length ? (
         groups.map((g, gi) => (
           <section key={gi + g.label} className="k-group">
             {g.label && <h2 className="k-month">{g.label} <span>· {g.items.length}</span></h2>}
-            <div className="k-grid">
+            <div className={vista === "grid" ? "k-grid" : "k-grid una"}>
               {g.items.map(({ n, i }) => (
                 <button key={n.id} className="k-card" onClick={() => setAbierta(i)}>
                   {n.title && <span className="k-title">{n.title}</span>}
-                  {n.created && <span className="k-date">{fdate(n.created)}{!sub && n.folder !== sec.id && byId[n.folder ?? ""] ? ` · ${byId[n.folder ?? ""].name}` : ""}</span>}
+                  {n.created && <span className="k-date">{fdate(n.created)}{mezcla && n.folder !== sec.id && byId[n.folder ?? ""] ? ` · ${byId[n.folder ?? ""].name}` : ""}</span>}
                   {n.tipo === "lista" ? (
                     <span className="k-items">
                       {(n.items ?? []).filter((x) => !x.ok).slice(0, 6).map((x) => (

@@ -1063,3 +1063,56 @@ h1{font-weight:700;letter-spacing:-.02em}
 .hb-mes i.tdy{box-shadow:inset 0 0 0 2px var(--primary);background:transparent}
 .hb-foot{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
 .hb-del{font-size:14px;color:var(--muted);min-height:40px}
+
+/* ---------- Versión 1.6 ---------- */
+/* Barra: Hoy grande pero en gris si no estás en Hoy */
+@media (max-width:899px){
+  .navitem.hoy a{color:var(--muted)}
+  .navitem.hoy a[aria-current="page"]{color:var(--ink)}
+}
+/* Semana: el encabezado plegado nunca se parte en dos líneas */
+.daypast>summary{flex-wrap:nowrap}
+.daypast>summary b{white-space:nowrap}
+.daypast .pill{flex:none}
+.daypast .dp-n{white-space:nowrap}
+/* Hábitos: círculo para marcar */
+.hb-check{flex:none;width:48px;height:48px;border-radius:50%;border:2px solid var(--field);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0;color:transparent;transition:background .15s,border-color .15s}
+.hb-check svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.hb-check:hover{border-color:var(--primary)}
+.hb-check[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.hb-check:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+/* Cerebro: búsqueda con ordenar y vista dentro */
+.k-search{display:flex;align-items:center;gap:2px;min-height:52px;padding:0 4px 0 14px;margin-bottom:14px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.k-search:focus-within{border-color:var(--pine);box-shadow:0 0 0 3px color-mix(in srgb,var(--pine) 22%,transparent)}
+.k-sico{width:20px;height:20px;flex:none;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.k-search input{flex:1;min-width:0;border:none;background:transparent;box-shadow:none!important;padding:10px 8px}
+.k-sbtn{flex:none;width:44px;height:44px;border-radius:50%;border:none;background:none;display:grid;place-items:center;color:var(--muted);cursor:pointer;padding:0}
+.k-sbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.k-sbtn:hover{background:var(--rocio);color:var(--ink)}
+.k-sbtn:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.k-search .menu{right:0}
+.menu [role="menuitemradio"]{justify-content:space-between}
+.menu [aria-checked="true"]{font-weight:700}
+.ke-ok{width:20px;height:20px;fill:none;stroke:var(--primary);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* Cerebro: cuadros en filas parejas (orden de izquierda a derecha) o una debajo de otra */
+.k-grid{columns:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+@media (min-width:900px){.k-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}}
+.k-grid .k-card{margin:0;height:100%;box-sizing:border-box}
+.k-grid .k-title{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.k-grid .k-text{-webkit-line-clamp:5}
+.k-grid.una{grid-template-columns:minmax(0,1fr)}
+.k-grid.una .k-text{-webkit-line-clamp:3}
+/* Editor tipo Keep */
+.ke-bar{border-bottom:none;gap:4px}
+.ke-ib{border-color:transparent;background:none;border-radius:50%}
+.ke-ib:hover,.ke-ib[aria-pressed="true"],.ke-ib[aria-expanded="true"]{background:var(--rocio);border-color:transparent}
+.ke-menu{min-width:240px;max-height:60vh;overflow-y:auto}
+.ke-paper{padding-top:8px;gap:4px}
+.ke-title{font-family:var(--display);font-size:26px;font-weight:700;border:none;background:transparent;padding:6px 0;box-shadow:none!important;min-height:0}
+.ke-where{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.rich.bare{border:none;background:transparent;box-shadow:none}
+.rich.bare:focus-within{box-shadow:none}
+.rich.bare .rich-body{padding:4px 0;min-height:40vh}
+.rich.bare .toolbar{background:var(--bg);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.voice.float{position:fixed;left:12px;right:12px;bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:35;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgb(0 0 0 / .18);flex-wrap:wrap}
+@media (min-width:900px){.voice.float{left:auto;width:420px}}

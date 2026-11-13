@@ -166,29 +166,40 @@ export default function NoteView({
   );
 }
 
-/** Editar (o crear) una nota de texto o de lista */
+/**
+ * Editar (o crear) una nota, como Google Keep: una hoja limpia con «Título» y «Nota».
+ * Las opciones están arriba a la derecha. Al volver (←) se guarda sola.
+ */
 function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder: string; tipo: "texto" | "lista" }; onDone: () => void }) {
   const { save, carpetas } = useData();
-  const [d, setD] = useState(() => ({
-    title: note?.title ?? "",
-    folder: note?.folder ?? nueva?.folder ?? "notas",
-    tipo: (note?.tipo ?? nueva?.tipo ?? "texto") as "texto" | "lista",
-    html: note?.html ?? (note?.text ? `<p>${esc(note.text).replace(/\n/g, "<br>")}</p>` : ""),
-    text: note?.text ?? "",
-    items: note?.items?.length ? note.items : [{ id: newId(), t: "", ok: false }],
-  }));
+  const inicial = useRef<string>("");
+  const [d, setD] = useState(() => {
+    const v = {
+      title: note?.title ?? "",
+      folder: note?.folder ?? nueva?.folder ?? "notas",
+      tipo: (note?.tipo ?? nueva?.tipo ?? "texto") as "texto" | "lista",
+      html: note?.html ?? (note?.text ? `<p>${esc(note.text).replace(/\n/g, "<br>")}</p>` : ""),
+      text: note?.text ?? "",
+      items: note?.items?.length ? note.items : [{ id: newId(), t: "", ok: false }],
+    };
+    inicial.current = JSON.stringify(v);
+    return v;
+  });
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [menu, setMenu] = useState<"" | "carpeta" | "mas">("");
+  const [formato, setFormato] = useState(false);
   const items = d.items.filter((i) => i.t.trim());
-  const vacia = d.tipo === "lista" ? !items.length : !d.text.trim();
+  const vacia = d.tipo === "lista" ? !items.length && !d.title.trim() : !d.text.trim() && !d.title.trim();
+  const opciones = folderOptions(carpetas);
+  const carpeta = opciones.find((o) => o.id === d.folder)?.label ?? "Notas";
 
-  const setTipo = (tipo: "texto" | "lista") => {
-    if (tipo === d.tipo) return;
-    if (tipo === "lista") {
+  const setTipo = () => {
+    if (d.tipo === "texto") {
       const lines = d.text.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
-      setD({ ...d, tipo, items: lines.length ? lines.map((t) => ({ id: newId(), t, ok: false })) : d.items });
+      setD({ ...d, tipo: "lista", items: lines.length ? lines.map((t) => ({ id: newId(), t, ok: false })) : d.items });
     } else {
       const text = d.items.map((i) => i.t).filter(Boolean).join("\n");
-      setD({ ...d, tipo, text, html: text ? text.split("\n").map((l) => `<p>${esc(l)}</p>`).join("") : "" });
+      setD({ ...d, tipo: "texto", text, html: text ? text.split("\n").map((l) => `<p>${esc(l)}</p>`).join("") : "" });
     }
   };
   const setItem = (id: string, t: string) => setD((x) => ({ ...x, items: x.items.map((i) => (i.id === id ? { ...i, t } : i)) }));
@@ -204,50 +215,99 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
   };
   const delItem = (id: string) => setD((x) => ({ ...x, items: x.items.length > 1 ? x.items.filter((i) => i.id !== id) : [{ ...x.items[0], t: "" }] }));
 
-  const commit = () => {
-    if (vacia) return;
-    const base: Nota = note ?? { id: newId(), kind: "nota", title: "", text: "", ref: "", created: new Date().toISOString() };
-    const lista = d.tipo === "lista";
-    save("notas", {
-      ...base,
-      title: d.title.trim(),
-      folder: d.folder,
-      tipo: d.tipo,
-      items: lista ? items : undefined,
-      html: lista ? undefined : d.html,
-      text: lista ? textOf({ tipo: "lista", items, text: "" }) : d.text.trim(),
-      updated: new Date().toISOString(),
-    });
+  /* Volver = guardar (si hay algo y cambió) */
+  const volver = () => {
+    const cambio = JSON.stringify(d) !== inicial.current;
+    if (!vacia && cambio) {
+      const base: Nota = note ?? { id: newId(), kind: "nota", title: "", text: "", ref: "", created: new Date().toISOString() };
+      const lista = d.tipo === "lista";
+      save("notas", {
+        ...base,
+        title: d.title.trim(),
+        folder: d.folder,
+        tipo: d.tipo,
+        items: lista ? items : undefined,
+        html: lista ? undefined : d.html,
+        text: lista ? textOf({ tipo: "lista", items, text: "" }) : d.text.trim(),
+        updated: new Date().toISOString(),
+      });
+    }
     onDone();
   };
 
   return (
-    <div className="nv" role="dialog" aria-modal="true" aria-labelledby="ne-h">
-      <div className="nv-bar">
-        <button className="nv-ib" aria-label="Cancelar" onClick={onDone}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    <div className="nv ke" role="dialog" aria-modal="true" aria-label={note ? "Editar nota" : "Nueva nota"}>
+      <div className="nv-bar ke-bar">
+        <button className="nv-ib ke-ib" aria-label={vacia ? "Volver" : "Guardar y volver"} onClick={volver}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
         </button>
-        <h2 id="ne-h" className="nv-h">{note ? "Editar nota" : "Nueva nota"}</h2>
         <span style={{ flex: 1 }} />
-        <button className="btn sm" onClick={commit} disabled={vacia}>Guardar</button>
+        {d.tipo === "texto" && (
+          <button className="nv-ib ke-ib" aria-label="Formato" title="Formato" aria-pressed={formato} onClick={() => setFormato(!formato)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14M8 16l4-11 4 11M9.5 12h5" /></svg>
+          </button>
+        )}
+        <button className="nv-ib ke-ib" aria-label={d.tipo === "lista" ? "Cambiar a texto" : "Cambiar a lista"} title={d.tipo === "lista" ? "Texto" : "Lista"} onClick={setTipo}>
+          {d.tipo === "lista" ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12l3 3 5-6" /></svg>
+          )}
+        </button>
+        <VoiceButton
+          compact
+          onText={(p) =>
+            d.tipo === "lista"
+              ? setD((x) => ({ ...x, items: [...x.items.filter((i) => i.t.trim()), ...p.map((t) => ({ id: newId(), t, ok: false }))] }))
+              : setD((x) => ({ ...x, ...appendParas(x.html, x.text, p) }))
+          }
+          onTitle={async (t) => {
+            if (d.title.trim()) return;
+            const title = await suggestTitle(t);
+            if (title) setD((x) => (x.title.trim() ? x : { ...x, title }));
+          }}
+        />
+        <div className="nv-more">
+          <button className="nv-ib ke-ib" aria-label="Carpeta" title="Carpeta" aria-haspopup="menu" aria-expanded={menu === "carpeta"} onClick={() => setMenu(menu === "carpeta" ? "" : "carpeta")}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
+          </button>
+          {menu === "carpeta" && (
+            <>
+              <div className="dial-backdrop clear" onClick={() => setMenu("")} />
+              <div className="menu ke-menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu("")}>
+                <p className="k-menulabel">Guardar en</p>
+                {opciones.map((o, i) => (
+                  <button key={o.id} role="menuitemradio" aria-checked={o.id === d.folder} autoFocus={o.id === d.folder || (i === 0 && !opciones.some((x) => x.id === d.folder))} onClick={() => { setD({ ...d, folder: o.id }); setMenu(""); }}>
+                    <span>{o.label}</span>
+                    {o.id === d.folder && <svg className="ke-ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="nv-more">
+          <button className="nv-ib ke-ib" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu === "mas"} onClick={() => setMenu(menu === "mas" ? "" : "mas")}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
+          </button>
+          {menu === "mas" && (
+            <>
+              <div className="dial-backdrop clear" onClick={() => setMenu("")} />
+              <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu("")}>
+                <button role="menuitem" autoFocus onClick={onDone}>{note ? "Descartar cambios" : "Descartar nota"}</button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-      <div className="nv-body">
-        <div className="nv-paper ne">
-          <label htmlFor="ne-title" className="sr-only">Título</label>
-          <input id="ne-title" className="ne-title" placeholder="Título" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} />
-          <div className="ne-opts">
-            <div className="seg ne-tipo" role="group" aria-label="Tipo de nota">
-              <button type="button" aria-pressed={d.tipo === "texto"} onClick={() => setTipo("texto")}>Texto</button>
-              <button type="button" aria-pressed={d.tipo === "lista"} onClick={() => setTipo("lista")}>Lista</button>
-            </div>
-            <label htmlFor="ne-folder" className="sr-only">Carpeta</label>
-            <select id="ne-folder" value={d.folder} onChange={(e) => setD({ ...d, folder: e.target.value })}>
-              {folderOptions(carpetas).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-            </select>
-          </div>
 
+      <div className="nv-body">
+        <div className="nv-paper ke-paper">
+          <label htmlFor="ne-title" className="sr-only">Título</label>
+          <input id="ne-title" className="ke-title" placeholder="Título" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} />
+          <p className="ke-where">En {carpeta}</p>
           {d.tipo === "texto" ? (
-            <RichEditor id="ne-text" big autoFocus={!note} value={d.html} placeholder="Escribe aquí…" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={commit} />
+            <RichEditor id="ne-text" big bare tools={formato} autoFocus={!note} value={d.html} placeholder="Nota" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={volver} />
           ) : (
             <ul className="ne-list" aria-label="Elementos de la lista">
               {d.items.map((it, i) => (
@@ -281,20 +341,6 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
               </li>
             </ul>
           )}
-
-          <VoiceButton
-            onText={(p) =>
-              d.tipo === "lista"
-                ? setD((x) => ({ ...x, items: [...x.items.filter((i) => i.t.trim()), ...p.map((t) => ({ id: newId(), t, ok: false }))] }))
-                : setD((x) => ({ ...x, ...appendParas(x.html, x.text, p) }))
-            }
-            onTitle={async (t) => {
-              if (d.title.trim()) return;
-              const title = await suggestTitle(t);
-              if (title) setD((x) => (x.title.trim() ? x : { ...x, title }));
-            }}
-          />
-          {vacia && <p className="hint" role="status">{d.tipo === "lista" ? "Añade al menos un elemento para guardar." : "Escribe algo para guardar."}</p>}
         </div>
       </div>
     </div>

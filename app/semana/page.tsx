@@ -48,7 +48,7 @@ export default function Semana() {
             <>
               <b>{DOW[d.getDay()]} {d.getDate()}</b>
               {preachesOn(labores, x) ? <span className="pill">Predicas</span> : rolesOn(labores, x).length ? <span className="pill">Culto</span> : <span className="pill free">Noche libre</span>}
-              {dias[x] && <span className="pill mine">Editado</span>}
+              {dias[x] && x >= t && <span className="pill mine">Editado</span>}
             </>
           );
           const cuerpo = bloques.map((bl) => (
@@ -63,11 +63,10 @@ export default function Semana() {
               <details className="card daypast" key={x}>
                 <summary className="dayhead">
                   {head}
-                  <span className="dp-n">{bloques.length} bloques</span>
+                  <span className="dp-n">{bloques.length} {bloques.length === 1 ? "bloque" : "bloques"}</span>
                   <svg className="dp-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
                 </summary>
                 {cuerpo}
-                <button className="linkbtn" onClick={() => setEditing(x)}>Editar {DOW[d.getDay()].toLowerCase()} {d.getDate()}</button>
               </details>
             );
           return (
