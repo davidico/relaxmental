@@ -11,7 +11,7 @@
 import { scheduleFor, type Bloque } from "../lib/schedule";
 import laboresBase from "../data/labores.json";
 import { sendPush, vapid, type Sub } from "./push";
-import { planDay, title, transcribe, type AI } from "./ai";
+import { planDay, preguntas, reescribirReglas, title, transcribe, type AI } from "./ai";
 
 const LABORES = (laboresBase as { dias: Record<string, string[]> }).dias;
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
@@ -160,6 +160,18 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const bloques = await planDay(env.AI, { reglas, fecha, labores: LABORES, tareas });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
+  }
+
+  if (url.pathname === "/api/ai/preguntas" && req.method === "POST") {
+    const { reglas } = (await req.json()) as { reglas?: string };
+    return json({ preguntas: await preguntas(env.AI, String(reglas ?? "")) });
+  }
+  if (url.pathname === "/api/ai/reglas" && req.method === "POST") {
+    const b = (await req.json()) as { reglas?: string; respuestas?: { p?: string; r?: string }[]; mensaje?: string };
+    const respuestas = (Array.isArray(b.respuestas) ? b.respuestas : []).slice(0, 20).map((x) => ({ p: String(x?.p ?? "").slice(0, 300), r: String(x?.r ?? "").slice(0, 3000) }));
+    const texto = await reescribirReglas(env.AI, { reglas: String(b.reglas ?? ""), respuestas, mensaje: String(b.mensaje ?? "") });
+    if (!texto) return json({ error: "ai_empty" }, 502);
+    return json({ reglas: texto });
   }
 
   if (!TABLAS.has(tabla) || !id) return json({ error: "not_found" }, 404);

@@ -1161,3 +1161,14 @@ h1{font-weight:700;letter-spacing:-.02em}
 /* Calendario: el número siempre centrado en su círculo */
 .wd-day{display:grid;place-items:center;padding:0;line-height:1;min-height:0}
 .vwarn-txt{color:var(--gold-ink);font-weight:600;font-size:15px}
+
+/* ---------- Versión 2.2: armar reglas con preguntas ---------- */
+.rq{gap:14px}
+.rq-centro{padding:40px 0;display:flex;flex-direction:column;gap:14px}
+.rq-barra{height:6px;border-radius:3px;background:var(--cell);overflow:hidden}
+.rq-barra i{display:block;height:100%;background:var(--primary);transition:width .2s}
+.rq-p{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.3;color:var(--ink)}
+.rq-r{min-height:140px;font-size:17px;line-height:1.5}
+.rq-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rq-nav .btn{min-height:48px}
+.nv .hint{border:none;background:none;padding:0;font-size:15px}

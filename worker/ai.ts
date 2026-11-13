@@ -135,3 +135,46 @@ export async function planDay(
   });
   return cleanBlocks(parsed<{ bloques: unknown }>(r)?.bloques);
 }
+
+/** Preguntas para completar las reglas del horario (lo que falta o no está claro) */
+export async function preguntas(ai: AI, reglas: string): Promise<string[]> {
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ayudas a una persona a escribir las reglas de su horario semanal. Lee sus reglas y haz 8 preguntas cortas en español, de una en una, " +
+          "sobre lo que falta o no está claro: horas, días concretos, excepciones, descansos, prioridades, qué le cuesta y qué quiere proteger. " +
+          "Tutéala, preguntas sencillas y concretas (máx. 20 palabras), sin repetir lo que ya está claro. " +
+          'Responde SOLO con JSON: {"preguntas":["…","…"]}',
+      },
+      { role: "user", content: `MIS REGLAS ACTUALES:\n${reglas.slice(0, 6000) || "(todavía no hay)"}` },
+    ],
+    response_format: { type: "json_schema", json_schema: { type: "object", properties: { preguntas: { type: "array", items: { type: "string" } } }, required: ["preguntas"] } },
+    max_tokens: 700,
+    temperature: 0.4,
+  });
+  const xs = parsed<{ preguntas: unknown }>(r)?.preguntas;
+  return Array.isArray(xs) ? xs.map((x) => String(x).trim()).filter((x) => x.length > 5).slice(0, 10) : [];
+}
+
+/** Reescribe las reglas con las respuestas y el mensaje final */
+export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string }): Promise<string> {
+  const qa = o.respuestas.filter((x) => x.r.trim()).map((x) => `P: ${x.p}\nR: ${x.r.trim()}`).join("\n\n");
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Reescribes las reglas del horario semanal de una persona, en español y en primera persona, como ella misma las escribiría. " +
+          "Parte de sus reglas actuales y añade o corrige lo que dicen sus respuestas y su mensaje final (si chocan, ganan las respuestas y el mensaje). " +
+          "No inventes nada que no esté en sus reglas o respuestas. Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
+          "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
+      },
+      { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}` },
+    ],
+    max_tokens: 2500,
+    temperature: 0.2,
+  });
+  return String(r.response ?? "").trim();
+}

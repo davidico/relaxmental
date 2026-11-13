@@ -6,6 +6,7 @@ import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/schedule";
 import VoiceButton from "@/components/VoiceButton";
+import RulesQuiz, { hayPreguntasPendientes } from "@/components/RulesQuiz";
 import { NOVEDADES, REGLAS_INICIALES, VERSION, VERSION_FECHA } from "@/lib/version";
 
 type Prop = { fecha: string; bloques?: Bloque[]; error?: boolean };
@@ -17,6 +18,9 @@ export default function Perfil() {
   const [guardadas, setGuardadas] = useState("");
   const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
   const [editando, setEditando] = useState(false);
+  const [quiz, setQuiz] = useState(false);
+  const [pendiente, setPendiente] = useState(false);
+  useEffect(() => setPendiente(hayPreguntasPendientes()), [quiz]);
   const [todas, setTodas] = useState(false);
   const [semana, setSemana] = useState<"esta" | "proxima">(new Date().getDay() === 0 ? "proxima" : "esta");
   const [props, setProps] = useState<Prop[] | null>(null);
@@ -46,20 +50,24 @@ export default function Perfil() {
 
   const cambiado = reglas !== guardadas;
 
-  const guardar = async () => {
+  const guardar = async (texto: string = reglas) => {
     setEstado("guardando");
     try {
       if (cloud) {
-        const r = await fetch("/api/perfil/reglas", { method: "PUT", body: JSON.stringify({ text: reglas, updated: new Date().toISOString() }) });
+        const r = await fetch("/api/perfil/reglas", { method: "PUT", body: JSON.stringify({ text: texto, updated: new Date().toISOString() }) });
         if (!r.ok) throw new Error();
-      } else localStorage.setItem("mi-semana-reglas", reglas);
-      setGuardadas(reglas);
+      } else localStorage.setItem("mi-semana-reglas", texto);
+      setReglas(texto);
+      setGuardadas(texto);
       setEstado("ok");
       setEditando(false);
+      return true;
     } catch {
       setEstado("error");
+      return false;
     }
   };
+
 
   const lunes = addD(mondayOf(today()), semana === "proxima" ? 7 : 0);
   const fechas = Array.from({ length: 7 }, (_, i) => addD(lunes, i)).filter((f) => f >= today());
@@ -151,7 +159,7 @@ export default function Perfil() {
             <textarea id="reglas" className="rules" value={reglas} onChange={(e) => { setReglas(e.target.value); setEstado(""); }} spellCheck autoFocus />
             <VoiceButton onText={(p) => { setReglas((r) => [r.trimEnd(), ...p].filter(Boolean).join("\n\n")); setEstado(""); }} />
             <div className="row actions">
-              <button className="btn" onClick={guardar} disabled={!cambiado || estado === "guardando"}>
+              <button className="btn" onClick={() => guardar()} disabled={!cambiado || estado === "guardando"}>
                 {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
               </button>
               <button className="btn ghost" onClick={() => { setReglas(guardadas); setEstado(""); setEditando(false); }}>Cancelar</button>
@@ -168,12 +176,16 @@ export default function Perfil() {
             <p className="rules-view all" id="reglas-texto">{guardadas}</p>
             <div className="row actions">
               <button className="btn" onClick={() => setEditando(true)}>Editar reglas</button>
+              {cloud && (
+                <button className="btn ghost" onClick={() => setQuiz(true)}>{pendiente ? "Seguir con las preguntas" : "Armar con preguntas"}</button>
+              )}
               {estado === "ok" && <span role="status" className="vok">✓ Reglas guardadas</span>}
             </div>
           </>
         ) : null}
         </div>
       </section>
+      {quiz && <RulesQuiz reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
 
       <h2 id="ia-h">Armar mi semana con IA</h2>
       <section className="card pad" aria-labelledby="ia-h">
