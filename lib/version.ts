@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "3.7";
+export const VERSION = "3.8";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Metas y tareas separadas: en el planner pones tus metas (Personal y Trabajo) y debajo ves las tareas puntuales de cada día",
+  "En Hoy: «Tus metas de hoy» y «Tareas de hoy»; la IA te propone a qué hora trabajar en cada meta",
+  "Puedes poner un rango de horas: «9:00-11:00 Contabilidad»",
   "En el planner, los días que ya pasaron se ven apagados y no se pueden cambiar",
   "Cada mañana, lo que quedó sin hacer te pregunta: Hoy, Otro día o Ya no",
   "Semana es ahora tu weekly planner: lo que te propones cada día, separado en Personal y Trabajo, y tus pendientes",

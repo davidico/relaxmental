@@ -23,7 +23,12 @@ export default function Aprendizajes() {
       /* Si ya existe sin hacer, se mueve a ese día en vez de duplicarla */
       const t = a.tarea;
       const ya = tareas.find((x) => !x.done && x.title.trim().toLowerCase() === t.title.trim().toLowerCase());
-      save("tareas", ya ? { ...ya, due: t.due, hora: t.hora, lado: t.lado } : { id: newId(), title: t.title, step: "", due: t.due, ...(t.hora ? { hora: t.hora } : {}), done: false, created: new Date().toISOString(), lado: t.lado });
+      save(
+        "tareas",
+        ya
+          ? { ...ya, due: t.due, hora: t.hora, fin: t.hora ? t.fin : undefined }
+          : { id: newId(), title: t.title, step: "", due: t.due, ...(t.hora ? { hora: t.hora, ...(t.fin ? { fin: t.fin } : {}) } : {}), done: false, created: new Date().toISOString(), ...(t.meta ? { lado: t.lado, meta: true } : { meta: false }) },
+      );
       setApuntada(t.title);
     }
     if (si && a.regla) {

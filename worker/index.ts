@@ -10,7 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, propuestasDiario, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, propuestasDiario, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -249,6 +249,15 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .map((c) => ({ fecha: c.fecha as string, antes: lista(c.antes), despues: lista(c.despues) }));
     if (!historial.length) return json({ conclusiones: [] });
     return json({ conclusiones: await conclusiones(env.AI, { historial, reglas: String(b.reglas ?? ""), decididas: lista(b.decididas) }) });
+  }
+  /* Metas de hoy sin hora: cuándo trabajar en cada una */
+  if (url.pathname === "/api/ai/metas" && req.method === "POST") {
+    const b = (await req.json()) as { fecha?: string; ahora?: string; metas?: { id?: unknown; t?: unknown; lado?: unknown }[]; bloques?: unknown; reglas?: string };
+    if (typeof b.fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha) || !/^\d{2}:\d{2}$/.test(String(b.ahora ?? ""))) return json({ error: "bad_request" }, 400);
+    const metas = (Array.isArray(b.metas) ? b.metas : []).slice(0, 12).map((m) => ({ id: String(m?.id ?? "").slice(0, 60), t: String(m?.t ?? "").slice(0, 120), lado: m?.lado === "trabajo" ? "trabajo" : "personal" })).filter((m) => m.id && m.t);
+    if (!metas.length) return json({ propuestas: [] });
+    const bloques = Array.isArray(b.bloques) ? b.bloques.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
+    return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? "") }) });
   }
   /* El diario de la noche: propuestas para seguir organizándose */
   if (url.pathname === "/api/ai/diario" && req.method === "POST") {

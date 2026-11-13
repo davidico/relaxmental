@@ -7,7 +7,8 @@ import { DOW, MES, addD, ds, pd, toMin } from "@/lib/dates";
 import { nowInfo, textoEventos, type Bloque } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { sortHabits } from "@/lib/habits";
-import type { Tarea } from "@/lib/types";
+import { esMeta, type Tarea } from "@/lib/types";
+import HorasMetas from "@/components/HorasMetas";
 import { openTasks, toggleHecho } from "@/components/ui";
 import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
@@ -309,7 +310,7 @@ function OneTask({ day }: { day: string }) {
       <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
       <span className="hy-task-b">
         <label htmlFor={`hy-${x.id}`}>{x.title}</label>
-        {x.hora && <span className="hy-step">A las {x.hora}</span>}
+        {x.hora && <span className="hy-step">{x.fin ? `De ${x.hora} a ${x.fin}` : `A las ${x.hora}`}</span>}
         {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
       </span>
       {x.id === primera?.id && (
@@ -320,30 +321,44 @@ function OneTask({ day }: { day: string }) {
       )}
     </li>
   );
-  const grupos = (["personal", "trabajo"] as const).map((l) => ({ l, xs: deHoy.filter((x) => (x.lado === "trabajo" ? "trabajo" : "personal") === l) })).filter((g) => g.xs.length);
+  const metas = deHoy.filter(esMeta);
+  const tareasHoy = deHoy.filter((x) => !esMeta(x));
+  const grupos = (["personal", "trabajo"] as const).map((l) => ({ l, xs: metas.filter((x) => (x.lado === "trabajo" ? "trabajo" : "personal") === l) })).filter((g) => g.xs.length);
   return (
-    <section aria-labelledby="hy-una" className="hy-sec">
-      <Atrasadas day={day} />
-      <div className="hy-sechead">
-        <h2 id="hy-una" className="hy-h">Lo que te propusiste hoy</h2>
-        {deHoy.length > 0 && <span className="hy-count">{hechas} de {deHoy.length}</span>}
-      </div>
-      {deHoy.length ? (
-        grupos.map((g) => (
-          <div key={g.l} className={`hy-lado ${g.l}`}>
-            {grupos.length > 1 || g.l === "trabajo" ? <h3 className="hy-lado-h">{g.l === "trabajo" ? "Trabajo" : "Personal"}</h3> : null}
-            <ul className="hy-pros">{g.xs.map((x) => fila(x))}</ul>
-          </div>
-        ))
-      ) : (
-        <p className="hy-empty">Nada apuntado para hoy. <Link href="/semana">Ábrelo en tu planner</Link>.</p>
-      )}
-      {otras > 0 && (
-        <Link className="linkbtn hy-more" href="/semana">
-          Ver tu semana ({otras} {otras === 1 ? "cosa más" : "cosas más"})
-        </Link>
-      )}
-    </section>
+    <>
+      <section aria-labelledby="hy-una" className="hy-sec">
+        <Atrasadas day={day} />
+        <div className="hy-sechead">
+          <h2 id="hy-una" className="hy-h">Tus metas de hoy</h2>
+          {metas.length > 0 && <span className="hy-count">{metas.filter((x) => x.done).length} de {metas.length}</span>}
+        </div>
+        {metas.length ? (
+          grupos.map((g) => (
+            <div key={g.l} className={`hy-lado ${g.l}`}>
+              <h3 className="hy-lado-h">{g.l === "trabajo" ? "Trabajo" : "Personal"}</h3>
+              <ul className="hy-pros">{g.xs.map((x) => fila(x))}</ul>
+            </div>
+          ))
+        ) : (
+          <p className="hy-empty">
+            Sin metas para hoy. <Link href="/semana">Ponlas en tu planner</Link>.
+          </p>
+        )}
+        <HorasMetas day={day} metas={metas} />
+      </section>
+      <section aria-labelledby="hy-tar" className="hy-sec">
+        <div className="hy-sechead">
+          <h2 id="hy-tar" className="hy-h">Tareas de hoy</h2>
+          {tareasHoy.length > 0 && <span className="hy-count">{tareasHoy.filter((x) => x.done).length} de {tareasHoy.length}</span>}
+        </div>
+        {tareasHoy.length ? <ul className="hy-pros">{tareasHoy.map((x) => fila(x))}</ul> : <p className="hy-empty">Ninguna tarea para hoy.</p>}
+        {otras > 0 && (
+          <Link className="linkbtn hy-more" href="/semana">
+            Ver tu semana ({otras} {otras === 1 ? "cosa más" : "cosas más"})
+          </Link>
+        )}
+      </section>
+    </>
   );
 }
 

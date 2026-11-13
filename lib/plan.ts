@@ -65,14 +65,19 @@ export function encajar(base: Bloque[], fijos: Bloque[]): Bloque[] {
   return [...out, ...fijos].sort((x, y) => toMin(x.s) - toMin(y.s));
 }
 
-type TareaConHora = { id: string; title: string; step?: string; due: string; hora?: string; done: boolean; lado?: string };
+type TareaConHora = { id: string; title: string; step?: string; due: string; hora?: string; done: boolean; lado?: string; meta?: boolean; fin?: string };
 const hhmm = (m: number) => `${String(Math.floor(Math.min(m, 1439) / 60)).padStart(2, "0")}:${String(Math.min(m, 1439) % 60).padStart(2, "0")}`;
 
 /** Las tareas de esa fecha que tienen hora, como bloques de 30 minutos */
 export function bloquesDeTareas(fecha: string, tareas: TareaConHora[] = []): Bloque[] {
   return tareas
     .filter((t) => !t.done && t.due === fecha && t.hora && hm.test(t.hora))
-    .map((t) => ({ s: t.hora!, e: hhmm(toMin(t.hora!) + 30), t: t.title, a: (t.lado === "trabajo" ? "trabajo" : "casa") as Area, sub: t.step ? `Tarea · ${t.step}` : "Tarea", tarea: t.id }));
+    .map((t) => {
+      const meta = t.meta ?? !!t.lado;
+      const e = t.fin && hm.test(t.fin) && toMin(t.fin) > toMin(t.hora!) ? t.fin : hhmm(toMin(t.hora!) + 30);
+      const tipo = meta ? "Meta" : "Tarea";
+      return { s: t.hora!, e, t: t.title, a: (t.lado === "trabajo" ? "trabajo" : "casa") as Area, sub: t.step ? `${tipo} · ${t.step}` : tipo, tarea: t.id };
+    });
 }
 
 /**

@@ -346,7 +346,7 @@ export async function conclusiones(
 export async function propuestasDiario(
   ai: AI,
   o: { fecha: string; texto: string; hechas: string[]; pendientes: string[]; semana: string[]; reglas: string; decididas: string[] },
-): Promise<{ texto: string; regla?: string; tarea?: { title: string; due: string; hora?: string; lado: "personal" | "trabajo" } }[]> {
+): Promise<{ texto: string; regla?: string; tarea?: { title: string; due: string; hora?: string; fin?: string; lado: "personal" | "trabajo"; meta: boolean } }[]> {
   const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
   const manana = new Date(Date.parse(o.fecha + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
   const r = await ai.run(LLM, {
@@ -355,8 +355,10 @@ export async function propuestasDiario(
         role: "system",
         content:
           "Eres el asistente de organización de una persona. Por la noche escribe su diario. Léelo junto con lo que cumplió y lo que no, y propón hasta 3 cosas útiles para organizarse mejor. " +
+          "Sus cosas son de dos tipos: [meta] = en lo que quiere avanzar un día (lleva tiempo, puede repetirse) y [tarea] = algo puntual y rápido. " +
+          "Si una tarea no se hizo, propón pasarla a otro día. Si una meta lleva días sin avanzar, propón darle un bloque de tiempo concreto (hora y fin) otro día. " +
           "Cada propuesta es UNA de dos clases: " +
-          "(a) algo concreto para apuntar en un día: «tarea» con title (corto), due (AAAA-MM-DD, normalmente mañana " + manana + " o un día de los próximos 7), hora opcional (HH:MM) y lado (personal o trabajo); " +
+          "(a) algo concreto para apuntar en un día: «tarea» con title (corto, igual que el original si ya existe), due (AAAA-MM-DD, normalmente mañana " + manana + " o un día de los próximos 7), hora y fin opcionales (HH:MM), lado (personal o trabajo) y meta (true si es una meta); " +
           "(b) una regla para su horario, en primera persona (ej.: «Los jueves no me apunto más de 3 cosas.»). " +
           "texto = la propuesta dicha a la persona, en segunda persona, corta y amable, explicando el porqué (ej.: «Hoy no te dio tiempo de la contabilidad. ¿La pongo mañana a las 9:00?»). " +
           "Básate solo en lo que escribió y en sus tareas; no inventes datos. Si se siente cansado o agobiado, propone aligerar, no añadir. No repitas lo ya decidido ni lo que ya está apuntado esta semana. " +
@@ -381,7 +383,7 @@ export async function propuestasDiario(
               properties: {
                 texto: { type: "string" },
                 regla: { type: "string" },
-                tarea: { type: "object", properties: { title: { type: "string" }, due: { type: "string" }, hora: { type: "string" }, lado: { type: "string", enum: ["personal", "trabajo"] } }, required: ["title", "due", "lado"] },
+                tarea: { type: "object", properties: { title: { type: "string" }, due: { type: "string" }, hora: { type: "string" }, fin: { type: "string" }, lado: { type: "string", enum: ["personal", "trabajo"] }, meta: { type: "boolean" } }, required: ["title", "due", "lado"] },
               },
               required: ["texto"],
             },
@@ -405,12 +407,63 @@ export async function propuestasDiario(
         const title = String(t.title ?? "").trim().slice(0, 120);
         const due = String(t.due ?? "");
         const hora = String(t.hora ?? "");
+        const fin = String(t.fin ?? "");
         if (!title || !fecha.test(due) || due <= o.fecha) return null;
-        return { texto, tarea: { title, due, ...(hm.test(hora) ? { hora } : {}), lado: t.lado === "trabajo" ? ("trabajo" as const) : ("personal" as const) } };
+        const conHora = hm.test(hora);
+        return {
+          texto,
+          tarea: { title, due, ...(conHora ? { hora } : {}), ...(conHora && hm.test(fin) && fin > hora ? { fin } : {}), lado: t.lado === "trabajo" ? ("trabajo" as const) : ("personal" as const), meta: t.meta === true },
+        };
       }
       const regla = String(x?.regla ?? "").trim().slice(0, 300);
       return regla ? { texto, regla } : null;
     })
     .filter((x): x is NonNullable<typeof x> => !!x && !!x.texto)
     .slice(0, 3);
+}
+
+/** Propone cuándo trabajar hoy en cada meta sin hora, mirando el itinerario del día */
+export async function horasMetas(
+  ai: AI,
+  o: { fecha: string; ahora: string; metas: { id: string; t: string; lado: string }[]; bloques: string[]; reglas: string },
+): Promise<{ id: string; s: string; e: string }[]> {
+  const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ayudas a una persona a decidir cuándo trabajar hoy en sus metas. Tienes su itinerario del día y sus reglas. " +
+          "Para cada meta propone UN bloque realista (s y e en HH:MM, normalmente de 45 a 120 minutos) que empiece después de la hora actual. " +
+          "Las metas de trabajo van en bloques de trabajo o huecos libres de horario laboral; las personales en huecos personales. " +
+          "Nunca encima de compromisos fijos (iglesia, turnos, citas), comidas, pastillas ni de otras tareas o metas ya puestas; puede ir dentro de bloques genéricos como «trabajo», «bloque de mañana» o «libre». " +
+          "Respeta sus reglas. Si una meta no cabe hoy, no la incluyas. No solapes las propuestas entre sí. " +
+          'Responde SOLO con JSON: {"propuestas":[{"id":"…","s":"HH:MM","e":"HH:MM"}]}',
+      },
+      {
+        role: "user",
+        content: `HOY: ${dia} ${o.fecha}, ahora son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.bloques.join("\n") || "(vacío)"}\n\nMETAS SIN HORA:\n${o.metas.map((m) => `${m.id} · [${m.lado}] ${m.t}`).join("\n")}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { type: "object", properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id", "s", "e"] } } }, required: ["propuestas"] },
+    },
+    max_tokens: 600,
+    temperature: 0.2,
+  });
+  const xs = parsed<{ propuestas: unknown }>(r)?.propuestas;
+  if (!Array.isArray(xs)) return [];
+  const hm = /^([01]\d|2[0-3]):[0-5]\d$/;
+  const ids = new Set(o.metas.map((m) => m.id));
+  const usados: [string, string][] = [];
+  return xs
+    .map((x: Record<string, unknown>) => ({ id: String(x?.id ?? ""), s: String(x?.s ?? ""), e: String(x?.e ?? "") }))
+    .filter((x) => {
+      if (!ids.has(x.id) || !hm.test(x.s) || !hm.test(x.e) || x.e <= x.s || x.s < o.ahora) return false;
+      if (usados.some(([s, e]) => x.s < e && s < x.e)) return false;
+      ids.delete(x.id);
+      usados.push([x.s, x.e]);
+      return true;
+    });
 }

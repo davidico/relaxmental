@@ -6,6 +6,7 @@ import { DOW, MES, addD, mondayOf, pd } from "@/lib/dates";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { leerDiario } from "@/lib/aprender";
 import VoiceButton from "./VoiceButton";
+import { esMeta, type Tarea } from "@/lib/types";
 
 /** A partir de esta hora aparece el momento del diario */
 export const HORA_DIARIO = 21;
@@ -34,16 +35,17 @@ export default function Diario() {
     if (mode !== "cloud" || offline) return setEstado("ok");
     setEstado("leyendo");
     const deHoy = tareas.filter((x) => x.due === hoy);
+    const et = (x: Tarea) => `[${esMeta(x) ? "meta" : "tarea"}${esMeta(x) ? " · " + (x.lado === "trabajo" ? "trabajo" : "personal") : ""}] ${x.title}`;
     const lun = mondayOf(hoy);
     const semana = tareas
       .filter((x) => !x.done && x.due > hoy && x.due <= addD(lun, 13))
-      .map((x) => `${x.due}${x.hora ? " " + x.hora : ""} [${x.lado === "trabajo" ? "trabajo" : "personal"}] ${x.title}`);
+      .map((x) => `${x.due}${x.hora ? " " + x.hora : ""} ${et(x)}`);
     try {
       const n = await leerDiario(perfil, savePerfil, {
         fecha: hoy,
         texto: t,
-        hechas: deHoy.filter((x) => x.done).map((x) => x.title),
-        pendientes: [...deHoy.filter((x) => !x.done), ...tareas.filter((x) => !x.done && x.due && x.due < hoy)].map((x) => `[${x.lado === "trabajo" ? "trabajo" : "personal"}] ${x.title}`),
+        hechas: deHoy.filter((x) => x.done).map(et),
+        pendientes: [...deHoy.filter((x) => !x.done), ...tareas.filter((x) => !x.done && x.due && x.due < hoy)].map((x) => `${x.due < hoy ? "(del " + x.due + ") " : ""}${et(x)}`),
         semana,
       });
       setEstado(n ? "ok" : "sin");

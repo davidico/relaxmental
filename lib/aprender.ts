@@ -14,7 +14,7 @@ export interface Aprendizaje {
   texto: string; // «Los viernes trabajas de 13:30 a 15:30»
   regla: string; // «Los viernes trabajo de 13:30 a 15:30.» (vacía si la propuesta es solo una tarea)
   /** Propuesta del diario: algo concreto para apuntar en un día */
-  tarea?: { title: string; due: string; hora?: string; lado: "personal" | "trabajo" };
+  tarea?: { title: string; due: string; hora?: string; fin?: string; lado: "personal" | "trabajo"; meta?: boolean };
   estado: "nueva" | "si" | "no";
   fecha: string;
 }

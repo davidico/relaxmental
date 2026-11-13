@@ -1413,3 +1413,19 @@ h1{font-weight:700;letter-spacing:-.02em}
 .pl-marca{width:24px;flex:none;text-align:center;color:var(--muted);font-weight:700}
 .pl-visto.hecho .pl-marca{color:var(--pine)}
 .pl-vacio{color:var(--muted);font-size:15px;padding:6px 2px}
+
+/* Metas y tareas (3.8) */
+.pl-tareas{border-top:1px dashed var(--line);background:color-mix(in srgb,var(--cell) 55%,var(--surface))}
+.pl-tareas .pl-lado{padding:6px 10px 2px}
+.pl-lado.tarea .pl-lado-h{color:var(--muted)}
+.pl-lado.tarea .pl-txt{font-size:15px}
+.hm-box{border:1px dashed color-mix(in srgb,var(--primary) 50%,var(--line));border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--pine-soft)}
+.hm-h{margin:0;font-family:var(--display);font-size:17px;font-weight:700}
+.hm-p{margin:0;line-height:1.45}
+.hm-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.hm-l li{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.hm-t{flex:1 1 160px;min-width:0;overflow-wrap:break-word}
+.hm-t b{font-family:var(--display);color:var(--pine)}
+.hm-b{display:flex;gap:6px}
+.hm-box .row.actions{margin-top:0}
+.pl-dia{display:flex;flex-direction:column}.pl-lados{flex:none}.pl-tareas{flex:1}

@@ -13,7 +13,14 @@ export interface Tarea {
   created: string;
   /** Lado de la vida en el planner semanal (sin lado = personal) */
   lado?: "personal" | "trabajo";
+  /** Meta del weekly planner (en lo que quieres avanzar ese día); si no, es una tarea puntual */
+  meta?: boolean;
+  /** Fin del bloque (HH:MM) cuando tiene hora; si no, dura 30 min */
+  fin?: string;
 }
+
+/** Lo escrito en el planner antes de separar metas y tareas también cuenta como meta */
+export const esMeta = (x: Pick<Tarea, "meta" | "lado">) => x.meta ?? !!x.lado;
 
 export interface Carpeta {
   id: string;
