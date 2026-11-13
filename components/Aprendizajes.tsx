@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useData } from "@/lib/data";
+import { newId, useData } from "@/lib/data";
 import { anadirRegla, type Aprendizaje } from "@/lib/aprender";
 import { armarPlantilla } from "@/lib/imagen";
 
@@ -10,15 +10,23 @@ import { armarPlantilla } from "@/lib/imagen";
  * Nada se aplica solo: «Sí, úsalo» la añade a tus reglas; «No» la descarta.
  */
 export default function Aprendizajes() {
-  const { perfil, savePerfil, offline } = useData();
+  const { perfil, savePerfil, offline, save, tareas } = useData();
   const [aceptadas, setAceptadas] = useState(0);
+  const [apuntada, setApuntada] = useState("");
   const [tipo, setTipo] = useState<"" | "armando" | "ok" | "error">("");
   const todas = (perfil.aprendizajes as Aprendizaje[] | undefined) ?? [];
   const nuevas = todas.filter((a) => a.estado === "nueva");
-  if (offline || (!nuevas.length && !aceptadas && tipo !== "ok")) return null;
+  if (offline || (!nuevas.length && !aceptadas && !apuntada && tipo !== "ok")) return null;
 
   const decidir = (a: Aprendizaje, si: boolean) => {
-    if (si) {
+    if (si && a.tarea) {
+      /* Si ya existe sin hacer, se mueve a ese día en vez de duplicarla */
+      const t = a.tarea;
+      const ya = tareas.find((x) => !x.done && x.title.trim().toLowerCase() === t.title.trim().toLowerCase());
+      save("tareas", ya ? { ...ya, due: t.due, hora: t.hora, lado: t.lado } : { id: newId(), title: t.title, step: "", due: t.due, ...(t.hora ? { hora: t.hora } : {}), done: false, created: new Date().toISOString(), lado: t.lado });
+      setApuntada(t.title);
+    }
+    if (si && a.regla) {
       const reglas = anadirRegla(perfil.reglas?.text ?? "", a.regla);
       savePerfil("reglas", { text: reglas, updated: new Date().toISOString() });
       setAceptadas((n) => n + 1);
@@ -38,14 +46,14 @@ export default function Aprendizajes() {
 
   return (
     <section className="card pad hy-aviso apr" aria-labelledby="apr-h">
-      <h2 id="apr-h" className="hy-h">Aprendí de tus días</h2>
-      {nuevas.length > 0 && <p>Miré cómo ajustaste tus días. ¿Lo tengo en cuenta?</p>}
+      <h2 id="apr-h" className="hy-h">Mis propuestas para ti</h2>
+      {nuevas.length > 0 && <p>Según cómo ajustas tus días y lo que escribes en tu diario. ¿Lo hago?</p>}
       <ul className="apr-lista">
         {nuevas.slice(0, 3).map((a) => (
           <li key={a.id}>
             <p className="apr-txt">{a.texto}</p>
             <div className="row actions">
-              <button className="btn sm" onClick={() => decidir(a, true)}>Sí, úsalo</button>
+              <button className="btn sm" onClick={() => decidir(a, true)}>{a.tarea ? "Sí, apúntalo" : "Sí, úsalo"}</button>
               <button className="btn ghost sm" onClick={() => decidir(a, false)}>No</button>
             </div>
           </li>
@@ -59,6 +67,7 @@ export default function Aprendizajes() {
           {tipo === "error" && <p className="verr" role="alert">⚠ No se pudo. Inténtalo otra vez.</p>}
         </div>
       )}
+      {apuntada && <p className="vok" role="status">✓ Apunté «{apuntada}» en tu planner.</p>}
       {tipo === "ok" && <p className="vok" role="status">✓ Tu semana tipo ya usa lo aprendido.</p>}
     </section>
   );

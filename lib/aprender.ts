@@ -12,7 +12,9 @@ export interface Cambio {
 export interface Aprendizaje {
   id: string;
   texto: string; // «Los viernes trabajas de 13:30 a 15:30»
-  regla: string; // «Los viernes trabajo de 13:30 a 15:30.»
+  regla: string; // «Los viernes trabajo de 13:30 a 15:30.» (vacía si la propuesta es solo una tarea)
+  /** Propuesta del diario: algo concreto para apuntar en un día */
+  tarea?: { title: string; due: string; hora?: string; lado: "personal" | "trabajo" };
   estado: "nueva" | "si" | "no";
   fecha: string;
 }
@@ -56,4 +58,29 @@ export function anadirRegla(reglas: string, regla: string) {
   const linea = `- ${regla.replace(/^[-•]\s*/, "")}`;
   if (reglas.includes(titulo)) return reglas.replace(titulo, `${titulo}\n${linea}`);
   return `${reglas.trimEnd()}\n\n${titulo}\n${linea}`.trim();
+}
+
+/**
+ * El diario de la noche: la IA lo lee junto con lo que cumpliste y lo que no,
+ * y deja propuestas (reglas o cosas para apuntar en un día) que tú aceptas o no.
+ */
+export async function leerDiario(
+  perfil: Perfil,
+  savePerfil: (id: string, d: unknown) => void,
+  o: { fecha: string; texto: string; hechas: string[]; pendientes: string[]; semana: string[] },
+) {
+  const previas = (perfil.aprendizajes as Aprendizaje[] | undefined) ?? [];
+  const r = await fetch("/api/ai/diario", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...o, reglas: perfil.reglas?.text ?? "", decididas: previas.slice(-30).map((x) => x.texto) }),
+  });
+  if (!r.ok) throw new Error("diario");
+  const { propuestas } = (await r.json()) as { propuestas: { texto: string; regla?: string; tarea?: Aprendizaje["tarea"] }[] };
+  const ya = new Set(previas.map((x) => x.texto.toLowerCase()));
+  const nuevas: Aprendizaje[] = (propuestas ?? [])
+    .filter((c) => c.texto && (c.regla || c.tarea) && !ya.has(c.texto.toLowerCase()))
+    .map((c, i) => ({ id: `${Date.now().toString(36)}d${i}`, texto: c.texto, regla: c.regla ?? "", ...(c.tarea ? { tarea: c.tarea } : {}), estado: "nueva", fecha: new Date().toISOString() }));
+  if (nuevas.length) savePerfil("aprendizajes", [...previas, ...nuevas].slice(-60));
+  return nuevas.length;
 }

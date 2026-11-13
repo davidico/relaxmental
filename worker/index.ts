@@ -10,7 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, propuestasDiario, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -249,6 +249,22 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .map((c) => ({ fecha: c.fecha as string, antes: lista(c.antes), despues: lista(c.despues) }));
     if (!historial.length) return json({ conclusiones: [] });
     return json({ conclusiones: await conclusiones(env.AI, { historial, reglas: String(b.reglas ?? ""), decididas: lista(b.decididas) }) });
+  }
+  /* El diario de la noche: propuestas para seguir organizándose */
+  if (url.pathname === "/api/ai/diario" && req.method === "POST") {
+    const b = (await req.json()) as { fecha?: string; texto?: string; hechas?: unknown; pendientes?: unknown; semana?: unknown; reglas?: string; decididas?: unknown };
+    const lista = (x: unknown) => (Array.isArray(x) ? x.map((y) => String(y).slice(0, 200)).slice(0, 40) : []);
+    if (typeof b.fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha) || !String(b.texto ?? "").trim()) return json({ error: "bad_request" }, 400);
+    const propuestas = await propuestasDiario(env.AI, {
+      fecha: b.fecha,
+      texto: String(b.texto),
+      hechas: lista(b.hechas),
+      pendientes: lista(b.pendientes),
+      semana: lista(b.semana),
+      reglas: String(b.reglas ?? ""),
+      decididas: lista(b.decididas),
+    });
+    return json({ propuestas });
   }
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };

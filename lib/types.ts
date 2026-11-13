@@ -11,6 +11,8 @@ export interface Tarea {
   hora?: string;
   done: boolean;
   created: string;
+  /** Lado de la vida en el planner semanal (sin lado = personal) */
+  lado?: "personal" | "trabajo";
 }
 
 export interface Carpeta {

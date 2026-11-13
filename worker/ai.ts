@@ -341,3 +341,76 @@ export async function conclusiones(
         .slice(0, 5)
     : [];
 }
+
+/** Lee el diario de la noche y propone cómo seguir: reglas para su horario o cosas concretas para un día */
+export async function propuestasDiario(
+  ai: AI,
+  o: { fecha: string; texto: string; hechas: string[]; pendientes: string[]; semana: string[]; reglas: string; decididas: string[] },
+): Promise<{ texto: string; regla?: string; tarea?: { title: string; due: string; hora?: string; lado: "personal" | "trabajo" } }[]> {
+  const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
+  const manana = new Date(Date.parse(o.fecha + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Eres el asistente de organización de una persona. Por la noche escribe su diario. Léelo junto con lo que cumplió y lo que no, y propón hasta 3 cosas útiles para organizarse mejor. " +
+          "Cada propuesta es UNA de dos clases: " +
+          "(a) algo concreto para apuntar en un día: «tarea» con title (corto), due (AAAA-MM-DD, normalmente mañana " + manana + " o un día de los próximos 7), hora opcional (HH:MM) y lado (personal o trabajo); " +
+          "(b) una regla para su horario, en primera persona (ej.: «Los jueves no me apunto más de 3 cosas.»). " +
+          "texto = la propuesta dicha a la persona, en segunda persona, corta y amable, explicando el porqué (ej.: «Hoy no te dio tiempo de la contabilidad. ¿La pongo mañana a las 9:00?»). " +
+          "Básate solo en lo que escribió y en sus tareas; no inventes datos. Si se siente cansado o agobiado, propone aligerar, no añadir. No repitas lo ya decidido ni lo que ya está apuntado esta semana. " +
+          'Responde SOLO con JSON: {"propuestas":[{"texto":"…","regla":"…"} o {"texto":"…","tarea":{"title":"…","due":"…","hora":"…","lado":"personal"}}]}',
+      },
+      {
+        role: "user",
+        content:
+          `HOY ES ${dia} ${o.fecha}.\n\nMI DIARIO:\n${o.texto.slice(0, 4000)}\n\nLO QUE HICE HOY:\n${o.hechas.join("\n") || "(nada marcado)"}\n\nLO QUE NO HICE:\n${o.pendientes.join("\n") || "(nada)"}` +
+          `\n\nYA APUNTADO PARA LOS PRÓXIMOS DÍAS:\n${o.semana.join("\n") || "(nada)"}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}\n\nYA DECIDIDO (no repetir):\n${o.decididas.join("\n") || "(nada)"}`,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        type: "object",
+        properties: {
+          propuestas: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                texto: { type: "string" },
+                regla: { type: "string" },
+                tarea: { type: "object", properties: { title: { type: "string" }, due: { type: "string" }, hora: { type: "string" }, lado: { type: "string", enum: ["personal", "trabajo"] } }, required: ["title", "due", "lado"] },
+              },
+              required: ["texto"],
+            },
+          },
+        },
+        required: ["propuestas"],
+      },
+    },
+    max_tokens: 900,
+    temperature: 0.3,
+  });
+  const xs = parsed<{ propuestas: unknown }>(r)?.propuestas;
+  if (!Array.isArray(xs)) return [];
+  const fecha = /^\d{4}-\d{2}-\d{2}$/;
+  const hm = /^([01]\d|2[0-3]):[0-5]\d$/;
+  return xs
+    .map((x: Record<string, unknown>) => {
+      const texto = String(x?.texto ?? "").trim().slice(0, 220);
+      const t = x?.tarea as Record<string, unknown> | undefined;
+      if (t && typeof t === "object") {
+        const title = String(t.title ?? "").trim().slice(0, 120);
+        const due = String(t.due ?? "");
+        const hora = String(t.hora ?? "");
+        if (!title || !fecha.test(due) || due <= o.fecha) return null;
+        return { texto, tarea: { title, due, ...(hm.test(hora) ? { hora } : {}), lado: t.lado === "trabajo" ? ("trabajo" as const) : ("personal" as const) } };
+      }
+      const regla = String(x?.regla ?? "").trim().slice(0, 300);
+      return regla ? { texto, regla } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x && !!x.texto)
+    .slice(0, 3);
+}

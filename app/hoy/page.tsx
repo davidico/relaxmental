@@ -14,6 +14,7 @@ import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
+import Diario from "@/components/Diario";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
@@ -73,6 +74,7 @@ export default function Hoy() {
         <div className="hy-col">
           <NowCard blocks={blocks} minute={minute} onEntreno={() => setEntreno(true)} />
           <OneTask day={t} />
+          <Diario />
           <SemanaAviso />
           <Aprendizajes />
           <HabitRings day={t} />
@@ -296,34 +298,58 @@ function SemanaAviso() {
 function OneTask({ day }: { day: string }) {
   const { tareas, save } = useData();
   const startFocus = useFocus();
-  const open = openTasks(tareas);
-  // Primero lo atrasado, luego lo de hoy
-  const deHoy = open.filter((x) => x.due && x.due <= day).sort((a, b) => (a.due + (a.hora || "99") < b.due + (b.hora || "99") ? -1 : a.due + (a.hora || "99") > b.due + (b.hora || "99") ? 1 : a.created < b.created ? -1 : 1));
-  const x: Tarea | undefined = deHoy[0];
-  const resto = open.length - (x ? 1 : 0);
-  return (
-    <section aria-labelledby="hy-una" className="hy-sec">
-      <h2 id="hy-una" className="hy-h">Lo único de hoy</h2>
-      {x ? (
-        <div className="hy-one">
-          <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={false} onChange={() => save("tareas", { ...x, done: true })} />
-          <span className="hy-task-b">
-            <label htmlFor={`hy-${x.id}`}>{x.title}</label>
-            {x.due < day && <span className="hy-late">Atrasada</span>}
-            {x.hora && x.due === day && <span className="hy-step">A las {x.hora}</span>}
-            {x.step && <span className="hy-step">Primer paso: {x.step}</span>}
-          </span>
+  const porHora = (a: Tarea, b: Tarea) => (a.hora || "99").localeCompare(b.hora || "99") || a.created.localeCompare(b.created);
+  const deHoy = tareas.filter((x) => x.due === day).sort(porHora);
+  const atrasadas = tareas.filter((x) => !x.done && x.due && x.due < day).sort((a, b) => a.due.localeCompare(b.due));
+  const primera = deHoy.find((x) => !x.done);
+  const hechas = deHoy.filter((x) => x.done).length;
+  const otras = openTasks(tareas).filter((x) => !x.due || x.due > day).length;
+  const fila = (x: Tarea, tarde = false) => (
+    <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
+      <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
+      <span className="hy-task-b">
+        <label htmlFor={`hy-${x.id}`}>{x.title}</label>
+        {x.hora && !tarde && <span className="hy-step">A las {x.hora}</span>}
+        {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
+      </span>
+      {tarde ? (
+        <button className="hy-start" onClick={() => save("tareas", { ...x, due: day, hora: undefined })} aria-label={`Pasar a hoy: ${x.title}`}>A hoy</button>
+      ) : (
+        x.id === primera?.id && (
           <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
             10 min
           </button>
-        </div>
-      ) : (
-        <p className="hy-empty">Nada urgente hoy. Respira.</p>
+        )
       )}
-      {resto > 0 && (
-        <Link className="linkbtn hy-more" href="/tareas">
-          {x ? `Ver ${resto === 1 ? "la otra tarea" : `las otras ${resto} tareas`}` : `Ver tus ${resto} tareas para otros días`}
+    </li>
+  );
+  const grupos = (["personal", "trabajo"] as const).map((l) => ({ l, xs: deHoy.filter((x) => (x.lado === "trabajo" ? "trabajo" : "personal") === l) })).filter((g) => g.xs.length);
+  return (
+    <section aria-labelledby="hy-una" className="hy-sec">
+      <div className="hy-sechead">
+        <h2 id="hy-una" className="hy-h">Lo que te propusiste hoy</h2>
+        {deHoy.length > 0 && <span className="hy-count">{hechas} de {deHoy.length}</span>}
+      </div>
+      {deHoy.length ? (
+        grupos.map((g) => (
+          <div key={g.l} className={`hy-lado ${g.l}`}>
+            {grupos.length > 1 || g.l === "trabajo" ? <h3 className="hy-lado-h">{g.l === "trabajo" ? "Trabajo" : "Personal"}</h3> : null}
+            <ul className="hy-pros">{g.xs.map((x) => fila(x))}</ul>
+          </div>
+        ))
+      ) : (
+        <p className="hy-empty">Nada apuntado para hoy. <Link href="/semana">Ábrelo en tu planner</Link>.</p>
+      )}
+      {atrasadas.length > 0 && (
+        <div className="hy-lado tarde">
+          <h3 className="hy-lado-h">De días anteriores</h3>
+          <ul className="hy-pros">{atrasadas.slice(0, 5).map((x) => fila(x, true))}</ul>
+        </div>
+      )}
+      {otras > 0 && (
+        <Link className="linkbtn hy-more" href="/semana">
+          Ver tu semana ({otras} {otras === 1 ? "cosa más" : "cosas más"})
         </Link>
       )}
     </section>

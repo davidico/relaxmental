@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Planner from "@/components/Planner";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 
@@ -11,6 +12,19 @@ import { cssC } from "@/components/ui";
 export default function Semana() {
   const { eventos, planFor, dias } = useData();
   const [editing, setEditing] = useState<string | null>(null);
+  /* Dos vistas: el planner (lo que te propones) y el horario hora por hora */
+  const [vista, setVista] = useState<"planner" | "horario">("planner");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("mi-semana-vista") === "horario") setVista("horario");
+    } catch {}
+  }, []);
+  const cambiarVista = (v: "planner" | "horario") => {
+    setVista(v);
+    try {
+      localStorage.setItem("mi-semana-vista", v);
+    } catch {}
+  };
   // El domingo por la tarde ya interesa la semana siguiente (revisión semanal)
   const [off, setOff] = useState(() => (new Date().getDay() === 0 && new Date().getHours() >= 14 ? 1 : 0));
   const t = today();
@@ -35,6 +49,14 @@ export default function Semana() {
           <button className="ib" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>›</button>
         </div>
       </div>
+      <div className="sem-vista" role="tablist" aria-label="Cómo ver la semana">
+        <button role="tab" aria-selected={vista === "planner"} onClick={() => cambiarVista("planner")}>Planner</button>
+        <button role="tab" aria-selected={vista === "horario"} onClick={() => cambiarVista("horario")}>Horario</button>
+      </div>
+      {vista === "planner" ? (
+        <Planner days={days} hoy={t} />
+      ) : (
+      <>
       <p className="sub">{nLab ? `${nLab} día${nLab === 1 ? "" : "s"} con compromisos` : "Sin compromisos esta semana"}</p>
       <div className="weekgrid">
         {days.map((x) => {
@@ -76,6 +98,8 @@ export default function Semana() {
           );
         })}
       </div>
+      </>
+      )}
       {editing && <DayEditor date={editing} onClose={() => setEditing(null)} />}
     </>
   );
