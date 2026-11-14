@@ -510,6 +510,66 @@ export async function responder(
 }
 
 /** Propone cuándo trabajar hoy en cada meta sin hora, mirando el itinerario del día */
+/** Palabras para buscar en las notas lo que la persona pregunta: las suyas y otras formas de decir lo mismo */
+export async function palabrasClave(ai: AI, pregunta: string): Promise<string> {
+  try {
+    const r = await ai.run(LLM, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "Una persona busca algo en sus notas personales. Devuelve las palabras que habría que buscar: los sustantivos y temas de su pregunta, en singular y plural, y sinónimos o formas cercanas (por ejemplo, para «soñé» también «sueño»). " +
+            'Como mucho 12 palabras sueltas, en minúsculas. No incluyas palabras vacías como «nota», «decía» o «dónde». Responde SOLO con JSON: {"palabras":["…"]}',
+        },
+        { role: "user", content: pregunta.slice(0, 600) },
+      ],
+      response_format: { type: "json_schema", json_schema: { type: "object", properties: { palabras: { type: "array", items: { type: "string" } } }, required: ["palabras"] } },
+      max_tokens: 150,
+      temperature: 0,
+    });
+    const xs = parsed<{ palabras: unknown }>(r)?.palabras;
+    return Array.isArray(xs) ? xs.slice(0, 12).map((x) => String(x).slice(0, 30)).join(" ") : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Responde una pregunta con las notas de la persona que se encontraron. Dice en cuáles está (sus números) */
+export async function responderNotas(
+  ai: AI,
+  o: { pregunta: string; charla: { de: "yo" | "ia"; texto: string }[]; notas: { titulo: string; carpeta: string; fecha: string; texto: string }[] },
+): Promise<{ respuesta: string; usadas: number[] }> {
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ayudas a una persona a encontrar cosas en sus propias notas. Respondes SOLO con lo que dicen las notas que te doy: no inventes ni completes con lo que tú sepas. " +
+          "Di en qué nota está (su título, su sección y su fecha) y qué decía, con sus palabras cuando se pueda. Si aparece en varias, dilo. " +
+          "Si las notas no lo dicen, dilo claramente y sugiere con qué otra palabra probar. Un trozo marcado con […] es un recorte de una nota más larga. " +
+          "No interpretes sueños ni des consejos médicos, legales o financieros: solo cuenta lo que está escrito. Responde en español, en segunda persona, en menos de 150 palabras y sin formato especial. " +
+          'Responde SOLO con JSON: {"respuesta":"…","notas":[números de las notas que usaste]}',
+      },
+      {
+        role: "user",
+        content: `MIS NOTAS (no es una pregunta):\n\n${o.notas.map((n, i) => `NOTA ${i + 1} · «${n.titulo || "Sin título"}» · sección ${n.carpeta || "Notas"} · ${n.fecha}\n${n.texto}`).join("\n\n---\n\n") || "(no tengo notas)"}`,
+      },
+      { role: "assistant", content: "Entendido. ¿Qué quieres encontrar?" },
+      ...o.charla.slice(-6).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1200) })),
+      { role: "user", content: o.pregunta.slice(0, 600) },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { type: "object", properties: { respuesta: { type: "string" }, notas: { type: "array", items: { type: "number" } } }, required: ["respuesta", "notas"] },
+    },
+    max_tokens: 600,
+    temperature: 0.2,
+  });
+  const x = parsed<{ respuesta: unknown; notas: unknown }>(r);
+  const usadas = Array.isArray(x?.notas) ? [...new Set(x!.notas.map((n) => Number(n) - 1).filter((n) => Number.isInteger(n) && n >= 0 && n < o.notas.length))] : [];
+  return { respuesta: String(x?.respuesta ?? "").trim().slice(0, 2500), usadas };
+}
+
 /**
  * Clasifica actividades del horario por su nombre, para ponerles ícono y saber cuál es el despertar, el ejercicio, el diario…
  * Devuelve un tipo por actividad, en el mismo orden ("" si la IA no dijo nada de esa), o null si no respondió bien.

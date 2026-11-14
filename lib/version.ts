@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.4";
+export const VERSION = "5.5";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Pregúntale a tus notas: en el Cerebro, la IA busca en todas tus notas lo que preguntas (por ejemplo, en qué sueño hablabas de algo) y te dice en cuál está; tocas la nota y se abre",
+  "La tarea del botón + se puede guardar de cuatro formas: sin hora, a una hora (un momento de tu día), dentro de un momento (como subtarea) o más tarde",
+  "Los títulos y los elementos de una lista ya no se cortan: si no caben, bajan a la segunda y tercera línea mientras escribes (también en las tareas)",
   "El «+» de la línea y «Planificar» abren una hoja nueva, hecha para ese momento: ya no pregunta «¿cuándo?» ni ofrece dejarlo para después",
   "Subtareas: lo que añades puede ir dentro de un momento (por ejemplo «Lavar platos» dentro de «Arreglo de la casa») y sale debajo de él con su círculo; o ser un momento nuevo a esa hora",
   "Tiempo aproximado: eliges 10, 15, 20, 30, 45 min o 1 h, y con eso arrancas el temporizador (el botón de la subtarea o el ícono del momento nuevo)",

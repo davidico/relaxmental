@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { fdate } from "@/lib/dates";
 import type { ItemLista, Nota } from "@/lib/types";
+import TextoCrece from "./TextoCrece";
 import RichEditor, { RichView } from "./RichEditor";
 import VoiceButton from "./VoiceButton";
 import { folderOptions } from "@/lib/folders";
@@ -304,7 +305,7 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
       <div className="nv-body">
         <div className="nv-paper ke-paper">
           <label htmlFor="ne-title" className="sr-only">Título</label>
-          <input id="ne-title" className="ke-title" placeholder="Título" value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} />
+          <TextoCrece id="ne-title" className="ke-title" placeholder="Título" value={d.title} onTexto={(title) => setD((x) => ({ ...x, title }))} />
           <p className="ke-where">En {carpeta}</p>
           {d.tipo === "texto" ? (
             <RichEditor id="ne-text" big bare tools={formato} autoFocus={!note} value={d.html} placeholder="Nota" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={volver} />
@@ -314,19 +315,17 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
                 <li key={it.id}>
                   <span className={`ne-box${it.ok ? " ok" : ""}`} aria-hidden="true" />
                   <label htmlFor={`ne-i-${it.id}`} className="sr-only">Elemento {i + 1}</label>
-                  <input
+                  <TextoCrece
                     id={`ne-i-${it.id}`}
                     className={it.ok ? "ok" : undefined}
                     value={it.t}
                     placeholder="Elemento"
                     autoFocus={focusId === it.id || (!note && i === 0)}
                     enterKeyHint="next"
-                    onChange={(e) => setItem(it.id, e.target.value)}
+                    onTexto={(t) => setItem(it.id, t)}
+                    onEnter={() => addItem(it.id)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addItem(it.id);
-                      } else if (e.key === "Backspace" && !it.t && d.items.length > 1) {
+                      if (e.key === "Backspace" && !it.t && d.items.length > 1) {
                         e.preventDefault();
                         delItem(it.id);
                       }

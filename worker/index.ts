@@ -10,8 +10,9 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
+import { buscarNotas, type NotaTexto } from "./notas";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, tiposDe, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, tiposDe, palabrasClave, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -339,6 +340,49 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .map((c) => ({ fecha: c.fecha as string, antes: lista(c.antes), despues: lista(c.despues) }));
     if (!historial.length) return json({ conclusiones: [] });
     return json({ conclusiones: await conclusiones(env.AI, { historial, reglas: String(b.reglas ?? ""), decididas: lista(b.decididas) }) });
+  }
+  /* Preguntar a tus notas: se buscan las que hablan de eso (todas las secciones, también las privadas) y la IA responde con ellas.
+     Es el único sitio donde la IA lee notas del Cerebro, y solo cuando la persona pregunta. */
+  if (url.pathname === "/api/ai/notas" && req.method === "POST") {
+    const b = (await req.json()) as { pregunta?: string; charla?: { de?: string; texto?: string }[] };
+    const pregunta = String(b.pregunta ?? "").trim().slice(0, 600);
+    if (!pregunta) return json({ error: "bad_request" }, 400);
+    const charla = (Array.isArray(b.charla) ? b.charla : [])
+      .slice(-6)
+      .map((m) => ({ de: m?.de === "ia" ? ("ia" as const) : ("yo" as const), texto: String(m?.texto ?? "").slice(0, 1200) }))
+      .filter((m) => m.texto);
+    const [nq, cq] = await Promise.all([
+      env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'notas'").bind(email).all<{ id: string; data: string }>(),
+      env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'carpetas'").bind(email).all<{ id: string; data: string }>(),
+    ]);
+    const carpetas = new Map<string, string>();
+    for (const r of cq.results) {
+      try {
+        carpetas.set(r.id, String((JSON.parse(r.data) as { name?: unknown }).name ?? ""));
+      } catch {
+        /* una carpeta rara no impide buscar */
+      }
+    }
+    const notas: NotaTexto[] = [];
+    for (const r of nq.results) {
+      try {
+        const n = JSON.parse(r.data) as { title?: unknown; text?: unknown; folder?: unknown; created?: unknown; ref?: unknown; items?: { t?: unknown }[] };
+        const texto = (Array.isArray(n.items) && n.items.length ? n.items.map((i) => String(i?.t ?? "")).join("\n") : String(n.text ?? "")).trim();
+        const titulo = String(n.title ?? "").trim();
+        if (!texto && !titulo) continue;
+        notas.push({ id: r.id, titulo, carpeta: carpetas.get(String(n.folder ?? "")) ?? "", fecha: String(n.ref || n.created || "").slice(0, 10), texto: texto.slice(0, 40000) });
+      } catch {
+        /* una nota rara no impide buscar en las demás */
+      }
+    }
+    if (!notas.length) return json({ respuesta: "Todavía no tienes notas en tu Cerebro.", fuentes: [] });
+    /* En una conversación, la pregunta anterior ayuda a entender «¿y qué más decía?» */
+    const previa = [...charla].reverse().find((m) => m.de === "yo")?.texto ?? "";
+    const palabras = `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
+    const halladas = buscarNotas(notas, palabras);
+    const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas });
+    if (!respuesta) return json({ error: "ai" }, 502);
+    return json({ respuesta, fuentes: usadas.map((i) => ({ id: halladas[i].id, titulo: halladas[i].titulo || "Sin título" })) });
   }
   /* Qué tipo de actividad es cada nombre del horario que la app no reconoce (para su ícono y su botón) */
   if (url.pathname === "/api/ai/tipos" && req.method === "POST") {

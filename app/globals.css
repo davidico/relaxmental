@@ -2001,3 +2001,41 @@ h2,h3,.sheet-title{text-wrap:balance}
 .lt-tiempo svg{width:10px;height:10px;fill:currentColor}
 .lt-tiempo:hover{background:var(--band)}
 .lt-tiempo:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* ---------- Versión 5.5: campos que crecen en vez de cortarse; la tarea del botón + con sus cuatro formas ---------- */
+/* Un campo de una línea que baja a la segunda y la tercera cuando el texto no cabe */
+textarea.crece{display:block;width:100%;resize:none;overflow:hidden;min-height:0;font-family:inherit;line-height:1.3;overflow-wrap:anywhere}
+textarea.ke-title{line-height:1.2}
+textarea.ts-title{line-height:1.35;padding:10px 2px;min-height:48px}
+.ne-list li{align-items:flex-start}
+.ne-list .ne-box{margin-top:13px}
+.ne-list textarea{flex:1;min-width:0;width:auto;border:none;background:transparent;padding:10px 0;font-size:17px;line-height:1.4;box-shadow:none!important}
+.ne-list textarea.ok{text-decoration:line-through;color:var(--muted)}
+/* Nueva tarea */
+.sheet.ts{overflow-y:auto}
+.ts-campo{display:flex;flex-direction:column;gap:var(--e1)}
+.ts-campo>label,.ts-campo>p{margin:0;font-size:14px;color:var(--muted)}
+.ts-campo select{width:100%}
+.ts-modo{border:none;margin:0;padding:0;min-width:0}
+.ts-modo legend{padding:0;margin-bottom:var(--e1);font-size:14px;color:var(--muted)}
+.ts-modos{display:flex;flex-wrap:wrap;gap:var(--e2)}
+.ts-modos label{position:relative;display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--stone);border-radius:999px;background:var(--surface);font-size:15px;cursor:pointer}
+.ts-modos input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;opacity:0;cursor:pointer}
+.ts-modos label:has(input:checked){background:var(--primary);border-color:var(--primary);color:var(--on-primary);font-weight:500}
+.ts-modos label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
+.ts-modos label:hover:not(:has(input:checked)){background:var(--band)}
+.ts-nota{margin:var(--e2) 0 0;font-size:14px;line-height:1.35;color:var(--muted)}
+.ts-chip{display:inline-flex;align-items:center;gap:6px}
+.ts-chip svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Preguntar a tus notas: el botón en el Cerebro y las notas donde está la respuesta */
+.k-ask{margin-bottom:var(--e4)}
+.pq-turno>p{margin:0}
+.pq-fuentes{list-style:none;margin:var(--e2) 0 0;padding:var(--e2) 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:var(--e1)}
+.pq-fuentes button{display:flex;align-items:center;gap:var(--e2);width:100%;min-height:44px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--pine);font:inherit;font-size:15px;font-weight:500;text-align:left;cursor:pointer}
+.pq-fuentes button span{min-width:0;overflow-wrap:anywhere}
+.pq-fuentes svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.pq-fuentes button:hover{background:var(--band)}
+.pq-fuentes button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* El botón de tu cuenta solo va por encima del velo cuando su menú está abierto (antes se veía encima de cualquier hoja) */
+.mc-btn{z-index:auto}
+.mc-btn[aria-expanded="true"]{z-index:21}

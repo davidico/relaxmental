@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { newId, useData } from "@/lib/data";
 import { toMin } from "@/lib/dates";
+import TextoCrece from "./TextoCrece";
 
-const TIEMPOS = [10, 15, 20, 30, 45, 60];
-const texto = (m: number) => (m < 60 ? `${m} min` : `${m / 60} h`);
+/** Los tiempos aproximados que se ofrecen (minutos) */
+export const TIEMPOS = [10, 15, 20, 30, 45, 60];
+export const textoTiempo = (m: number) => (m < 60 ? `${m} min` : `${m / 60} h`);
 const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 /**
@@ -33,7 +35,8 @@ export default function AnadirAqui({
   const [donde, setDonde] = useState(inicial);
   const [min, setMin] = useState(15);
   const [guardadas, setGuardadas] = useState(0);
-  const campo = useRef<HTMLInputElement>(null);
+  const campo = useRef<HTMLTextAreaElement>(null);
+  const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -62,6 +65,7 @@ export default function AnadirAqui({
   return (
     <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <form
+        ref={form}
         className="sheet aq"
         role="dialog"
         aria-modal="true"
@@ -73,7 +77,7 @@ export default function AnadirAqui({
       >
         <h2 id="aq-h" className="aq-h">Añadir a tu día</h2>
         <label htmlFor="aq-t" className="sr-only">¿Qué vas a hacer?</label>
-        <input ref={campo} id="aq-t" className="ts-title" autoFocus autoComplete="off" enterKeyHint="done" placeholder="¿Qué vas a hacer?" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+        <TextoCrece ref={campo} id="aq-t" className="ts-title" autoFocus autoComplete="off" enterKeyHint="done" placeholder="¿Qué vas a hacer?" value={titulo} onTexto={setTitulo} onEnter={() => form.current?.requestSubmit()} />
 
         {dentro.length > 0 && (
           <fieldset className="aq-donde">
@@ -95,7 +99,7 @@ export default function AnadirAqui({
           <p id="aq-min" className="aq-lbl">Tiempo aproximado</p>
           <div className="rd-chips">
             {TIEMPOS.map((m) => (
-              <button key={m} type="button" aria-pressed={min === m} onClick={() => setMin(m)}>{texto(m)}</button>
+              <button key={m} type="button" aria-pressed={min === m} onClick={() => setMin(m)}>{textoTiempo(m)}</button>
             ))}
           </div>
         </div>
