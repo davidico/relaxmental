@@ -65,7 +65,9 @@ self.addEventListener("push", (e) => {
       tag: d.tag || "mi-semana",
       renotify: true,
       icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      /* Insignia de la barra de avisos de Android: tiene que ser de un solo color con fondo transparente
+         (con el ícono normal, Android pinta un cuadro blanco) */
+      badge: "/badge-96.png",
       data: { url: d.url || "/hoy" },
     }),
   );
