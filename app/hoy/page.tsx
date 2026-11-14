@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData, newId } from "@/lib/data";
-import { DOW, MES, addD, ds, pd, toMin } from "@/lib/dates";
-import { nowInfo, textoEventos, type Bloque } from "@/lib/plan";
+import { DOW, MES, addD, ds, pd } from "@/lib/dates";
+import { textoEventos } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { cantidad, conUnidad, num, sortHabits, tipoDe } from "@/lib/habits";
 import HabitoAnotar from "@/components/HabitoAnotar";
@@ -17,7 +17,7 @@ import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
-import { SemanaTira, Tira } from "@/components/DiaTira";
+import { Tira } from "@/components/DiaTira";
 import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
 import { borrarTarea } from "@/lib/deshacer";
@@ -28,7 +28,6 @@ import VoiceButton from "@/components/VoiceButton";
 
 /* ---------- utilidades de texto ---------- */
 const lista = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`);
-const durTxt = (min: number) => (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`);
 const Check = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M5 12l5 5L20 7" />
@@ -43,6 +42,7 @@ export default function Hoy() {
   /* El día que se está viendo: hoy, u otro de la semana elegido en la tira */
   const [elegido, setElegido] = useState<string | null>(null);
   const dia = elegido ?? t;
+  const ir = (d: string) => setElegido(d === t ? null : d);
   const esHoy = dia === t;
   const fecha = pd(dia);
   const blocks = planFor(dia);
@@ -74,8 +74,16 @@ export default function Hoy() {
           <span className="hy-month-m">{MES[fecha.getMonth()][0].toUpperCase() + MES[fecha.getMonth()].slice(1)}{evTxt ? " · " : ""}</span>
           {evTxt}
         </p>
+        <div className="hy-dias" role="group" aria-label="Cambiar de día">
+          <button type="button" className="hy-dia-b" aria-label="Día anterior" onClick={() => ir(addD(dia, -1))}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" /></svg>
+          </button>
+          {!esHoy && <button type="button" className="hy-dia-hoy" onClick={() => setElegido(null)}>Hoy</button>}
+          <button type="button" className="hy-dia-b" aria-label="Día siguiente" onClick={() => ir(addD(dia, 1))}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg>
+          </button>
+        </div>
       </header>
-      <SemanaTira dia={dia} hoy={t} onElegir={(d) => setElegido(d === t ? null : d)} />
       {esHoy && <PushBanner />}
 
       <div className="hy-dots" aria-hidden="true" />
@@ -83,10 +91,9 @@ export default function Hoy() {
 
       <div className="hy-grid">
         <div className="hy-col">
-          {esHoy && <NowCard blocks={blocks.filter((b) => !b.hecha)} minute={minute} onEntreno={() => setEntreno(true)} />}
           {esHoy && <Atrasadas day={t} />}
           <SinHora day={dia} hoy={t} />
-          <Tira dia={dia} blocks={blocks} minuto={esHoy ? minute : dia < t ? 1440 : -1} onEditar={() => setEditing(true)} />
+          <Tira dia={dia} blocks={blocks} minuto={esHoy ? minute : dia < t ? 1440 : -1} onEditar={() => setEditing(true)} onEntreno={() => setEntreno(true)} />
           {dia <= t && <HabitRings day={dia} />}
         </div>
         {/* El orden del código es el que se ve (y el del teclado): en el móvil todo va en una columna */}
@@ -104,81 +111,11 @@ export default function Hoy() {
               </button>
             </>
           )}
-          {!esHoy && (
-            <button className="hy-allday hy-volver" onClick={() => setElegido(null)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
-              <span>Volver a hoy</span>
-            </button>
-          )}
         </div>
       </div>
       {editing && <DayEditor date={dia} onClose={() => setEditing(false)} />}
       {entreno && <Entreno onClose={() => setEntreno(false)} />}
     </div>
-  );
-}
-
-/* ---------- Ahora ---------- */
-export const esEjercicio = (t: string) => /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(t);
-function NowCard({ blocks, minute, onEntreno }: { blocks: Bloque[]; minute: number; onEntreno: () => void }) {
-  const { cur, nxt } = nowInfo(blocks, minute);
-  if (!blocks.length)
-    return (
-      <section className="hy-now" aria-labelledby="hy-now-t">
-        <span className="hy-now-lbl">Sin horario todavía</span>
-        <h2 id="hy-now-t">Aquí verás lo que te toca ahora</h2>
-        <p>Cuando armes tu semana, cada bloque del día aparece aquí.</p>
-      </section>
-    );
-  if (!cur && !nxt)
-    return (
-      <section className="hy-now" aria-labelledby="hy-now-t">
-        <span className="hy-now-lbl">Día terminado</span>
-        <h2 id="hy-now-t">Buen trabajo. A descansar.</h2>
-      </section>
-    );
-  if (!cur && nxt)
-    return (
-      <section className="hy-now" aria-labelledby="hy-now-t">
-        <div className="hy-now-top">
-          <span className="hy-now-lbl">Siguiente · {nxt.s}</span>
-          <span className="hy-now-left">en {durTxt(toMin(nxt.s) - minute)}</span>
-        </div>
-        <h2 id="hy-now-t">{nxt.t}</h2>
-        {nxt.sub && <p>{nxt.sub}</p>}
-      </section>
-    );
-  const b = cur!;
-  const span = toMin(b.e) - toMin(b.s);
-  const pct = Math.round(((minute - toMin(b.s)) / span) * 100);
-  return (
-    <section className="hy-now" aria-labelledby="hy-now-t">
-      <div className="hy-now-top">
-        <span className="hy-now-lbl">Ahora · {b.s}–{b.e}</span>
-        <span className="hy-now-left">quedan {durTxt(toMin(b.e) - minute)}</span>
-      </div>
-      <h2 id="hy-now-t">{b.t}</h2>
-      {b.sub && <p>{b.sub}</p>}
-      <div className="hy-bar" role="progressbar" aria-label="Avance del bloque" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-        <i style={{ width: `${pct}%` }} />
-      </div>
-      {esEjercicio(b.t) && (
-        <button className="btn hy-entreno" onClick={onEntreno}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
-          Empezar entrenamiento
-        </button>
-      )}
-      {nxt && (
-        <p className="hy-next">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-          <span>
-            Luego, <strong>{nxt.s} {nxt.t}</strong>
-          </span>
-        </p>
-      )}
-    </section>
   );
 }
 
