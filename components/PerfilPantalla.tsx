@@ -35,6 +35,7 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
   { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "hasta 3 propuestas y, si aprendió algo nuevo de ti, lo apunta en su memoria." },
   { cuando: "Pides el resumen de tu semana", lee: "tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "un repaso de la semana, hasta 3 recomendaciones y, si aprendió algo nuevo, lo apunta en su memoria." },
+  { cuando: "En tu horario hay una actividad que la app no reconoce por su nombre", lee: "el nombre y la descripción de esa actividad (nunca tus tareas ni tus notas).", da: "qué tipo de actividad es (despertar, ejercicio, diario…), para ponerle su ícono y su botón. Lo guarda y no vuelve a preguntar por ella." },
   { cuando: "Le haces una pregunta", lee: "tu pregunta, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "una respuesta corta. No cambia nada en la app." },
 ];
 

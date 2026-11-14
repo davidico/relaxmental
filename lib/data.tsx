@@ -123,6 +123,8 @@ export type Perfil = {
   memoria?: unknown[];
   /** Bloques del horario marcados como hechos: fecha -> «hora|nombre» (últimos 45 días) */
   hechos?: Record<string, string[]>;
+  /** Qué tipo de actividad es cada nombre que la app no reconoce por sus palabras (lo dice la IA): nombre → tipo */
+  tipos?: Record<string, string>;
   /** El último resumen semanal de la IA */
   resumenSemana?: { semana: string; texto: string; fecha: string };
   [k: string]: unknown;

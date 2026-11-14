@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.1";
+export const VERSION = "5.2";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Los íconos y sus botones ya no dependen de una palabra exacta: si la app no reconoce el nombre de una actividad («Arriba», «Mover el cuerpo»…), le pregunta a la IA qué es y lo recuerda",
+  "«Editar» está arriba, junto a «Tu día»",
   "Los círculos para marcar «lo hice» son más pequeños (siguen siendo fáciles de tocar)",
   "El ícono de ejercicio abre el contador de series cualquier día, también en una actividad ya marcada",
   "Hoy gira como un dial: al deslizar, cada actividad crece al llegar al centro de la pantalla y se encoge al irse, como la rueda de la hora",

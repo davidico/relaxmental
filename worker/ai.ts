@@ -510,6 +510,43 @@ export async function responder(
 }
 
 /** Propone cuándo trabajar hoy en cada meta sin hora, mirando el itinerario del día */
+/**
+ * Clasifica actividades del horario por su nombre, para ponerles ícono y saber cuál es el despertar, el ejercicio, el diario…
+ * Devuelve un tipo por actividad, en el mismo orden ("" si la IA no dijo nada de esa), o null si no respondió bien.
+ */
+export async function tiposDe(ai: AI, nombres: { t: string; sub?: string }[], tipos: Record<string, string>): Promise<string[] | null> {
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Clasificas actividades del horario diario de una persona. Para cada una eliges el tipo que mejor encaja de esta lista (usa exactamente la palabra de la izquierda):\n" +
+          Object.entries(tipos)
+            .map(([k, d]) => `- ${k}: ${d}`)
+            .join("\n") +
+          "\nLo que va entre paréntesis es la descripción de la actividad. Si el nombre es el de un proyecto, una empresa o no se entiende, guíate por la descripción; si aun así no encaja en ninguno, usa «otro». " +
+          'Responde SOLO con JSON: {"tipos":[{"n":1,"tipo":"…"}]}, con una entrada por actividad y su número.',
+      },
+      { role: "user", content: nombres.map((n, i) => `${i + 1}. ${n.t}${n.sub ? ` (${n.sub})` : ""}`).join("\n") },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { type: "object", properties: { tipos: { type: "array", items: { type: "object", properties: { n: { type: "number" }, tipo: { type: "string" } }, required: ["n", "tipo"] } } }, required: ["tipos"] },
+    },
+    max_tokens: 900,
+    temperature: 0,
+  });
+  const xs = parsed<{ tipos: unknown }>(r)?.tipos;
+  if (!Array.isArray(xs)) return null;
+  const out = nombres.map(() => "");
+  for (const x of xs as Record<string, unknown>[]) {
+    const i = Number(x?.n) - 1;
+    const t = String(x?.tipo ?? "").toLowerCase().trim();
+    if (Number.isInteger(i) && i >= 0 && i < out.length && t in tipos) out[i] = t;
+  }
+  return out;
+}
+
 export async function horasMetas(
   ai: AI,
   o: { fecha: string; ahora: string; metas: { id: string; t: string; lado: string }[]; bloques: string[]; reglas: string; memoria?: string[] },

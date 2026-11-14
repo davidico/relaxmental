@@ -1928,7 +1928,6 @@ h2,h3,.sheet-title{text-wrap:balance}
 .lt-hueco.ahora .lt-plan{border-color:var(--primary)}
 .lt-plan:hover{background:var(--band)}
 .lt-plan:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.lt-sec .linkbtn{align-self:flex-start}
 /* Despertador: las ruedas de la hora y cuánto se mueve el día */
 .wd.av{padding:16px 16px 10px;gap:var(--e3)}
 .av p{margin:0;font-size:16px;line-height:1.45}
@@ -1956,3 +1955,11 @@ h2,h3,.sheet-title{text-wrap:balance}
 /* El diario en una hoja */
 .dia-hoja-c{display:flex;flex-direction:column;gap:var(--e3);padding:var(--e4) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
 .dia-hoja-c p{margin:0}
+
+/* ---------- Versión 5.2: «Editar» arriba, en la franja de «Tu día» ---------- */
+.lt-sec .hy-sechead{gap:var(--e3)}
+.lt-sec .hy-sechead .hy-h{flex:1}
+.lt-editar{position:relative;flex:none;padding:0;border:none;background:none;font:inherit;font-size:15px;font-weight:500;color:var(--pine);cursor:pointer}
+.lt-editar::after{content:"";position:absolute;inset:-12px -10px}
+.lt-editar:hover{text-decoration:underline;text-underline-offset:3px}
+.lt-editar:focus-visible{outline:3px solid var(--focus);outline-offset:4px;border-radius:4px}

@@ -9,8 +9,9 @@
  */
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
+import { TIPOS } from "../lib/tipos";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, tiposDe, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -338,6 +339,17 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .map((c) => ({ fecha: c.fecha as string, antes: lista(c.antes), despues: lista(c.despues) }));
     if (!historial.length) return json({ conclusiones: [] });
     return json({ conclusiones: await conclusiones(env.AI, { historial, reglas: String(b.reglas ?? ""), decididas: lista(b.decididas) }) });
+  }
+  /* Qué tipo de actividad es cada nombre del horario que la app no reconoce (para su ícono y su botón) */
+  if (url.pathname === "/api/ai/tipos" && req.method === "POST") {
+    const b = (await req.json()) as { nombres?: { t?: unknown; sub?: unknown }[] };
+    const nombres = (Array.isArray(b.nombres) ? b.nombres : [])
+      .slice(0, 40)
+      .map((n) => ({ t: String(n?.t ?? "").slice(0, 80), ...(n?.sub ? { sub: String(n.sub).slice(0, 120) } : {}) }))
+      .filter((n) => n.t.trim());
+    if (!nombres.length) return json({ tipos: [] });
+    const tipos = await tiposDe(env.AI, nombres, TIPOS);
+    return tipos ? json({ tipos }) : json({ error: "ai" }, 502);
   }
   /* Metas de hoy sin hora: cuándo trabajar en cada una */
   if (url.pathname === "/api/ai/metas" && req.method === "POST") {
