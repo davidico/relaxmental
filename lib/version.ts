@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.8";
+export const VERSION = "5.9";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Nueva tarea, más simple: solo el nombre y un reloj. Sin tocar el reloj queda en Pendientes, sin presión; con el reloj le pones un día y, si quieres, una hora",
+  "El menú del botón + se abre con una animación suave",
+  "En el móvil, «Pregúntale a la IA» ya no ocupa sitio en Hoy: está en el botón +",
   "Toca el nombre de un momento de tu día y se abre ahí mismo una hoja para cambiarlo: nombre, descripción y horas, o quitarlo de ese día",
   "Las tareas se pueden cambiar enteras: toca su nombre (en la línea, en una subtarea o en «Sin hora») y cambias nombre, forma, día, hora, tiempo o la borras",
   "El círculo marca «lo hice»; el nombre abre para cambiar. «Editar todo» sigue arriba para el día entero",

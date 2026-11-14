@@ -10,27 +10,27 @@ import WhenDialog from "./WhenDialog";
 import TextoCrece from "./TextoCrece";
 import { TIEMPOS, textoTiempo } from "./AnadirAqui";
 
-type Modo = "sinhora" | "hora" | "dentro" | "luego";
 const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 /**
- * Nueva tarea (el botón + que flota): un campo para el nombre y cuatro formas de guardarla:
- * sin hora (para un día, a tu ritmo), a una hora (un momento de tu día, con su duración),
- * dentro de un momento (una subtarea suya) o más tarde (queda en Pendientes).
- * «Guardar» (o Enter) la guarda y deja el campo listo para otra. Si tiene hora, llega un aviso a esa hora.
- * Con `editar` es la misma hoja para cambiar una tarea que ya existe (todo se puede cambiar) o borrarla.
+ * Nueva tarea (el botón + que flota), lo más simple posible: un campo para el nombre y un reloj.
+ * - Sin tocar el reloj: queda en Pendientes, sin fecha y sin presión.
+ * - Con el reloj se le pone un día (sale en Hoy ese día, sin hora) y, si se quiere, una hora
+ *   (entonces es un momento de ese día, con su tiempo aproximado y su aviso).
+ * «Guardar» (o Enter) la guarda y deja el campo listo para otra.
+ * Con `editar` es la misma hoja para cambiar una tarea que ya existe (todo se puede cambiar) o borrarla;
+ * si es una subtarea, además deja elegir dentro de qué momento va.
  */
 export default function TaskSheet({ onClose, inicial, editar }: { onClose: () => void; inicial?: { due?: string; hora?: string }; editar?: Tarea }) {
   const { save, remove, hoy, planFor } = useData();
   const [title, setTitle] = useState(editar?.title ?? "");
   const [step, setStep] = useState(editar?.step ?? "");
-  const [due, setDue] = useState(editar ? editar.due || hoy : inicial?.due ?? hoy);
+  const [due, setDue] = useState(editar ? editar.due : inicial?.due ?? "");
   const [hora, setHora] = useState(editar?.hora ?? inicial?.hora ?? "");
-  const [modo, setModo] = useState<Modo>(editar ? (!editar.due ? "luego" : editar.hora ? "hora" : editar.momento ? "dentro" : "sinhora") : inicial?.hora ? "hora" : "sinhora");
   const [min, setMin] = useState(() => {
     if (editar?.min) return editar.min;
     const d = editar?.hora && editar.fin ? toMin(editar.fin) - toMin(editar.hora) : 0;
-    return d > 0 ? d : editar?.hora ? 30 : 15;
+    return d > 0 ? d : 30;
   });
   const [momento, setMomento] = useState(editar?.momento ?? "");
   const [verPaso, setVerPaso] = useState(!!editar?.step);
@@ -43,69 +43,42 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
 
   useEffect(() => {
     setPermiso(typeof Notification === "undefined" ? "no" : Notification.permission);
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const k = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".wd") && onClose();
     addEventListener("keydown", k);
     return () => removeEventListener("keydown", k);
   }, [onClose]);
 
-  const diaTxt = !due ? "Sin fecha" : due === hoy ? "Hoy" : due === addD(hoy, 1) ? "Mañana" : fdate(due);
-  /* Los momentos de ese día donde puede ir como subtarea (hoy, solo los que no han terminado) */
-  const ahora = new Date().getHours() * 60 + new Date().getMinutes();
-  const delDia = modo === "dentro" && due ? planFor(due).filter((b) => !b.tarea) : [];
-  /* El momento donde ya está (al editar) sigue en la lista aunque haya terminado */
-  const suyo = momento ? bloqueDeSub(momento, delDia) : undefined;
-  const momentos = delDia.filter((b) => due !== hoy || toMin(b.e) > ahora || b === suyo);
-  const elegido = suyo ?? momentos[0];
+  const diaTxt = !due ? "" : due === hoy ? "Hoy" : due === addD(hoy, 1) ? "Mañana" : fdate(due);
+  /* Una subtarea (solo al editar): los momentos de ese día donde puede ir */
+  const esSub = !!editar?.momento && !!due && !hora;
+  const momentos = esSub ? planFor(due).filter((b) => !b.tarea) : [];
+  const suyo = esSub && momento ? bloqueDeSub(momento, momentos) : undefined;
 
-  const elegir = (m: Modo) => {
-    setModo(m);
-    if (m !== "luego" && !due) setDue(hoy);
-    /* «A una hora» empieza en la próxima media hora; se cambia tocando la hora */
-    if (m === "hora" && !hora) setHora(aHora(Math.min(1410, Math.ceil((ahora + 1) / 30) * 30)));
-  };
-
-  const puede = !!title.trim() && (modo !== "dentro" || !!elegido) && (modo !== "hora" || !!hora);
+  const puede = !!title.trim();
   const guardar = () => {
     if (!puede) return;
+    /* Lo que dice el reloj: sin fecha, un día, o un día con hora (y entonces su duración) */
+    const cuando = !due
+      ? { due: "", hora: "", fin: undefined, min: undefined, momento: undefined }
+      : hora
+        ? { due, hora, fin: aHora(Math.min(1439, toMin(hora) + min)), min, momento: undefined }
+        : { due, hora: "", fin: undefined, min: suyo ? min : undefined, momento: suyo ? claveDe(suyo) : undefined };
     if (editar) {
-      /* Se cambia lo que haga falta y se quita lo que ya no aplica a la forma elegida */
-      const campos =
-        modo === "luego"
-          ? { due: "", hora: "", fin: undefined, momento: undefined, min: undefined }
-          : modo === "sinhora"
-            ? { due, hora: "", fin: undefined, momento: undefined, min: undefined }
-            : modo === "hora"
-              ? { due, hora, fin: aHora(Math.min(1439, toMin(hora) + min)), momento: undefined, min }
-              : { due, hora: "", fin: undefined, momento: claveDe(elegido!), min };
-      save("tareas", { ...editar, title: title.trim(), step: step.trim(), ...campos });
+      save("tareas", { ...editar, title: title.trim(), step: step.trim(), ...cuando });
       onClose();
       return;
     }
-    const base = { id: newId(), title: title.trim(), step: step.trim(), done: false, created: new Date().toISOString(), meta: false };
-    if (modo === "luego") save("tareas", { ...base, due: "", hora: "" });
-    else if (modo === "sinhora") save("tareas", { ...base, due, hora: "" });
-    else if (modo === "hora") save("tareas", { ...base, due, hora, fin: aHora(Math.min(1439, toMin(hora) + min)), min });
-    else save("tareas", { ...base, due, hora: "", momento: claveDe(elegido!), min });
+    save("tareas", { id: newId(), title: title.trim(), step: step.trim(), done: false, created: new Date().toISOString(), meta: false, ...cuando });
     setTitle("");
     setStep("");
+    setHora("");
     setVerPaso(false);
     setVerCuando(false);
     setGuardadas((n) => n + 1);
     titleRef.current?.focus();
   };
 
-  const opcion = (m: Modo, nombre: string) => (
-    <label>
-      <input type="radio" name="ts-que" checked={modo === m} onChange={() => elegir(m)} />
-      <span>{nombre}</span>
-    </label>
-  );
-  const NOTAS: Record<Modo, string> = {
-    sinhora: "Sale en Hoy ese día, para hacerla cuando puedas.",
-    hora: "Un momento nuevo en tu día, con su hora y su aviso.",
-    dentro: "Una subtarea: sale debajo de ese momento de tu día.",
-    luego: "Queda en Pendientes, sin fecha.",
-  };
+  const nota = !due ? "Sin fecha: queda en Pendientes, para cuando puedas." : hora ? `${diaTxt} a las ${hora}: entra en tu día a esa hora.` : suyo ? `${diaTxt}, dentro de «${suyo.t}».` : `${diaTxt}, sin hora: sale en Hoy ese día.`;
 
   return (
     <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -128,31 +101,19 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
             <input ref={stepRef} id="ts-step" className="ts-step" autoFocus={!editar} enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
           </>
         )}
-        <fieldset className="ts-modo">
-          <legend>¿Cómo la quieres?</legend>
-          <div className="ts-modos">
-            {opcion("sinhora", "Sin hora")}
-            {opcion("hora", "A una hora")}
-            {opcion("dentro", "Dentro de un momento")}
-            {opcion("luego", "Más tarde")}
-          </div>
-          <p className="ts-nota" aria-live="polite">{NOTAS[modo]}</p>
-        </fieldset>
 
-        {modo === "dentro" &&
-          (momentos.length ? (
-            <div className="ts-campo">
-              <label htmlFor="ts-mom">¿Dentro de cuál? ({diaTxt.toLowerCase()})</label>
-              <select id="ts-mom" value={elegido ? claveDe(elegido) : ""} onChange={(e) => setMomento(e.target.value)}>
-                {momentos.map((b) => (
-                  <option key={claveDe(b)} value={claveDe(b)}>{b.s} · {b.t}</option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <p className="hint ts-hint">{due === hoy ? "Hoy ya no quedan momentos en tu día." : "Ese día todavía no tiene momentos."} Elige otro día u otra forma.</p>
-          ))}
-        {(modo === "hora" || modo === "dentro") && (
+        {esSub && momentos.length > 0 && (
+          <div className="ts-campo">
+            <label htmlFor="ts-mom">Dentro de</label>
+            <select id="ts-mom" value={suyo ? claveDe(suyo) : ""} onChange={(e) => setMomento(e.target.value)}>
+              {momentos.map((b) => (
+                <option key={claveDe(b)} value={claveDe(b)}>{b.s} · {b.t}</option>
+              ))}
+              <option value="">Ningún momento (tarea del día)</option>
+            </select>
+          </div>
+        )}
+        {(!!hora || !!suyo) && !!due && (
           <div className="ts-campo" role="group" aria-labelledby="ts-min">
             <p id="ts-min">Tiempo aproximado</p>
             <div className="rd-chips">
@@ -162,7 +123,8 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
             </div>
           </div>
         )}
-        {modo === "hora" && hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
+        <p className="ts-nota" aria-live="polite">{nota}</p>
+        {!!due && !!hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
 
         <div className="ts-bar">
           <button
@@ -182,12 +144,11 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
           >
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
           </button>
-          {modo !== "luego" && (
-            <button type="button" className="ts-chip" aria-label={modo === "hora" ? `Día y hora: ${diaTxt}, ${hora}` : `Día: ${diaTxt}`} onClick={() => setVerCuando(true)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-              {diaTxt}{modo === "hora" && hora ? ` · ${hora}` : ""}
-            </button>
-          )}
+          {/* El reloj: sin fecha es solo el ícono; con fecha, dice cuál */}
+          <button type="button" className={due ? "ts-chip" : "nv-ib ke-ib"} aria-label={due ? `Fecha y hora: ${diaTxt}${hora ? `, ${hora}` : ""}. Cambiar` : "Poner fecha y hora"} title="Fecha y hora" onClick={() => setVerCuando(true)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+            {due ? `${diaTxt}${hora ? ` · ${hora}` : ""}` : null}
+          </button>
           <span style={{ flex: 1 }} />
           {editar && (
             <button type="button" className="ts-save ts-borrar" onClick={() => { borrarTarea(editar, save, remove); onClose(); }}>Borrar</button>
@@ -197,18 +158,14 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
         {verCuando && (
           <WhenDialog
             due={due}
-            hora={modo === "hora" ? hora : ""}
+            hora={hora}
             hoy={hoy}
-            onCancel={() => { setVerCuando(false); titleRef.current?.focus(); }}
+            onCancel={() => { setVerCuando(false); if (!editar) titleRef.current?.focus(); }}
             onDone={(d, h) => {
               setDue(d);
-              if (!d) setModo("luego");
-              else if (h) {
-                setHora(h);
-                if (modo === "sinhora") setModo("hora");
-              } else if (modo === "hora") setModo("sinhora");
+              setHora(d ? h : "");
               setVerCuando(false);
-              titleRef.current?.focus();
+              if (!editar) titleRef.current?.focus();
             }}
           />
         )}

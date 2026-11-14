@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
 import { textoEventos } from "@/lib/plan";
-import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
+import { useNow, useWide, submitOnCtrlEnter } from "@/lib/hooks";
 import { esMeta, type Tarea } from "@/lib/types";
 import HorasMetas from "@/components/HorasMetas";
 import { useFocus } from "@/components/Shell";
@@ -27,6 +27,7 @@ import VoiceButton from "@/components/VoiceButton";
 export default function Hoy() {
   const { eventos, planFor } = useData();
   const now = useNow();
+  const wide = useWide();
   const t = ds(now);
   const minute = now.getHours() * 60 + now.getMinutes();
   /* El día que se está viendo: hoy, u otro de la semana elegido en la tira */
@@ -93,11 +94,14 @@ export default function Hoy() {
               <Diario />
               <ResumenSemana />
               <Aprendizajes />
-              <button className="hy-allday hy-ask" onClick={() => dispatchEvent(new Event("mi-semana:preguntar"))}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
-                <span>Pregúntale a la IA</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-              </button>
+              {/* En el móvil «Preguntar a la IA» está en el botón + que flota; en pantallas anchas no hay ese menú, así que va aquí */}
+              {wide && (
+                <button className="hy-allday hy-ask" onClick={() => dispatchEvent(new Event("mi-semana:preguntar"))}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
+                  <span>Pregúntale a la IA</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
+              )}
             </>
           )}
         </div>
