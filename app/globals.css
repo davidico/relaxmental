@@ -2096,3 +2096,11 @@ textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8p
   @keyframes dial-velo{from{opacity:0}to{opacity:1}}
 }
 .ts-bar .nv-ib svg{fill:none}
+
+/* ---------- Versión 5.10: «¿Cuándo las hago?» en Pendientes ---------- */
+.cp-pedir{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e2);margin:var(--e2) 0 var(--e3)}
+.cp-pedir p{margin:0}
+.cp-nota{font-size:14px;color:var(--muted)}
+.hm-box.cp{margin:var(--e2) 0 var(--e3)}
+.cp-t{display:flex;flex-direction:column;gap:2px}
+.cp-t small{font-size:14px;color:var(--muted);line-height:1.35}

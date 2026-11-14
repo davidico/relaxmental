@@ -2,6 +2,7 @@
 
 import { useData } from "@/lib/data";
 import { TaskRow, splitTasks } from "@/components/ui";
+import CuandoPendientes from "@/components/CuandoPendientes";
 
 export default function Tareas() {
   const { tareas } = useData();
@@ -19,6 +20,8 @@ export default function Tareas() {
           <h2 className="banda">Para hoy · {hoy.length}</h2>
           <div className="card">{hoy.length ? hoy.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">Nada para hoy. ¡Bien!</div>}</div>
           <h2 className="banda">Próximas · {luego.length}</h2>
+          {/* Las que no tienen fecha (Pendientes): la IA propone un día si se lo pides */}
+          <CuandoPendientes pendientes={luego.filter((x) => !x.due)} />
           <div className="card">{luego.length ? luego.map((x) => <TaskRow key={x.id} x={x} />) : <div className="empty">No hay más tareas pendientes.</div>}</div>
           {done.length > 0 && (
             <>

@@ -1,5 +1,6 @@
 "use client";
 
+import CuandoPendientes from "./CuandoPendientes";
 import { useEffect, useState } from "react";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
@@ -67,6 +68,7 @@ export default function Planner({ days, hoy }: { days: string[]; hoy: string }) 
         {(ancho || verPend) && (
           <div id="pl-pend-cuerpo">
             <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
+            <CuandoPendientes pendientes={pendientes} />
             <Lista titulo="" tipo="tarea" lado="personal" due="" items={pendientes} days={days} />
           </div>
         )}

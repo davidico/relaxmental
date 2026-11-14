@@ -12,7 +12,7 @@ import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
 import { buscarNotas, type NotaTexto } from "./notas";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, tiposDe, palabrasClave, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -394,6 +394,18 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     if (!nombres.length) return json({ tipos: [] });
     const tipos = await tiposDe(env.AI, nombres, TIPOS);
     return tipos ? json({ tipos }) : json({ error: "ai" }, 502);
+  }
+  /* Pendientes sin fecha: qué día de los próximos 7 conviene cada uno (solo cuando la persona lo pide) */
+  if (url.pathname === "/api/ai/pendientes" && req.method === "POST") {
+    const b = (await req.json()) as { hoy?: string; pendientes?: { id?: unknown; t?: unknown; paso?: unknown }[]; dias?: unknown; reglas?: string };
+    if (typeof b.hoy !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.hoy)) return json({ error: "bad_request" }, 400);
+    const pendientes = (Array.isArray(b.pendientes) ? b.pendientes : [])
+      .slice(0, 20)
+      .map((p) => ({ id: String(p?.id ?? "").slice(0, 60), t: String(p?.t ?? "").slice(0, 120), ...(p?.paso ? { paso: String(p.paso).slice(0, 120) } : {}) }))
+      .filter((p) => p.id && p.t.trim());
+    if (!pendientes.length) return json({ propuestas: [] });
+    const dias = Array.isArray(b.dias) ? b.dias.map((x) => String(x).slice(0, 400)).slice(0, 7) : [];
+    return json({ propuestas: await diasPendientes(env.AI, { hoy: b.hoy, pendientes, dias, reglas: String(b.reglas ?? ""), memoria: await memoriaDe(env, email) }) });
   }
   /* Metas de hoy sin hora: cuándo trabajar en cada una */
   if (url.pathname === "/api/ai/metas" && req.method === "POST") {

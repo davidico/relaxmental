@@ -518,6 +518,54 @@ export async function responder(
 }
 
 /** Propone cuándo trabajar hoy en cada meta sin hora, mirando el itinerario del día */
+/** Para las tareas sin fecha: qué día de los próximos 7 conviene hacer cada una (solo cuando la persona lo pide) */
+export async function diasPendientes(
+  ai: AI,
+  o: { hoy: string; pendientes: { id: string; t: string; paso?: string }[]; dias: string[]; reglas: string; memoria?: string[] },
+): Promise<{ id: string; due: string; motivo: string }[]> {
+  const dia = DIAS[new Date(o.hoy + "T12:00:00Z").getUTCDay()];
+  const hasta = new Date(Date.parse(o.hoy + "T12:00:00Z") + 6 * 86400000).toISOString().slice(0, 10);
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Una persona tiene tareas pendientes sin fecha y te pide ayuda para decidir cuándo hacerlas. Tienes cómo viene cada uno de sus próximos 7 días (lo que ya tiene apuntado y sus compromisos), sus reglas y lo que recuerdas de ella. " +
+          `Para cada tarea propón UN día entre ${o.hoy} y ${hasta} (formato AAAA-MM-DD) y un motivo de una frase corta, concreto (por ejemplo «El jueves tienes pocas cosas»). ` +
+          "Reparte: no pongas más de 2 tareas nuevas en el mismo día ni cargues los días que ya están llenos o con compromisos largos. Respeta sus reglas (días de descanso, horarios). " +
+          "Lo que parezca urgente o rápido va antes. Si una tarea puede esperar a otra semana o esta semana no cabe bien, no la incluyas: es mejor proponer pocas que agobiar. " +
+          'Responde SOLO con JSON: {"propuestas":[{"id":"…","due":"AAAA-MM-DD","motivo":"…"}]}',
+      },
+      {
+        role: "user",
+        content:
+          `HOY ES ${dia} ${o.hoy}.\n\nMIS PRÓXIMOS 7 DÍAS:\n${o.dias.join("\n") || "(sin datos)"}\n\nMIS PENDIENTES SIN FECHA:\n${o.pendientes.map((p) => `${p.id} · ${p.t}${p.paso ? ` (primer paso: ${p.paso})` : ""}`).join("\n")}` +
+          `${textoMemoria(o.memoria ?? [])}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        type: "object",
+        properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, due: { type: "string" }, motivo: { type: "string" } }, required: ["id", "due"] } } },
+        required: ["propuestas"],
+      },
+    },
+    max_tokens: 900,
+    temperature: 0.2,
+  });
+  const xs = parsed<{ propuestas: unknown }>(r)?.propuestas;
+  if (!Array.isArray(xs)) return [];
+  const ids = new Set(o.pendientes.map((p) => p.id));
+  return (xs as Record<string, unknown>[])
+    .map((x) => ({ id: String(x?.id ?? ""), due: String(x?.due ?? ""), motivo: String(x?.motivo ?? "").replace(/\s+/g, " ").trim().slice(0, 140) }))
+    .filter((x) => {
+      if (!ids.has(x.id) || !/^\d{4}-\d{2}-\d{2}$/.test(x.due) || x.due < o.hoy || x.due > hasta) return false;
+      ids.delete(x.id);
+      return true;
+    });
+}
+
 /** Palabras para buscar en las notas lo que la persona pregunta: las suyas y otras formas de decir lo mismo */
 export async function palabrasClave(ai: AI, pregunta: string): Promise<string> {
   try {
