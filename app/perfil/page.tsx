@@ -208,7 +208,7 @@ export default function Perfil() {
 
       <Compromisos />
 
-      <h2 id="ia-h">Armar mi semana con IA</h2>
+      <h2 id="ia-h" className="banda">Armar mi semana con IA</h2>
       <section className="card pad" aria-labelledby="ia-h">
         {!cloud ? (
           <p className="hint">Para usar la IA tienes que haber iniciado sesión.</p>
@@ -302,7 +302,7 @@ export default function Perfil() {
         </>
       )}
 
-      <h2>Acerca de</h2>
+      <h2 className="banda">Acerca de</h2>
       <section className="card pad about">
         <div className="ver">
           <img className="brandmark sm logo" src="/icon.svg" alt="" aria-hidden="true" />

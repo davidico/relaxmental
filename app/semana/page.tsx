@@ -32,21 +32,22 @@ export default function Semana() {
   const a = pd(mon);
   const b = pd(addD(mon, 6));
   const days = Array.from({ length: 7 }, (_, i) => addD(mon, i));
-  const rango =
-    a.getMonth() === b.getMonth()
-      ? `Semana del ${a.getDate()} al ${b.getDate()} de ${MES[b.getMonth()]}`
-      : `Semana del ${a.getDate()} de ${MES[a.getMonth()]} al ${b.getDate()} de ${MES[b.getMonth()]}`;
-  const rel = off === 0 ? "Esta semana" : off === 1 ? "Próxima" : off === -1 ? "Anterior" : "Volver a hoy";
+  const rango = a.getMonth() === b.getMonth() ? `${a.getDate()} a ${b.getDate()} de ${MES[b.getMonth()]}` : `${a.getDate()} de ${MES[a.getMonth()]} a ${b.getDate()} de ${MES[b.getMonth()]}`;
   const nLab = days.filter((x) => eventos[x]?.length).length;
 
   return (
     <>
-      <div className="top">
-        <h1>{rango}</h1>
+      <h1>Semana</h1>
+      <div className="sem-nav">
+        <p className="sem-rango">{rango}</p>
         <div className="wnav">
-          <button className="ib" aria-label="Semana anterior" onClick={() => setOff(off - 1)}>‹</button>
-          <button className={`btn sm${off === 0 ? "" : " ghost"}`} onClick={() => setOff(0)} title="Volver a esta semana">{rel}</button>
-          <button className="ib" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>›</button>
+          <button className="ib" aria-label="Semana anterior" onClick={() => setOff(off - 1)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+          <button className="btn ghost sm" onClick={() => setOff(0)} disabled={off === 0} title="Volver a esta semana">Esta semana</button>
+          <button className="ib" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
         </div>
       </div>
       <div className="sem-vista" role="tablist" aria-label="Cómo ver la semana">

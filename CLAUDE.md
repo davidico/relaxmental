@@ -22,9 +22,12 @@ El repositorio es **público**: no subas datos personales de David (salud, famil
 - Íconos: `public/icon.svg` y PNGs. El manifest apunta a los íconos en jsDelivr con un sha fijo (la app está detrás de Access y Android necesita íconos públicos): si cambian, commit, luego actualizar el sha en `public/manifest.webmanifest` y otro commit.
 
 ## Diseño
-- Azul petróleo `--primary #2f5d62` (oscuro: `#9ccbcc`), dorado `--gold #c9a548` (texto dorado `--gold-ink #84661a`), fondo blanco, una línea dorada fina bajo los títulos. Letra: Atkinson Hyperlegible para el texto, Inter para títulos y números. Tokens claro/oscuro en `app/globals.css` (al final está lo más nuevo).
-- Buenas prácticas siempre: texto e inputs de 16px, objetivos de 44px, foco visible, errores con ícono + texto, contraste AA. David no quiere tener que señalar errores de UI: revísalos tú antes de publicar.
-- Usa la skill `impeccable` (en `.claude/skills/`) para trabajo de diseño. Para pantallas nuevas, David puede pedir primero un diseño en Claude Design.
+- Estilo limpio (desde la 3.10): fondo blanco, grises neutros (`--ink #1e1f21`, `--muted #6d6e6f`, `--line #e4e5e7`, franja `--band #f3f4f5`) y el azul petróleo `--primary #2f5d62` (oscuro: `#9ccbcc`) como único color de acento. Sin dorado ni crema: los tokens `--gold*` siguen existiendo pero ahora son grises.
+- Una sola letra, Inter, con pesos 400/500/600 (nada de 700/800). Título de pantalla 30 px, texto 16 px, datos secundarios 14 px en gris. Sin MAYÚSCULAS en etiquetas ni rótulos encima de los títulos.
+- Secciones con franja gris (`.banda`, `.hy-sechead`), tarjetas con borde fino de 1 px y esquinas de 10 px (controles 8 px), sin sombras salvo el botón + y los menús. Lo atrasado en rojo (`--warn`).
+- Tokens claro/oscuro en `app/globals.css`: manda la última capa del archivo («Versión 3.10: estilo limpio»).
+- Buenas prácticas siempre: texto e inputs de 16px, objetivos de 44px, foco visible (`--focus`), errores con ícono + texto, contraste AA. David no quiere tener que señalar errores de UI: revísalos tú antes de publicar.
+- Skills de diseño en `.claude/skills/`: `impeccable` y `frontend-design` para diseñar, `web-design-guidelines` para revisar. Para pantallas nuevas, David puede pedir primero un diseño en Claude Design.
 
 ## Comprobar antes de publicar
 - `npx tsc --noEmit -p .` y `npx next build`; Worker: `npx wrangler deploy --dry-run`.

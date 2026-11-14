@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "3.9";
+export const VERSION = "3.10";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Diseño nuevo, más limpio: una sola letra (Inter), fondo blanco, grises neutros y listas con líneas finas",
+  "Semana con título corto y las fechas debajo; pestañas Planner y Horario con subrayado",
   "Las cuentas nuevas empiezan con hábitos y carpetas generales, listas para cualquier persona",
   "Metas y tareas separadas: en el planner pones tus metas (Personal y Trabajo) y debajo ves las tareas puntuales de cada día",
   "En Hoy: «Tus metas de hoy» y «Tareas de hoy»; la IA te propone a qué hora trabajar en cada meta",

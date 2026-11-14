@@ -9,7 +9,7 @@ Lee CLAUDE.md primero.
 
 1. `git pull`.
 2. Antes de construir, revisa las buenas prácticas UX/UI de lo que vas a hacer; para diseño usa la skill `impeccable`.
-3. Respeta los tokens de `app/globals.css` (oliva + dorado, claro y oscuro).
+3. Respeta los tokens de `app/globals.css` (estilo limpio: Inter, blanco y grises, petróleo como único acento; claro y oscuro). Ver «Diseño» en CLAUDE.md.
 4. Construye. Si tocas la base de datos, migración en `migrations/` y aplícala a D1 aparte.
 5. `npx tsc --noEmit -p .`, `npx next build`, y `npx wrangler deploy --dry-run` si tocaste el Worker.
 6. Capturas con Playwright a 390×844 y 1280×900 y en modo oscuro; arregla lo que se vea mal antes de publicar.

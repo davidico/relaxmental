@@ -89,7 +89,7 @@ export default function Habitos() {
           <div className="card empty">Todavía no tienes hábitos. Añade el primero abajo.</div>
         )}
       </div>
-      <h2>Nuevo hábito</h2>
+      <h2 className="banda">Nuevo hábito</h2>
       <div className="card newhabit">
         <form
           className="add"
