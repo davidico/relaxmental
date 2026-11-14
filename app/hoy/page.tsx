@@ -14,6 +14,7 @@ import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
 import { Tira } from "@/components/DiaTira";
+import { bloqueDeSub } from "@/lib/momentos";
 import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
 import { borrarTarea } from "@/lib/deshacer";
@@ -164,10 +165,12 @@ function ReglasAviso() {
 
 /* ---------- Metas y tareas de ese día que no tienen hora (las que tienen hora van en la línea de tiempo) ---------- */
 function SinHora({ day, hoy }: { day: string; hoy: string }) {
-  const { tareas, save } = useData();
+  const { tareas, save, planFor } = useData();
   const startFocus = useFocus();
   const delDia = tareas.filter((x) => x.due === day);
-  const xs = delDia.filter((x) => !x.hora).sort((a, b) => Number(esMeta(b)) - Number(esMeta(a)) || a.created.localeCompare(b.created));
+  /* Las subtareas de un momento del día se ven en la línea, debajo de ese momento */
+  const bloques = planFor(day);
+  const xs = delDia.filter((x) => !x.hora && !(x.momento && bloqueDeSub(x.momento, bloques))).sort((a, b) => Number(esMeta(b)) - Number(esMeta(a)) || a.created.localeCompare(b.created));
   if (!xs.length) return null;
   const primera = day === hoy ? xs.find((x) => !x.done) : undefined;
   const etiqueta = (x: Tarea) => (esMeta(x) ? `Meta de ${x.lado === "trabajo" ? "trabajo" : "tu vida personal"}` : "Tarea");

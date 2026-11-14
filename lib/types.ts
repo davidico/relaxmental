@@ -17,6 +17,10 @@ export interface Tarea {
   meta?: boolean;
   /** Fin del bloque (HH:MM) cuando tiene hora; si no, dura 30 min */
   fin?: string;
+  /** Tiempo aproximado en minutos (lo que dura el temporizador) */
+  min?: number;
+  /** Subtarea de un momento del día: su clave «HH:MM|nombre» (lib/momentos.ts). No lleva hora propia */
+  momento?: string;
 }
 
 /** Lo escrito en el planner antes de separar metas y tareas también cuenta como meta */

@@ -7,6 +7,10 @@ import type { Bloque } from "@/lib/plan";
 import { tipoDe } from "@/lib/tipos";
 import { useTipos } from "@/lib/usarTipos";
 import IconoBloque from "./IconoBloque";
+import AnadirAqui from "./AnadirAqui";
+import { useFocus } from "./Shell";
+import { bloqueDeSub } from "@/lib/momentos";
+import type { Tarea } from "@/lib/types";
 import AvisoDespertar from "./AvisoDespertar";
 import Diario from "./Diario";
 
@@ -22,7 +26,8 @@ const alto = (min: number) => Math.round(Math.min(132, 44 + Math.max(0, min - 15
  * El día en una línea: cada actividad es una cápsula con su ícono (más alta cuanto más dura),
  * con su hora a la izquierda y un círculo a la derecha para decir «lo hice».
  * La línea que las une se va llenando con la hora: continua lo que ya pasó, punteada lo que falta.
- * Entre dos actividades que aún no pasaron hay un «+» en la línea para añadir ahí una tarea (en los ratos libres, «Planificar»).
+ * Entre dos actividades que aún no pasaron hay un «+» en la línea (en los ratos libres, «Planificar») que abre `AnadirAqui`:
+ * lo nuevo va como subtarea de un momento vecino (se ve debajo de él, con su círculo y su temporizador) o como momento nuevo a esa hora.
  * Si el ícono tiene algo que abrir (el contador de ejercicio, el aviso para levantarse), es un botón.
  * `minuto` es el minuto actual si el día es hoy; -1 si es un día futuro; 1440 si ya pasó.
  */
@@ -30,6 +35,8 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
   const { perfil, savePerfil, tareas, save, hoy, planFor } = useData();
   const [aviso, setAviso] = useState<{ fecha: string; hora: string; cuando: string; pasado?: boolean } | null>(null);
   const [diario, setDiario] = useState(false);
+  const [anadir, setAnadir] = useState<{ hora: string; dentro: { clave: string; nombre: string }[]; inicial: number } | null>(null);
+  const empezar = useFocus();
   const hechos = new Set(perfil.hechos?.[dia] ?? []);
   const estaHecho = (b: Bloque) => (b.tarea ? !!b.hecha : hechos.has(clave(b)));
   const marcar = (b: Bloque) => {
@@ -45,7 +52,18 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
     const todos = Object.fromEntries(Object.entries({ ...(perfil.hechos ?? {}), [dia]: lista }).filter(([f, xs]) => f >= desde && xs.length));
     savePerfil("hechos", todos);
   };
-  const planificar = (hora: string) => dispatchEvent(new CustomEvent("mi-semana:nueva-tarea", { detail: { due: dia, hora } }));
+  /* Añadir algo en un punto del día: como subtarea de un momento vecino que aún no pasó, o como momento nuevo a esa hora */
+  const anadirEn = (hora: string, vecinos: (Bloque | undefined)[], preferido?: Bloque) => {
+    const dentro = vecinos.filter((x): x is Bloque => !!x && !x.tarea && toMin(x.e) > minuto);
+    setAnadir({ hora, dentro: dentro.map((x) => ({ clave: clave(x), nombre: x.t })), inicial: preferido ? dentro.indexOf(preferido) : -1 });
+  };
+  /* Las subtareas de cada momento: tareas de ese día sin hora que apuntan a él */
+  const subs = new Map<Bloque, Tarea[]>();
+  for (const x of tareas) {
+    if (x.due !== dia || x.hora || !x.momento) continue;
+    const b = bloqueDeSub(x.momento, blocks);
+    if (b) subs.set(b, [...(subs.get(b) ?? []), x]);
+  }
   const nHechos = blocks.filter(estaHecho).length;
   const esHoy = minuto >= 0 && minuto < 1440;
   const cuando = esHoy ? "hoy" : dia === addD(hoy, 1) ? "mañana" : "ese día";
@@ -78,11 +96,14 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
         run: () => setAviso({ fecha: addD(dia, 1), hora: despertarSig, cuando: dia === hoy ? "mañana" : "al día siguiente" }),
       };
     if (esHoy && k === "diario") return { label: "Escribir tu diario de hoy", pista: "Toca el ícono para escribir tu diario", run: () => setDiario(true) };
+    /* Una tarea con tiempo aproximado: su ícono empieza el temporizador */
+    const t = b.tarea ? tareas.find((x) => x.id === b.tarea) : undefined;
+    if (esHoy && t?.min && !t.done) return { label: `Empezar el temporizador de ${t.min} minutos: ${b.t}`, pista: `Toca el ícono para empezar ${t.min} min`, run: () => empezar(t) };
     return null;
   };
 
   /** Fila del momento actual cuando no hay ninguna actividad en curso */
-  const filaAhora = (key: string, texto: string, plan?: string) => (
+  const filaAhora = (key: string, texto: string, plan?: string, sig?: Bloque) => (
     <li key={key} className="lt-f lt-hueco ahora" aria-current="time">
       <span className="lt-h">{aHora(minuto)}</span>
       <span className="lt-c"><span className="lt-dot" aria-hidden="true" /></span>
@@ -91,7 +112,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
           <span className="lt-t">Ahora</span>
           <span className="lt-s">{texto}</span>
         </span>
-        {plan && <button className="lt-plan" onClick={() => planificar(plan)} aria-label={`Planificar a las ${plan}`}>Planificar</button>}
+        {plan && <button className="lt-plan" onClick={() => anadirEn(plan, [sig])} aria-label={`Planificar a las ${plan}`}>Planificar</button>}
       </span>
     </li>
   );
@@ -139,27 +160,43 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                   {accion && <span className="lt-s lt-pista">{accion.pista}</span>}
                 </span>
                 <input type="checkbox" className="hy-check" id={id} checked={hecho} onChange={() => marcar(b)} />
+                {subs.has(b) && (
+                  <ul className="lt-subs" aria-label={`Subtareas de ${b.t}`}>
+                    {subs.get(b)!.map((x) => (
+                      <li key={x.id} className={x.done ? "hecho" : undefined}>
+                        <input type="checkbox" className="hy-check" id={`lt-sub-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
+                        <label htmlFor={`lt-sub-${x.id}`}>{x.title}</label>
+                        {!!x.min && !x.done && (
+                          <button type="button" className="lt-tiempo" onClick={() => empezar(x)} aria-label={`Empezar el temporizador de ${x.min} minutos: ${x.title}`}>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+                            {x.min} min
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>,
               /* Entre dos actividades seguidas: un «+» en la línea para meter ahí una tarea */
               !!sig && !enHueco && hueco < 15 && dia >= hoy && toMin(b.e) > minuto && (
                 <li key={id + "m"} className="lt-f lt-entre">
                   <span className="lt-h" />
                   <span className="lt-c">
-                    <button type="button" className="lt-mas" onClick={() => planificar(b.e)} aria-label={`Añadir una tarea a las ${b.e}, entre ${b.t} y ${sig.t}`}>
+                    <button type="button" className="lt-mas" onClick={() => anadirEn(b.e, [b, sig], ahora ? b : undefined)} aria-label={`Añadir algo a las ${b.e}, entre ${b.t} y ${sig.t}`}>
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                     </button>
                   </span>
                 </li>
               ),
               enHueco
-                ? filaAhora(id + "h", libre(toMin(sig.s) - minuto), aHora(Math.max(minuto, Math.min(toMin(sig.s) - 5, Math.ceil(minuto / 5) * 5))))
+                ? filaAhora(id + "h", libre(toMin(sig.s) - minuto), aHora(Math.max(minuto, Math.min(toMin(sig.s) - 5, Math.ceil(minuto / 5) * 5))), sig)
                 : hueco >= 15 && (
                     <li key={id + "h"} className={`lt-f lt-hueco${huecoPaso ? " paso" : ""}`}>
                       <span className="lt-h" />
                       <span className="lt-c" />
                       <span className="lt-b lt-hb">
                         <span className="lt-s">{libre(hueco)}</span>
-                        {dia >= hoy && !huecoPaso && <button className="lt-plan" onClick={() => planificar(b.e)} aria-label={`Planificar a las ${b.e}`}>Planificar</button>}
+                        {dia >= hoy && !huecoPaso && <button className="lt-plan" onClick={() => anadirEn(b.e, [b, sig])} aria-label={`Planificar a las ${b.e}`}>Planificar</button>}
                       </span>
                     </li>
                   ),
@@ -172,6 +209,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
       )}
       {aviso && <AvisoDespertar fecha={aviso.fecha} hora={aviso.hora} cuando={aviso.cuando} pasado={aviso.pasado} onClose={() => setAviso(null)} />}
       {diario && <Diario hoja onClose={() => setDiario(false)} />}
+      {anadir && <AnadirAqui dia={dia} hora={anadir.hora} dentro={anadir.dentro} inicial={anadir.inicial} onClose={() => setAnadir(null)} />}
     </section>
   );
 }

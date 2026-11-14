@@ -27,7 +27,8 @@ const FocusCtx = createContext<(t: Tarea) => void>(() => {});
 export const useFocus = () => useContext(FocusCtx);
 
 function FocusBar({ task, onClose }: { task: Tarea; onClose: () => void }) {
-  const [end] = useState(() => Date.now() + 10 * 60 * 1000);
+  const minutos = task.min && task.min > 0 ? task.min : 10;
+  const [end] = useState(() => Date.now() + minutos * 60 * 1000);
   const [, tick] = useState(0);
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 1000);
@@ -40,7 +41,7 @@ function FocusBar({ task, onClose }: { task: Tarea; onClose: () => void }) {
         <span className="clock">{left ? `${pad(Math.floor(left / 60000))}:${pad(Math.floor(left / 1000) % 60)}` : "¡Listo!"}</span>
         <div className="what">
           {task.title}
-          <small>{left ? task.step || "Solo 10 minutos" : "Puedes parar sin culpa, o seguir."}</small>
+          <small>{left ? task.step || `Solo ${minutos} minutos` : "Puedes parar sin culpa, o seguir."}</small>
         </div>
         <button onClick={onClose}>{left ? "Parar" : "Cerrar"}</button>
       </div>

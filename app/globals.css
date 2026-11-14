@@ -1941,7 +1941,7 @@ h2,h3,.sheet-title{text-wrap:balance}
 @supports (animation-timeline: view()){
   @media (prefers-reduced-motion:no-preference){
     .lt-f{view-timeline:--lt-fila block}
-    .lt-h,.lt-b,.lt .hy-check{animation:lt-dial linear both;animation-timeline:--lt-fila;animation-range:cover}
+    .lt-h,.lt-b,.lt-subs,.lt-f>.hy-check{animation:lt-dial linear both;animation-timeline:--lt-fila;animation-range:cover}
     /* El ícono solo cambia de tamaño (si se transparentara, la línea se vería a través) */
     .lt-cap,.lt-dot,.lt-mas{animation:lt-dial-cap linear both;animation-timeline:--lt-fila;animation-range:cover}
     .lt-h{transform-origin:100% 50%}
@@ -1971,3 +1971,33 @@ h2,h3,.sheet-title{text-wrap:balance}
 .lt-mas::after{content:"";position:absolute;inset:-9px -18px}
 .lt-mas:hover{color:var(--pine);border-color:var(--primary)}
 .lt-mas:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* ---------- Versión 5.4: añadir en un punto del día (subtarea de un momento o momento nuevo) con tiempo aproximado ---------- */
+.sheet.aq{max-width:520px;gap:var(--e3);padding:var(--e4) max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.aq-h{margin:0;font-size:15px;font-weight:500;color:var(--muted)}
+.aq .ts-title{width:100%}
+.aq-lbl,.aq-donde legend{margin:0 0 var(--e1);padding:0;font-size:14px;color:var(--muted)}
+.aq-donde{border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--e1)}
+.aq-donde label{display:flex;align-items:center;gap:var(--e2);min-height:var(--tap,44px);padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.aq-donde label:has(input:checked){border-color:var(--primary);background:var(--pine-soft)}
+.aq-donde label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
+.aq-donde input{width:20px;height:20px;min-height:0;margin:0;padding:0;flex:none;accent-color:var(--primary)}
+.aq-donde span{min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.aq-pie{display:flex;align-items:center;gap:var(--e1);border-top:1px solid var(--line);padding-top:6px}
+/* Las subtareas, debajo de su momento */
+.lt-subs{grid-column:3 / -1;list-style:none;margin:0 0 var(--e2);padding:0;display:flex;flex-direction:column;transform-origin:0 50%}
+/* Con subtareas la fila tiene dos pisos: la hora y el ícono se quedan arriba, junto al nombre, y la línea sigue hasta abajo */
+.lt-f:has(>.lt-subs)>.lt-h{grid-column:1;grid-row:1}
+.lt-f:has(>.lt-subs)>.lt-c{grid-column:2;grid-row:1 / span 2;place-items:start center}
+.lt-f:has(>.lt-subs)>.lt-b{grid-column:3;grid-row:1}
+.lt-f:has(>.lt-subs)>.hy-check{grid-column:4;grid-row:1}
+.lt-subs li{display:flex;align-items:center;gap:var(--e2);min-height:40px}
+.lt-subs label{flex:1;min-width:0;font-size:15px;line-height:1.35;overflow-wrap:anywhere;cursor:pointer}
+.lt-subs li.hecho label{color:var(--muted);text-decoration:line-through}
+.lt .lt-subs .hy-check{width:20px;height:20px}
+.lt .lt-subs .hy-check::before{inset:-10px}
+.lt-tiempo{position:relative;flex:none;display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 10px;border:1px solid var(--stone);border-radius:999px;background:var(--surface);color:var(--pine);font:inherit;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;cursor:pointer}
+.lt-tiempo::after{content:"";position:absolute;inset:-6px 0}
+.lt-tiempo svg{width:10px;height:10px;fill:currentColor}
+.lt-tiempo:hover{background:var(--band)}
+.lt-tiempo:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
