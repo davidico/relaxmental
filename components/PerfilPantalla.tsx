@@ -19,7 +19,19 @@ export const PANTALLAS: { ver: Exclude<Ver, "cuenta">; href: string; titulo: str
   { ver: "reglas", href: "/perfil/reglas", titulo: "Mis reglas del horario", sub: "Cómo es tu día: horas, días y excepciones. La IA las usa para armar tu semana." },
   { ver: "compromisos", href: "/perfil/compromisos", titulo: "Mis compromisos", sub: "Lo que tiene fecha: iglesia, turnos, citas." },
   { ver: "semana", href: "/perfil/semana", titulo: "Mi semana con IA", sub: "Tu semana tipo y el horario de una semana concreta." },
-  { ver: "acerca", href: "/perfil/acerca", titulo: "Acerca de", sub: "La versión de la app y sus novedades." },
+  { ver: "acerca", href: "/perfil/acerca", titulo: "Acerca de", sub: "La versión de la app, sus novedades y cómo funciona la IA." },
+];
+
+/** Para «Cómo funciona la IA»: cada uso, qué lee y qué devuelve (debe coincidir con worker/ai.ts) */
+const IA_USOS: { cuando: string; lee: string; da: string }[] = [
+  { cuando: "Dictas con el micrófono", lee: "el audio.", da: "el texto escrito y, en las notas, un título corto." },
+  { cuando: "Respondes las preguntas de «Armemos tu semana»", lee: "tus reglas, tus respuestas y tus compromisos próximos.", da: "más preguntas y, al final, tus reglas redactadas." },
+  { cuando: "Subes una foto de tus compromisos", lee: "la foto, la fecha de hoy y tus reglas.", da: "la lista de compromisos con fecha y hora, que revisas antes de guardar." },
+  { cuando: "Armas tu semana tipo", lee: "tus reglas y tus últimos 30 días ajustados a mano.", da: "un día típico para cada día de la semana." },
+  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes y tus días ajustados.", da: "el horario de cada día; tú lo aplicas o no." },
+  { cuando: "Guardas un día que editaste", lee: "lo que la app te propuso y cómo lo dejaste (tus últimos 12 cambios), tus reglas y lo que ya decidiste.", da: "hasta 5 conclusiones sobre cómo armas tus días." },
+  { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es y tus reglas.", da: "un bloque de tiempo para cada meta." },
+  { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, lo que tienes apuntado para los próximos días y tus reglas.", da: "hasta 3 propuestas: pasar una tarea a otro día, dar un bloque a una meta o una regla nueva." },
 ];
 
 export default function PerfilPantalla({ ver }: { ver: Ver }) {
@@ -322,24 +334,66 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
       )}
 
       {ver === "acerca" && (
-      <section className="card pad about">
-        <div className="ver">
-          <img className="brandmark sm logo" src="/icon.svg" alt="" aria-hidden="true" />
-          <div>
-            <strong>Mi Semana · versión {VERSION}</strong>
-            <span>{VERSION_FECHA}</span>
-          </div>
-        </div>
-        <ul>
-          {NOVEDADES.slice(0, 6).map((n) => <li key={n}>{n}</li>)}
-        </ul>
-        {NOVEDADES.length > 6 && (
-          <details className="nov-mas">
-            <summary>Ver todas las novedades ({NOVEDADES.length})</summary>
-            <ul>{NOVEDADES.slice(6).map((n) => <li key={n}>{n}</li>)}</ul>
-          </details>
-        )}
-      </section>
+        <>
+          <section className="card pad about">
+            <div className="ver">
+              <img className="brandmark sm logo" src="/icon.svg" alt="" aria-hidden="true" />
+              <div>
+                <strong>Mi Semana · versión {VERSION}</strong>
+                <span>{VERSION_FECHA}</span>
+              </div>
+            </div>
+            <ul>
+              {NOVEDADES.slice(0, 6).map((n) => <li key={n}>{n}</li>)}
+            </ul>
+            {NOVEDADES.length > 6 && (
+              <details className="nov-mas">
+                <summary>Ver todas las novedades ({NOVEDADES.length})</summary>
+                <ul>{NOVEDADES.slice(6).map((n) => <li key={n}>{n}</li>)}</ul>
+              </details>
+            )}
+          </section>
+
+          <h2 id="ia-como" className="banda">Cómo funciona la IA</h2>
+          <section className="card pad ia-exp" aria-labelledby="ia-como">
+            <p>
+              La IA solo actúa cuando tú pulsas algo. Lee únicamente lo que hace falta para esa tarea y casi todo lo que devuelve es una propuesta: tú decides con «Sí» o «No».
+            </p>
+
+            <h3>Qué lee en cada momento</h3>
+            <dl className="ia-lista">
+              {IA_USOS.map((u) => (
+                <div key={u.cuando}>
+                  <dt>{u.cuando}</dt>
+                  <dd><span>Lee:</span> {u.lee}</dd>
+                  <dd><span>Te da:</span> {u.da}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <h3>Cómo decide</h3>
+            <ul>
+              <li>Tus reglas mandan: es el texto que lee siempre.</li>
+              <li>Tus compromisos con fecha son fijos: no los mueve ni pone nada encima.</li>
+              <li>Aprende de lo que corriges: compara lo que te propuso con cómo lo dejaste y busca lo que se repite.</li>
+              <li>No vuelve a proponer lo que ya aceptaste o rechazaste.</li>
+              <li>Antes de mostrarte algo, la app descarta horas imposibles, fechas pasadas y bloques que se pisan.</li>
+            </ul>
+
+            <h3>Tus datos</h3>
+            <ul>
+              <li>La IA funciona en Cloudflare, el mismo servicio donde se guardan tus datos. Cloudflare no conserva lo que se le envía ni lo usa para entrenar modelos.</li>
+              <li>No tiene memoria propia: lo que sabe de ti son tus reglas y lo que tienes guardado en la app.</li>
+              <li>No lee tus notas ni tus diarios anteriores. El diario solo lo lee en el momento en que lo guardas.</li>
+              <li>Lo único que se guarda sin tu «Sí» es el texto que dictas y el título de una nota dictada. Puedes cambiarlos.</li>
+            </ul>
+
+            <h3>Sus límites</h3>
+            <p>
+              Puede equivocarse o inventar algo: es un modelo abierto (Llama, de Meta; Whisper para la voz). Por eso nada cambia en tu horario sin que tú lo aceptes.
+            </p>
+          </section>
+        </>
       )}
     </>
   );

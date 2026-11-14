@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.4";
+export const VERSION = "4.5";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "En Acerca de: «Cómo funciona la IA», con qué datos lee en cada momento, cómo decide y qué pasa con tus datos",
   "Los avisos ya muestran el ícono de la app en la barra de arriba (antes salía un cuadro blanco)",
   "En el móvil, Pendientes está arriba del planner, plegado: tócalo para abrirlo",
   "Repaso de espacios en toda la app: mismo aire entre secciones, botones pequeños más fáciles de tocar y días vacíos del planner más compactos",

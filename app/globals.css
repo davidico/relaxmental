@@ -1690,3 +1690,17 @@ h2,h3,.sheet-title{text-wrap:balance}
   .pl-pend,.pl-pend.abierto{grid-column:2;grid-row:1;padding:14px}
 }
 @media (prefers-reduced-motion:reduce){.pl-pend-btn svg{transition:none}}
+
+/* ---------- Versión 4.5: «Cómo funciona la IA» en Acerca de ---------- */
+.ia-exp{display:flex;flex-direction:column;gap:var(--e3)}
+.ia-exp>*{max-width:70ch}
+.ia-exp p,.ia-exp ul,.ia-exp dl,.ia-exp dd{margin:0}
+.ia-exp p,.ia-exp li,.ia-exp dd{line-height:1.5}
+.ia-exp h3{margin:var(--e3) 0 0;font-size:16px;font-weight:600}
+.ia-exp ul{padding-left:20px;display:flex;flex-direction:column;gap:var(--e2)}
+.ia-lista{display:flex;flex-direction:column}
+.ia-lista>div{padding:var(--e3) 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.ia-lista>div:first-child{border-top:none;padding-top:var(--e1)}
+.ia-lista dt{font-weight:500}
+.ia-lista dd{font-size:15px;color:var(--muted)}
+.ia-lista dd span{color:var(--ink)}
