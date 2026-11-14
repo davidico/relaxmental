@@ -19,6 +19,8 @@ export interface Bloque {
   church?: boolean;
   /** Viene de una tarea con hora (id de la tarea) */
   tarea?: string;
+  /** La tarea o meta de este bloque ya está hecha */
+  hecha?: boolean;
 }
 
 export interface Evento {
@@ -68,15 +70,15 @@ export function encajar(base: Bloque[], fijos: Bloque[]): Bloque[] {
 type TareaConHora = { id: string; title: string; step?: string; due: string; hora?: string; done: boolean; lado?: string; meta?: boolean; fin?: string };
 const hhmm = (m: number) => `${String(Math.floor(Math.min(m, 1439) / 60)).padStart(2, "0")}:${String(Math.min(m, 1439) % 60).padStart(2, "0")}`;
 
-/** Las tareas de esa fecha que tienen hora, como bloques de 30 minutos */
+/** Las tareas y metas de esa fecha que tienen hora, como bloques (30 minutos si no tienen fin). Las hechas siguen en el día, marcadas */
 export function bloquesDeTareas(fecha: string, tareas: TareaConHora[] = []): Bloque[] {
   return tareas
-    .filter((t) => !t.done && t.due === fecha && t.hora && hm.test(t.hora))
+    .filter((t) => t.due === fecha && t.hora && hm.test(t.hora))
     .map((t) => {
       const meta = t.meta ?? !!t.lado;
       const e = t.fin && hm.test(t.fin) && toMin(t.fin) > toMin(t.hora!) ? t.fin : hhmm(toMin(t.hora!) + 30);
       const tipo = meta ? "Meta" : "Tarea";
-      return { s: t.hora!, e, t: t.title, a: (t.lado === "trabajo" ? "trabajo" : "casa") as Area, sub: t.step ? `${tipo} · ${t.step}` : tipo, tarea: t.id };
+      return { s: t.hora!, e, t: t.title, a: (t.lado === "trabajo" ? "trabajo" : "casa") as Area, sub: t.step ? `${tipo} · ${t.step}` : tipo, tarea: t.id, ...(t.done ? { hecha: true } : {}) };
     });
 }
 

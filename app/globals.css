@@ -1783,3 +1783,48 @@ h2,h3,.sheet-title{text-wrap:balance}
 .pl-edit-hora{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e2)}
 .pl-sheet .sheet-foot{flex-wrap:nowrap}
 .pl-items li{position:static}
+
+/* ---------- Versión 4.8: Hoy con la tira de la semana y el día en una línea de tiempo con checks ---------- */
+.st{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:var(--e1) 0 var(--e4)}
+.st button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;padding:6px 0 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.st button:hover{background:var(--band)}
+.st button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.st-d{font-size:14px;color:var(--muted);line-height:1.2}
+.st-n{font-size:18px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.st button.st-hoy::after{content:"";position:absolute;bottom:5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--primary)}
+.st button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.st button[aria-pressed="true"] .st-d{color:var(--on-primary)}
+.st button[aria-pressed="true"].st-hoy::after{background:var(--on-primary)}
+@media (min-width:1000px){.st{max-width:520px}}
+.tr{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tr li{position:relative;display:grid;grid-template-columns:44px 12px minmax(0,1fr) auto;column-gap:var(--e3);align-items:start}
+.tr li::before{content:"";position:absolute;left:61.5px;top:0;bottom:0;width:1px;background:var(--line)}
+.tr li:first-child::before{top:20px}
+.tr li:last-child::before{bottom:auto;height:20px}
+.tr li:only-child::before{display:none}
+.tr-fila{padding:6px 0;min-height:56px}
+.tr-hora{padding-top:11px;font-size:14px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.tr-punto{position:relative;z-index:1;width:12px;height:12px;margin-top:14px;border-radius:50%;border:2px solid var(--field);background:var(--bg);box-sizing:border-box}
+.tr-b{display:flex;flex-direction:column;gap:2px;min-width:0;padding:9px 0}
+.tr-t{font-size:16px;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}
+.tr-s{font-size:14px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.tr-fila.ahora .tr-punto{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 4px var(--pine-soft)}
+.tr-fila.ahora .tr-t{font-weight:600}
+.tr-fila.ahora .tr-hora,.tr-fila.ahora .tr-s{color:var(--pine)}
+.tr-fila.paso .tr-t{color:var(--muted)}
+.tr-fila.hecho .tr-t{color:var(--muted);text-decoration:line-through}
+.tr-fila.hecho .tr-punto{background:var(--field);border-color:var(--field)}
+.tr-hueco{min-height:44px}
+.tr li.tr-hueco::before{background:none;border-left:1px dashed var(--field);width:0}
+.tr-hueco .tr-hora{padding-top:13px}
+.tr-hueco .tr-punto{width:6px;height:6px;margin:19px 3px 0;border:none;background:var(--field)}
+.tr-hueco .tr-b{flex-direction:row;align-items:center;flex-wrap:wrap;gap:var(--e3);padding:4px 0}
+.tr-plan{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--stone);border-radius:999px;background:var(--surface);color:var(--pine);font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+.tr-plan::after{content:"";position:absolute;inset:-4px 0}
+.tr-plan:hover{background:var(--band)}
+.tr-plan:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.tr-plan svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.tr .hy-check{margin:8px 0 0}
+.tr-sec .linkbtn{align-self:flex-start}
+.hy-volver span{flex:1}
+.hy-volver svg{color:var(--muted);flex:none}

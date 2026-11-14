@@ -121,6 +121,8 @@ export type Perfil = {
   aprendizajes?: unknown[];
   /** Lo que la IA recuerda de la persona (lib/aprender.ts: Recuerdo[]) */
   memoria?: unknown[];
+  /** Bloques del horario marcados como hechos: fecha -> «hora|nombre» (últimos 45 días) */
+  hechos?: Record<string, string[]>;
   /** El último resumen semanal de la IA */
   resumenSemana?: { semana: string; texto: string; fecha: string };
   [k: string]: unknown;

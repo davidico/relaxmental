@@ -16,6 +16,7 @@ import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
+import { SemanaTira, Tira } from "@/components/DiaTira";
 import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
 import { borrarTarea } from "@/lib/deshacer";
@@ -38,10 +39,14 @@ export default function Hoy() {
   const now = useNow();
   const t = ds(now);
   const minute = now.getHours() * 60 + now.getMinutes();
-  const blocks = planFor(t);
-  const evs = eventos[t] ?? [];
+  /* El día que se está viendo: hoy, u otro de la semana elegido en la tira */
+  const [elegido, setElegido] = useState<string | null>(null);
+  const dia = elegido ?? t;
+  const esHoy = dia === t;
+  const fecha = pd(dia);
+  const blocks = planFor(dia);
+  const evs = eventos[dia] ?? [];
   const [editing, setEditing] = useState(false);
-  const [verDia, setVerDia] = useState(false);
   const [entreno, setEntreno] = useState(false);
   /* El aviso del bloque de ejercicio abre directamente el entrenamiento (/hoy#entreno) */
   useEffect(() => {
@@ -51,7 +56,7 @@ export default function Hoy() {
     }
   }, []);
 
-  const hoyTxt = evs.length ? `Hoy: ${textoEventos(evs)}` : "";
+  const evTxt = evs.length ? `${esHoy ? "Hoy: " : ""}${textoEventos(evs)}` : "";
 
   return (
     <div className="hy">
@@ -61,53 +66,52 @@ export default function Hoy() {
           Nueva tarea
         </button>
         <h1>
-          {DOW[now.getDay()]} {now.getDate()}
-          <span className="hy-month"> de {MES[now.getMonth()]}</span>
+          {DOW[fecha.getDay()]} {fecha.getDate()}
+          <span className="hy-month"> de {MES[fecha.getMonth()]}</span>
         </h1>
         <p className="sub">
-          <span className="hy-month-m">{MES[now.getMonth()][0].toUpperCase() + MES[now.getMonth()].slice(1)}{hoyTxt ? " · " : ""}</span>
-          {hoyTxt}
+          <span className="hy-month-m">{MES[fecha.getMonth()][0].toUpperCase() + MES[fecha.getMonth()].slice(1)}{evTxt ? " · " : ""}</span>
+          {evTxt}
         </p>
       </header>
-      <PushBanner />
+      <SemanaTira dia={dia} hoy={t} onElegir={(d) => setElegido(d === t ? null : d)} />
+      {esHoy && <PushBanner />}
 
       <div className="hy-dots" aria-hidden="true" />
-      <ReglasAviso />
+      {esHoy && <ReglasAviso />}
 
       <div className="hy-grid">
         <div className="hy-col">
-          <NowCard blocks={blocks} minute={minute} onEntreno={() => setEntreno(true)} />
-          <Atrasadas day={t} />
-          <OneTask day={t} />
-          <HabitRings day={t} />
+          {esHoy && <NowCard blocks={blocks.filter((b) => !b.hecha)} minute={minute} onEntreno={() => setEntreno(true)} />}
+          {esHoy && <Atrasadas day={t} />}
+          <SinHora day={dia} hoy={t} />
+          <Tira dia={dia} blocks={blocks} minuto={esHoy ? minute : dia < t ? 1440 : -1} onEditar={() => setEditing(true)} />
+          {dia <= t && <HabitRings day={dia} />}
         </div>
         {/* El orden del código es el que se ve (y el del teclado): en el móvil todo va en una columna */}
         <div className="hy-col hy-side">
           <Capture />
-          <Diario />
-          <ResumenSemana />
-          <Aprendizajes />
-          <button className="hy-allday hy-ask" onClick={() => dispatchEvent(new Event("mi-semana:preguntar"))}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
-            <span>Pregúntale a la IA</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-          <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
-            <button className="hy-allday" aria-expanded={verDia} aria-controls="hy-dia-lista" onClick={() => setVerDia(!verDia)}>
-              <span id="hy-dia">{verDia ? "Ocultar el día" : "Ver todo el día"}</span>
-              <span className="hy-allday-n">{blocks.length} bloques</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          {esHoy && (
+            <>
+              <Diario />
+              <ResumenSemana />
+              <Aprendizajes />
+              <button className="hy-allday hy-ask" onClick={() => dispatchEvent(new Event("mi-semana:preguntar"))}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
+                <span>Pregúntale a la IA</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+              </button>
+            </>
+          )}
+          {!esHoy && (
+            <button className="hy-allday hy-volver" onClick={() => setElegido(null)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
+              <span>Volver a hoy</span>
             </button>
-            {verDia && (
-              <div id="hy-dia-lista">
-                <DayList blocks={blocks} minute={minute} />
-                <button className="linkbtn" onClick={() => setEditing(true)}>Editar hoy</button>
-              </div>
-            )}
-          </section>
+          )}
         </div>
       </div>
-      {editing && <DayEditor date={t} onClose={() => setEditing(false)} />}
+      {editing && <DayEditor date={dia} onClose={() => setEditing(false)} />}
       {entreno && <Entreno onClose={() => setEntreno(false)} />}
     </div>
   );
@@ -177,54 +181,6 @@ function NowCard({ blocks, minute, onEntreno }: { blocks: Bloque[]; minute: numb
   );
 }
 
-/* ---------- Tu día ---------- */
-function DayList({ blocks, minute }: { blocks: Bloque[]; minute: number }) {
-  const [showPast, setShowPast] = useState(false);
-  const past = blocks.filter((b) => toMin(b.e) <= minute);
-  const visible = showPast ? blocks : blocks.filter((b) => toMin(b.e) > minute);
-  return (
-    <>
-      {past.length > 0 && (
-        <button className="hy-past" aria-expanded={showPast} onClick={() => setShowPast(!showPast)}>
-          <span>{showPast ? "Ocultar lo que ya pasó" : `Ya pasaron ${past.length} ${past.length === 1 ? "bloque" : "bloques"} de hoy`}</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </button>
-      )}
-      {visible.length ? (
-        <ol className="hy-tl">
-          {visible.map((b) => {
-            const isPast = toMin(b.e) <= minute;
-            const isCur = minute >= toMin(b.s) && minute < toMin(b.e);
-            return (
-              <li key={b.s + b.t} className={isCur ? "cur" : isPast ? "past" : ""} aria-current={isCur ? "step" : undefined}>
-                <span className="hy-tl-h">{b.s}</span>
-                <span className="hy-tl-dot" aria-hidden="true" />
-                <span className="hy-tl-b">
-                  <span className="hy-tl-t">{b.t}</span>
-                  {isCur ? (
-                    <span className="hy-tl-now">Ahora · hasta las {b.e}</span>
-                  ) : (
-                    b.sub && !b.evento && <span className="hy-tl-s">{b.sub}</span>
-                  )}
-                  {b.evento && b.sub && !isCur && (
-                    <span className="hy-roles">
-                      <span className="hy-role">{b.sub}</span>
-                    </span>
-                  )}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      ) : (
-        <p className="hy-empty">{blocks.length ? "No queda nada en el plan de hoy." : "Todavía no hay horario para hoy."}</p>
-      )}
-    </>
-  );
-}
-
 /* ---------- Bienvenida (sin reglas) y revisión de cada mes ---------- */
 function ReglasAviso() {
   const { mode, offline, perfil, savePerfil, hoy } = useData();
@@ -281,68 +237,41 @@ function ReglasAviso() {
   );
 }
 
-/* ---------- Lo único de hoy: una sola tarea a la vista ---------- */
-function OneTask({ day }: { day: string }) {
+/* ---------- Metas y tareas de ese día que no tienen hora (las que tienen hora van en la línea de tiempo) ---------- */
+function SinHora({ day, hoy }: { day: string; hoy: string }) {
   const { tareas, save } = useData();
   const startFocus = useFocus();
-  const porHora = (a: Tarea, b: Tarea) => (a.hora || "99").localeCompare(b.hora || "99") || a.created.localeCompare(b.created);
-  const deHoy = tareas.filter((x) => x.due === day).sort(porHora);
-  const primera = deHoy.find((x) => !x.done);
-  const hechas = deHoy.filter((x) => x.done).length;
-  const otras = openTasks(tareas).filter((x) => !x.due || x.due > day).length;
-  const fila = (x: Tarea) => (
-    <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
-      <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
-      <span className="hy-task-b">
-        <label htmlFor={`hy-${x.id}`}>{x.title}</label>
-        {x.hora && <span className="hy-step">{x.fin ? `De ${x.hora} a ${x.fin}` : `A las ${x.hora}`}</span>}
-        {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
-      </span>
-      {x.id === primera?.id && (
-        <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
-          10 min
-        </button>
-      )}
-    </li>
-  );
-  const metas = deHoy.filter(esMeta);
-  const tareasHoy = deHoy.filter((x) => !esMeta(x));
-  const grupos = (["personal", "trabajo"] as const).map((l) => ({ l, xs: metas.filter((x) => (x.lado === "trabajo" ? "trabajo" : "personal") === l) })).filter((g) => g.xs.length);
+  const delDia = tareas.filter((x) => x.due === day);
+  const xs = delDia.filter((x) => !x.hora).sort((a, b) => Number(esMeta(b)) - Number(esMeta(a)) || a.created.localeCompare(b.created));
+  if (!xs.length) return null;
+  const primera = day === hoy ? xs.find((x) => !x.done) : undefined;
+  const etiqueta = (x: Tarea) => (esMeta(x) ? `Meta de ${x.lado === "trabajo" ? "trabajo" : "tu vida personal"}` : "Tarea");
   return (
-    <>
-      <section aria-labelledby="hy-una" className="hy-sec">
-        <div className="hy-sechead">
-          <h2 id="hy-una" className="hy-h">Tus metas de hoy</h2>
-          {metas.length > 0 && <span className="hy-count">{metas.filter((x) => x.done).length} de {metas.length}</span>}
-        </div>
-        {metas.length ? (
-          grupos.map((g) => (
-            <div key={g.l} className={`hy-lado ${g.l}`}>
-              <h3 className="hy-lado-h">{g.l === "trabajo" ? "Trabajo" : "Personal"}</h3>
-              <ul className="hy-pros">{g.xs.map((x) => fila(x))}</ul>
-            </div>
-          ))
-        ) : (
-          <p className="hy-empty">
-            Sin metas para hoy. <Link href="/semana">Ponlas en tu planner</Link>.
-          </p>
-        )}
-        <HorasMetas day={day} metas={metas} />
-      </section>
-      <section aria-labelledby="hy-tar" className="hy-sec">
-        <div className="hy-sechead">
-          <h2 id="hy-tar" className="hy-h">Tareas de hoy</h2>
-          {tareasHoy.length > 0 && <span className="hy-count">{tareasHoy.filter((x) => x.done).length} de {tareasHoy.length}</span>}
-        </div>
-        {tareasHoy.length ? <ul className="hy-pros">{tareasHoy.map((x) => fila(x))}</ul> : <p className="hy-empty">Ninguna tarea para hoy.</p>}
-        {otras > 0 && (
-          <Link className="linkbtn hy-more" href="/semana">
-            Ver tu semana ({otras} {otras === 1 ? "cosa más" : "cosas más"})
-          </Link>
-        )}
-      </section>
-    </>
+    <section aria-labelledby="hy-una" className="hy-sec">
+      <div className="hy-sechead">
+        <h2 id="hy-una" className="hy-h">{day === hoy ? "Para hoy, sin hora" : "Sin hora"}</h2>
+        <span className="hy-count">{xs.filter((x) => x.done).length} de {xs.length}</span>
+      </div>
+      <ul className="hy-pros">
+        {xs.map((x) => (
+          <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
+            <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
+            <span className="hy-task-b">
+              <label htmlFor={`hy-${x.id}`}>{x.title}</label>
+              <span className="hy-step">{etiqueta(x)}</span>
+              {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
+            </span>
+            {x.id === primera?.id && (
+              <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+                10 min
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {day === hoy && <HorasMetas day={day} metas={delDia.filter(esMeta)} />}
+    </section>
   );
 }
 

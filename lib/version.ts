@@ -1,7 +1,11 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.7";
+export const VERSION = "4.8";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hoy tiene arriba la tira de la semana: toca un día para ver ese día",
+  "Tu día en una línea de tiempo: cada bloque con su círculo para marcar «lo hice», el tiempo libre entre bloques y «Planificar»",
+  "Las metas y tareas con hora van en la línea de tiempo; las que no tienen hora, en «Para hoy, sin hora»",
+  "Tocando un día anterior en la tira puedes marcar los hábitos de ese día",
   "La hora se elige girando una rueda (hora y minutos, al minuto), con atajos de duración: 15 min, 30 min, 1 h…",
   "Al crear una tarea te pregunta «¿Cuándo la haces?»: en un día, o más tarde (queda en Pendientes)",
   "En el planner, al tocar una meta o tarea se abre una hoja cómoda para cambiarla, con la rueda para la hora",

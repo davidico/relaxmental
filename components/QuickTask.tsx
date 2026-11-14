@@ -23,6 +23,8 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
   const [menu, setMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const [done, setDone] = useState(false);
+  /* Día y hora con los que se abre «Nueva tarea» (p. ej. desde «Planificar» en un hueco del día) */
+  const [inicial, setInicial] = useState<{ due?: string; hora?: string } | undefined>(undefined);
   const [f, setF] = useState({ title: "", step: "", due: today() });
   /* Si la app quedó abierta pasada la medianoche, "hoy" pasa al día nuevo */
   useEffect(() => setF((x) => (x.due && x.due < hoy ? { ...x, due: hoy } : x)), [hoy]);
@@ -48,7 +50,10 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
 
   /* Otras pantallas (p. ej. Hoy en escritorio) pueden abrir "Nueva tarea" con un evento */
   useEffect(() => {
-    const h = () => open("task");
+    const h = (e: Event) => {
+      setInicial((e as CustomEvent<{ due?: string; hora?: string }>).detail ?? undefined);
+      open("task");
+    };
     const q = () => open("ask");
     addEventListener("mi-semana:nueva-tarea", h);
     addEventListener("mi-semana:preguntar", q);
@@ -95,7 +100,7 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
       {mode === "entreno" && <Entreno onClose={close} />}
       {mode === "ask" && <Preguntar onClose={close} />}
       {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
-      {mode === "task" && <TaskSheet onClose={close} />}
+      {mode === "task" && <TaskSheet onClose={() => { close(); setInicial(undefined); }} inicial={inicial} />}
     </>
   );
 }
