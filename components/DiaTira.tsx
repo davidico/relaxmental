@@ -52,7 +52,8 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
     const todos = Object.fromEntries(Object.entries({ ...(perfil.hechos ?? {}), [dia]: lista }).filter(([f, xs]) => f >= desde && xs.length));
     savePerfil("hechos", todos);
   };
-  /* Añadir algo en un punto del día: como subtarea de un momento vecino que aún no pasó, o como momento nuevo a esa hora */
+  /* Añadir algo en un punto del día: como momento nuevo a esa hora o, con el «+» que hay debajo de un momento, como subtarea de ese
+     momento (el de arriba; nunca el de abajo: lo que se pone antes del desayuno no es parte del desayuno) */
   const anadirEn = (hora: string, vecinos: (Bloque | undefined)[], preferido?: Bloque) => {
     const dentro = vecinos.filter((x): x is Bloque => !!x && !x.tarea && toMin(x.e) > minuto);
     setAnadir({ hora, dentro: dentro.map((x) => ({ clave: clave(x), nombre: x.t })), inicial: preferido ? dentro.indexOf(preferido) : -1 });
@@ -77,9 +78,10 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
 
   /** Lo que abre el ícono de un bloque, si abre algo */
   const accionDe = (b: Bloque, paso: boolean): { label: string; pista: string; run: () => void } | null => {
-    /* El contador de series se abre desde cualquier actividad de ejercicio, sea el día que sea */
     const k = tipo(b);
-    if (k === "ejercicio")
+    /* El contador, el diario y el temporizador se ofrecen cuando llega su momento (hoy, desde su hora), no antes */
+    const llego = esHoy && toMin(b.s) <= minuto;
+    if (llego && k === "ejercicio")
       return { label: `Abrir el contador de series: ${b.t}`, pista: "Toca el ícono para elegir tus series", run: onEntreno };
     if (dia >= hoy && b === despertar) {
       const pasado = esHoy && toMin(b.s) <= minuto;
@@ -95,15 +97,15 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
         pista: `Toca el ícono: despertador de las ${despertarSig}`,
         run: () => setAviso({ fecha: addD(dia, 1), hora: despertarSig, cuando: dia === hoy ? "mañana" : "al día siguiente" }),
       };
-    if (esHoy && k === "diario") return { label: "Escribir tu diario de hoy", pista: "Toca el ícono para escribir tu diario", run: () => setDiario(true) };
+    if (llego && k === "diario") return { label: "Escribir tu diario de hoy", pista: "Toca el ícono para escribir tu diario", run: () => setDiario(true) };
     /* Una tarea con tiempo aproximado: su ícono empieza el temporizador */
     const t = b.tarea ? tareas.find((x) => x.id === b.tarea) : undefined;
-    if (esHoy && t?.min && !t.done) return { label: `Empezar el temporizador de ${t.min} minutos: ${b.t}`, pista: `Toca el ícono para empezar ${t.min} min`, run: () => empezar(t) };
+    if (llego && t?.min && !t.done) return { label: `Empezar el temporizador de ${t.min} minutos: ${b.t}`, pista: `Toca el ícono para empezar ${t.min} min`, run: () => empezar(t) };
     return null;
   };
 
   /** Fila del momento actual cuando no hay ninguna actividad en curso */
-  const filaAhora = (key: string, texto: string, plan?: string, sig?: Bloque) => (
+  const filaAhora = (key: string, texto: string, plan?: string) => (
     <li key={key} className="lt-f lt-hueco ahora" aria-current="time">
       <span className="lt-h">{aHora(minuto)}</span>
       <span className="lt-c"><span className="lt-dot" aria-hidden="true" /></span>
@@ -112,7 +114,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
           <span className="lt-t">Ahora</span>
           <span className="lt-s">{texto}</span>
         </span>
-        {plan && <button className="lt-plan" onClick={() => anadirEn(plan, [sig])} aria-label={`Planificar a las ${plan}`}>Planificar</button>}
+        {plan && <button className="lt-plan" onClick={() => anadirEn(plan, [])} aria-label={`Planificar a las ${plan}`}>Planificar</button>}
       </span>
     </li>
   );
@@ -182,21 +184,21 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                 <li key={id + "m"} className="lt-f lt-entre">
                   <span className="lt-h" />
                   <span className="lt-c">
-                    <button type="button" className="lt-mas" onClick={() => anadirEn(b.e, [b, sig], ahora ? b : undefined)} aria-label={`Añadir algo a las ${b.e}, entre ${b.t} y ${sig.t}`}>
+                    <button type="button" className="lt-mas" onClick={() => anadirEn(b.e, [b], ahora ? b : undefined)} aria-label={`Añadir algo a las ${b.e}, entre ${b.t} y ${sig.t}`}>
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                     </button>
                   </span>
                 </li>
               ),
               enHueco
-                ? filaAhora(id + "h", libre(toMin(sig.s) - minuto), aHora(Math.max(minuto, Math.min(toMin(sig.s) - 5, Math.ceil(minuto / 5) * 5))), sig)
+                ? filaAhora(id + "h", libre(toMin(sig.s) - minuto), aHora(Math.max(minuto, Math.min(toMin(sig.s) - 5, Math.ceil(minuto / 5) * 5))))
                 : hueco >= 15 && (
                     <li key={id + "h"} className={`lt-f lt-hueco${huecoPaso ? " paso" : ""}`}>
                       <span className="lt-h" />
                       <span className="lt-c" />
                       <span className="lt-b lt-hb">
                         <span className="lt-s">{libre(hueco)}</span>
-                        {dia >= hoy && !huecoPaso && <button className="lt-plan" onClick={() => anadirEn(b.e, [b, sig])} aria-label={`Planificar a las ${b.e}`}>Planificar</button>}
+                        {dia >= hoy && !huecoPaso && <button className="lt-plan" onClick={() => anadirEn(b.e, [])} aria-label={`Planificar a las ${b.e}`}>Planificar</button>}
                       </span>
                     </li>
                   ),
