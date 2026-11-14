@@ -79,7 +79,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
                 <div className="ed-times">
                   <HoraInput id={`ed-s-${i}`} label="Empieza" value={b.s} onChange={(v) => set(i, { s: v })} />
                   <span aria-hidden="true">–</span>
-                  <HoraInput id={`ed-e-${i}`} label="Termina" value={b.e} onChange={(v) => set(i, { e: v })} invalid={!!bad} />
+                  <HoraInput id={`ed-e-${i}`} label="Termina" value={b.e} onChange={(v) => set(i, { e: v })} invalid={!!bad} desde={b.s} />
                 </div>
                 <input id={`ed-t-${i}`} className="ed-name" placeholder="Qué haces" value={b.t} onChange={(e) => set(i, { t: e.target.value })} />
                 <textarea id={`ed-sub-${i}`} className="ed-sub" rows={2} placeholder="Detalle (opcional): qué vas a hacer exactamente, notas…" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />

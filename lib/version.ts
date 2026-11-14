@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.6";
+export const VERSION = "4.7";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "La hora se elige girando una rueda (hora y minutos, al minuto), con atajos de duración: 15 min, 30 min, 1 h…",
+  "Al crear una tarea te pregunta «¿Cuándo la haces?»: en un día, o más tarde (queda en Pendientes)",
+  "En el planner, al tocar una meta o tarea se abre una hoja cómoda para cambiarla, con la rueda para la hora",
   "La IA ahora te recuerda: apunta lo que aprende de ti en «Lo que la IA recuerda de mí», donde puedes verlo, corregirlo o borrarlo",
   "La IA lee tus últimos 14 días (diarios, metas, tareas y hábitos) para recomendarte mejor",
   "Los domingos: «¿Repasamos tu semana?», con un resumen y recomendaciones para la siguiente",

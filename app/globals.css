@@ -1740,3 +1740,46 @@ h2,h3,.sheet-title{text-wrap:balance}
 .dial-ico svg{display:block}
 /* La columna derecha de Hoy ya no es solo la captura rápida: en el móvil sus bloques van en la misma columna (no se esconde) */
 @media (max-width:899px){.hy-side{display:contents}}
+
+/* ---------- Versión 4.7: la hora se elige girando una rueda; «¿cuándo la haces?» al crear una tarea ---------- */
+.hora-dlg{max-width:340px;gap:var(--e3);padding:16px 16px 10px}
+.hora-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e3)}
+.hora-cab h2{margin:0;font-size:17px;font-weight:600;color:var(--ink)}
+.hora-ver{margin:0;text-align:right;font-size:28px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.hora-desde{font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0}
+.rd{position:relative;display:flex;justify-content:center;align-items:stretch;gap:var(--e2);height:220px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rd::before{content:"";position:absolute;left:8px;right:8px;top:88px;height:44px;border-radius:8px;background:var(--band);pointer-events:none}
+.rd-col{position:relative;width:88px;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y;-webkit-mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent);mask-image:linear-gradient(transparent,#000 32%,#000 68%,transparent)}
+.rd-col::-webkit-scrollbar{display:none}
+.rd-col::before,.rd-col::after{content:"";display:block;height:88px}
+.rd-col>div{height:44px;display:grid;place-items:center;scroll-snap-align:center;font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;user-select:none}
+.rd-col>div.on{color:var(--ink);font-size:24px;font-weight:600}
+.rd-col:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:10px}
+.rd-sep{position:relative;align-self:center;font-size:24px;font-weight:600;color:var(--ink)}
+.rd-dur{display:flex;flex-direction:column;gap:var(--e2)}
+.rd-dur .hora-lbl{margin:0;font-size:14px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.rd-chips{display:flex;flex-wrap:wrap;gap:var(--e2)}
+.rd-chips button{font:inherit;font-size:15px;min-height:44px;padding:0 14px;border:1px solid var(--stone);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
+.rd-chips button:hover{background:var(--band)}
+.rd-chips button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary);font-weight:500}
+.rd-chips button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ts-que{border:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e2)}
+.ts-que legend{padding:0;margin-bottom:var(--e1);font-size:14px;color:var(--muted)}
+.ts-que label{display:flex;align-items:flex-start;gap:var(--e2);min-height:var(--tap);padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.ts-que label:has(input:checked){border-color:var(--primary);background:var(--pine-soft)}
+.ts-que label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
+.ts-que input{width:20px;height:20px;min-height:0;margin:1px 0 0;padding:0;flex:none;accent-color:var(--primary)}
+.ts-que span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ts-que b{font-weight:500}
+.ts-que small{font-size:14px;color:var(--muted);line-height:1.35}
+.pl-edit-hora{align-items:center}
+.pl-edit-hora .hora-btn{min-width:0;flex:0 1 auto}
+.pl-edit-hora span{color:var(--muted)}
+.pl-sheet{max-width:520px}
+.pl-campos{display:flex;flex-direction:column;gap:var(--e3);padding:var(--e4) max(16px,env(safe-area-inset-right,0px)) var(--e4) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.pl-campo{display:flex;flex-direction:column;gap:var(--e1);min-width:0}
+.pl-campo label,.pl-etq{font-size:14px;color:var(--muted)}
+.pl-dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e3)}
+.pl-edit-hora{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e2)}
+.pl-sheet .sheet-foot{flex-wrap:nowrap}
+.pl-items li{position:static}

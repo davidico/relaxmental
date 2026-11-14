@@ -5,6 +5,7 @@ import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
 import { borrarTarea } from "@/lib/deshacer";
+import HoraInput from "./HoraInput";
 
 /**
  * Weekly planner: cada día con tus metas (en lo que quieres avanzar), separadas en
@@ -134,10 +135,6 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
                 <span className="sr-only">{x.done ? " (hecho)" : " (sin hacer)"}</span>
               </span>
             </li>
-          ) : abierto === x.id ? (
-            <li key={x.id}>
-              <Editar x={x} days={days} onClose={() => setAbierto(null)} />
-            </li>
           ) : (
             <li key={x.id} className={x.done ? "hecho" : ""}>
               <label className="pl-tap">
@@ -146,6 +143,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
               <button className="pl-txt" onClick={() => setAbierto(x.id)} aria-label={`Cambiar: ${x.title}`}>
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
               </button>
+              {abierto === x.id && <Editar x={x} days={days} onClose={() => setAbierto(null)} />}
             </li>
           ),
         )}
@@ -181,69 +179,108 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
 
 function Editar({ x, days, onClose }: { x: Tarea; days: string[]; onClose: () => void }) {
   const { save, remove, hoy } = useData();
-  const [txt, setTxt] = useState(`${x.hora ? x.hora + (x.fin ? "-" + x.fin : "") + " " : ""}${x.title}`);
+  const [txt, setTxt] = useState(x.title);
+  const [hora, setHora] = useState(x.hora ?? "");
+  const [fin, setFin] = useState(x.fin ?? "");
   const [meta, setMeta] = useState(esMeta(x));
   const [due, setDue] = useState(x.due);
   const [lado, setLado] = useState<Lado>(ladoDe(x));
   const opciones = Array.from(new Set([...(x.due ? [x.due] : []), ...days.filter((d) => d >= hoy)])).sort();
   const guardar = () => {
+    /* Si escribes la hora en el texto («10:00 Llamar»), manda sobre las ruedas */
     const t = leerHora(txt);
     if (!t.title) return;
-    save("tareas", { ...x, title: t.title, hora: due ? t.hora : undefined, fin: due && t.hora ? t.fin : undefined, due, lado, meta });
+    const h = t.hora ?? hora;
+    const f = t.hora ? t.fin : fin;
+    save("tareas", { ...x, title: t.title, hora: due && h ? h : undefined, fin: due && h && f && f > h ? f : undefined, due, lado, meta });
     onClose();
   };
+  const f = (d: string) => pd(d);
   return (
-    <form
-      className="pl-edit"
-      onSubmit={(e) => {
-        e.preventDefault();
-        guardar();
-      }}
-    >
-      <label htmlFor={`pe-t-${x.id}`} className="sr-only">Qué es</label>
-      <input id={`pe-t-${x.id}`} autoFocus value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => e.key === "Escape" && onClose()} />
-      <div className="pl-edit-fila">
-        <label htmlFor={`pe-d-${x.id}`} className="sr-only">Día</label>
-        <select id={`pe-d-${x.id}`} value={due} onChange={(e) => setDue(e.target.value)}>
-          <option value="">Sin día</option>
-          {opciones.map((d) => {
-            const f = pd(d);
-            return (
-              <option key={d} value={d}>
-                {DOW[f.getDay()]} {f.getDate()}
-              </option>
-            );
-          })}
-        </select>
-        <label htmlFor={`pe-m-${x.id}`} className="sr-only">Meta o tarea</label>
-        <select id={`pe-m-${x.id}`} value={meta ? "meta" : "tarea"} onChange={(e) => setMeta(e.target.value === "meta")}>
-          <option value="meta">Meta</option>
-          <option value="tarea">Tarea</option>
-        </select>
-        {meta && (
-          <>
-            <label htmlFor={`pe-l-${x.id}`} className="sr-only">Personal o trabajo</label>
-            <select id={`pe-l-${x.id}`} value={lado} onChange={(e) => setLado(e.target.value as Lado)}>
-              <option value="personal">Personal</option>
-              <option value="trabajo">Trabajo</option>
+    <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <form
+        className="sheet pl-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`pe-h-${x.id}`}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
+        onSubmit={(e) => {
+          e.preventDefault();
+          guardar();
+        }}
+      >
+        <div className="sheet-head">
+          <h2 id={`pe-h-${x.id}`} className="sheet-title">{meta ? "Cambiar meta" : "Cambiar tarea"}</h2>
+          <button type="button" className="nv-ib" aria-label="Cerrar" onClick={onClose}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <div className="pl-campos">
+          <div className="pl-campo">
+            <label htmlFor={`pe-t-${x.id}`}>Qué es</label>
+            <input id={`pe-t-${x.id}`} autoFocus value={txt} autoComplete="off" onChange={(e) => setTxt(e.target.value)} />
+          </div>
+          <div className="pl-campo">
+            <label htmlFor={`pe-d-${x.id}`}>Día</label>
+            <select id={`pe-d-${x.id}`} value={due} onChange={(e) => setDue(e.target.value)}>
+              <option value="">Sin día (queda en Pendientes)</option>
+              {opciones.map((d) => (
+                <option key={d} value={d}>
+                  {DOW[f(d).getDay()]} {f(d).getDate()}
+                </option>
+              ))}
             </select>
-          </>
-        )}
-      </div>
-      <div className="pl-edit-fila">
-        <button type="submit" className="btn sm">Guardar</button>
-        <button type="button" className="btn ghost sm" onClick={onClose}>Cancelar</button>
-        <button
-          type="button"
-          className="btn ghost sm pl-borrar"
-          onClick={() => {
-            borrarTarea(x, save, remove);
-            onClose();
-          }}
-        >
-          Borrar
-        </button>
-      </div>
-    </form>
+          </div>
+          <div className="pl-dos">
+            <div className="pl-campo">
+              <label htmlFor={`pe-m-${x.id}`}>Tipo</label>
+              <select id={`pe-m-${x.id}`} value={meta ? "meta" : "tarea"} onChange={(e) => setMeta(e.target.value === "meta")}>
+                <option value="meta">Meta</option>
+                <option value="tarea">Tarea</option>
+              </select>
+            </div>
+            {meta && (
+              <div className="pl-campo">
+                <label htmlFor={`pe-l-${x.id}`}>Lado</label>
+                <select id={`pe-l-${x.id}`} value={lado} onChange={(e) => setLado(e.target.value as Lado)}>
+                  <option value="personal">Personal</option>
+                  <option value="trabajo">Trabajo</option>
+                </select>
+              </div>
+            )}
+          </div>
+          {due && (
+            <div className="pl-campo">
+              <span className="pl-etq" id={`pe-hh-${x.id}`}>Hora</span>
+              <div className="pl-edit-hora" role="group" aria-labelledby={`pe-hh-${x.id}`}>
+                <HoraInput label="Empieza" value={hora} onChange={setHora} vacio="Sin hora" />
+                {hora && (
+                  <>
+                    <span aria-hidden="true">a</span>
+                    <HoraInput label="Termina" value={fin} onChange={setFin} vacio="Fin" desde={hora} invalid={!!fin && fin <= hora} />
+                    <button type="button" className="linkbtn" onClick={() => { setHora(""); setFin(""); }}>Quitar hora</button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="sheet-foot">
+          <button
+            type="button"
+            className="btn ghost pl-borrar"
+            onClick={() => {
+              borrarTarea(x, save, remove);
+              onClose();
+            }}
+          >
+            Borrar
+          </button>
+          <span style={{ flex: 1 }} />
+          <button type="button" className="btn ghost" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="btn" disabled={!txt.trim()}>Guardar</button>
+        </div>
+      </form>
+    </div>
   );
 }

@@ -96,7 +96,7 @@ export default function Compromisos() {
               </label>
               <label>
                 <span>Hasta</span>
-                <HoraInput label="Hasta" value={f.e ?? ""} onChange={(v) => cambiar(f.k, { e: v })} vacio="Sin hora" />
+                <HoraInput label="Hasta" value={f.e ?? ""} onChange={(v) => cambiar(f.k, { e: v })} vacio="Sin hora" desde={f.s} />
               </label>
               <button type="button" className="nv-ib sm cmp-x" aria-label={`Quitar ${f.t || "compromiso"}`} onClick={() => setFilas((x) => x && x.filter((y) => y.k !== f.k))}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>

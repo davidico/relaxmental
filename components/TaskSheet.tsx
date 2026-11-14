@@ -10,12 +10,14 @@ import WhenDialog from "./WhenDialog";
  * o la fecha y la hora. «Guardar» (o Enter en el teclado) la guarda y deja el campo listo para otra.
  * Si tiene hora, llega un aviso a esa hora.
  */
-export default function TaskSheet({ onClose }: { onClose: () => void }) {
+export default function TaskSheet({ onClose, inicial }: { onClose: () => void; inicial?: { due?: string; hora?: string } }) {
   const { save, hoy } = useData();
   const [title, setTitle] = useState("");
   const [step, setStep] = useState("");
-  const [due, setDue] = useState(hoy);
-  const [hora, setHora] = useState("");
+  const [due, setDue] = useState(inicial?.due ?? hoy);
+  const [hora, setHora] = useState(inicial?.hora ?? "");
+  /* ¿Es para un día concreto (sale en ese día y, con hora, en el itinerario) o queda en Pendientes? */
+  const [cuandoEs, setCuandoEs] = useState<"dia" | "luego">("dia");
   const [verPaso, setVerPaso] = useState(false);
   const [verCuando, setVerCuando] = useState(false);
   const [guardadas, setGuardadas] = useState(0);
@@ -34,7 +36,8 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
 
   const guardar = () => {
     if (!title.trim()) return;
-    save("tareas", { id: newId(), title: title.trim(), step: step.trim(), due, hora: due ? hora : "", done: false, created: new Date().toISOString() });
+    const enDia = cuandoEs === "dia" && !!due;
+    save("tareas", { id: newId(), title: title.trim(), step: step.trim(), due: enDia ? due : "", hora: enDia ? hora : "", done: false, created: new Date().toISOString(), meta: false });
     setTitle("");
     setStep("");
     setHora("");
@@ -64,7 +67,24 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
             <input ref={stepRef} id="ts-step" className="ts-step" autoFocus enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
           </>
         )}
-        {hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
+        <fieldset className="ts-que">
+          <legend>¿Cuándo la haces?</legend>
+          <label>
+            <input type="radio" name="ts-que" checked={cuandoEs === "dia"} onChange={() => { setCuandoEs("dia"); if (!due) setDue(hoy); }} />
+            <span>
+              <b>En un día</b>
+              <small>Sale en Hoy ese día</small>
+            </span>
+          </label>
+          <label>
+            <input type="radio" name="ts-que" checked={cuandoEs === "luego"} onChange={() => setCuandoEs("luego")} />
+            <span>
+              <b>Más tarde</b>
+              <small>Queda en Pendientes</small>
+            </span>
+          </label>
+        </fieldset>
+        {cuandoEs === "dia" && hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
         <div className="ts-bar">
           <button
             type="button"
@@ -83,10 +103,14 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
           >
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
           </button>
-          <button type="button" className="nv-ib ke-ib" aria-label="Fecha y hora" title="Fecha y hora" aria-pressed={verCuando} onClick={() => setVerCuando(true)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-          </button>
-          <button type="button" className="ts-chip" onClick={() => setVerCuando(true)}>{cuando}</button>
+          {cuandoEs === "dia" && (
+            <>
+              <button type="button" className="nv-ib ke-ib" aria-label="Fecha y hora" title="Fecha y hora" aria-pressed={verCuando} onClick={() => setVerCuando(true)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              </button>
+              <button type="button" className="ts-chip" onClick={() => setVerCuando(true)}>{cuando}</button>
+            </>
+          )}
           <span style={{ flex: 1 }} />
           <button type="submit" className="ts-save" disabled={!title.trim()}>Guardar</button>
         </div>
@@ -96,7 +120,7 @@ export default function TaskSheet({ onClose }: { onClose: () => void }) {
             hora={hora}
             hoy={hoy}
             onCancel={() => { setVerCuando(false); titleRef.current?.focus(); }}
-            onDone={(d, h) => { setDue(d); setHora(h); setVerCuando(false); titleRef.current?.focus(); }}
+            onDone={(d, h) => { setDue(d); setHora(h); if (!d) setCuandoEs("luego"); setVerCuando(false); titleRef.current?.focus(); }}
           />
         )}
         <p className="ts-ok" role="status">{guardadas > 0 ? `✓ ${guardadas === 1 ? "Tarea guardada" : `${guardadas} tareas guardadas`}. Escribe otra o toca fuera para cerrar.` : ""}</p>
