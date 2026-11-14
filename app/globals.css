@@ -1943,7 +1943,7 @@ h2,h3,.sheet-title{text-wrap:balance}
     .lt-f{view-timeline:--lt-fila block}
     .lt-h,.lt-b,.lt .hy-check{animation:lt-dial linear both;animation-timeline:--lt-fila;animation-range:cover}
     /* El ícono solo cambia de tamaño (si se transparentara, la línea se vería a través) */
-    .lt-cap,.lt-dot{animation:lt-dial-cap linear both;animation-timeline:--lt-fila;animation-range:cover}
+    .lt-cap,.lt-dot,.lt-mas{animation:lt-dial-cap linear both;animation-timeline:--lt-fila;animation-range:cover}
     .lt-h{transform-origin:100% 50%}
     .lt-b{transform-origin:0 50%}
     @keyframes lt-dial{0%,100%{opacity:.35;scale:.8}26%,74%{opacity:1;scale:1}}
@@ -1963,3 +1963,11 @@ h2,h3,.sheet-title{text-wrap:balance}
 .lt-editar::after{content:"";position:absolute;inset:-12px -10px}
 .lt-editar:hover{text-decoration:underline;text-underline-offset:3px}
 .lt-editar:focus-visible{outline:3px solid var(--focus);outline-offset:4px;border-radius:4px}
+
+/* ---------- Versión 5.3: un «+» en la línea, entre dos actividades, para añadir ahí una tarea ---------- */
+.lt-entre .lt-c{min-height:26px;padding:0}
+.lt-mas{position:relative;z-index:1;box-sizing:border-box;display:grid;place-items:center;width:26px;height:26px;padding:0;border:1px solid var(--stone);border-radius:50%;background:var(--surface);color:var(--muted);cursor:pointer}
+.lt-mas svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.lt-mas::after{content:"";position:absolute;inset:-9px -18px}
+.lt-mas:hover{color:var(--pine);border-color:var(--primary)}
+.lt-mas:focus-visible{outline:3px solid var(--focus);outline-offset:2px}

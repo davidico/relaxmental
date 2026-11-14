@@ -22,6 +22,7 @@ const alto = (min: number) => Math.round(Math.min(132, 44 + Math.max(0, min - 15
  * El día en una línea: cada actividad es una cápsula con su ícono (más alta cuanto más dura),
  * con su hora a la izquierda y un círculo a la derecha para decir «lo hice».
  * La línea que las une se va llenando con la hora: continua lo que ya pasó, punteada lo que falta.
+ * Entre dos actividades que aún no pasaron hay un «+» en la línea para añadir ahí una tarea (en los ratos libres, «Planificar»).
  * Si el ícono tiene algo que abrir (el contador de ejercicio, el aviso para levantarse), es un botón.
  * `minuto` es el minuto actual si el día es hoy; -1 si es un día futuro; 1440 si ya pasó.
  */
@@ -139,6 +140,17 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                 </span>
                 <input type="checkbox" className="hy-check" id={id} checked={hecho} onChange={() => marcar(b)} />
               </li>,
+              /* Entre dos actividades seguidas: un «+» en la línea para meter ahí una tarea */
+              !!sig && !enHueco && hueco < 15 && dia >= hoy && toMin(b.e) > minuto && (
+                <li key={id + "m"} className="lt-f lt-entre">
+                  <span className="lt-h" />
+                  <span className="lt-c">
+                    <button type="button" className="lt-mas" onClick={() => planificar(b.e)} aria-label={`Añadir una tarea a las ${b.e}, entre ${b.t} y ${sig.t}`}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    </button>
+                  </span>
+                </li>
+              ),
               enHueco
                 ? filaAhora(id + "h", libre(toMin(sig.s) - minuto), aHora(Math.max(minuto, Math.min(toMin(sig.s) - 5, Math.ceil(minuto / 5) * 5))))
                 : hueco >= 15 && (
