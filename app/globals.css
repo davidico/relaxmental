@@ -1704,3 +1704,39 @@ h2,h3,.sheet-title{text-wrap:balance}
 .ia-lista dt{font-weight:500}
 .ia-lista dd{font-size:15px;color:var(--muted)}
 .ia-lista dd span{color:var(--ink)}
+
+/* ---------- Versión 4.6: memoria de la IA, resumen de la semana y «Pregúntale a la IA» ---------- */
+.mem-nuevo{display:flex;flex-direction:column;gap:var(--e2)}
+.mem-nuevo label{font-weight:500}
+.mem-fila{display:flex;gap:var(--e2);flex-wrap:wrap}
+.mem-fila input{flex:1 1 200px;min-width:0}
+.mem-lista{list-style:none;margin:0;padding:0}
+.mem-lista li{display:flex;align-items:flex-start;gap:var(--e1);padding:0 4px 0 0}
+.mem-lista li+li{border-top:1px solid var(--line)}
+.mem-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;min-height:var(--tap);padding:12px 8px 12px 16px;border:none;border-radius:10px;background:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer;overflow-wrap:anywhere;line-height:1.4}
+.mem-txt:hover{background:var(--band)}
+.mem-txt:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.mem-meta{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mem-x{margin-top:4px;color:var(--muted);border-color:transparent;background:none}
+.mem-edit{flex:1;display:flex;flex-direction:column;gap:var(--e2);padding:12px 12px 12px 16px}
+.mem-vacio{margin:0;padding:var(--e4);border:1px dashed var(--stone);border-radius:10px;color:var(--muted);line-height:1.5;max-width:60ch}
+.mem-pie{margin-top:var(--e3)}
+.rs-txt{white-space:pre-line;max-width:65ch}
+.hy-ask{gap:var(--e3)}
+.hy-ask span{flex:1}
+.hy-ask svg{color:var(--muted);flex:none}
+.pq{height:min(640px,100%)}
+.pq-cuerpo{flex:1;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:var(--e3);padding:var(--e4) max(16px,env(safe-area-inset-right,0px)) var(--e3) max(16px,env(safe-area-inset-left,0px))}
+.pq-cuerpo p{margin:0}
+.pq-ideas{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e2);color:var(--muted)}
+.pq-ideas .btn{text-align:left;font-weight:400;min-height:var(--tap);height:auto;white-space:normal}
+.pq-turno{max-width:85%;padding:10px 14px;border-radius:10px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.pq-turno.yo{align-self:flex-end;background:var(--primary);color:var(--on-primary)}
+.pq-turno.ia{align-self:flex-start;background:var(--band);border:1px solid var(--line)}
+.pq-pensando{color:var(--muted)}
+.pq-pie{display:flex;align-items:center;gap:var(--e2);padding:var(--e3) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));border-top:1px solid var(--line)}
+.pq-pie input{flex:1;min-width:0}
+.pq-nota{margin:0;padding:var(--e2) 16px max(12px,env(safe-area-inset-bottom,0px));font-size:14px;color:var(--muted);text-align:center}
+.dial-ico svg{display:block}
+/* La columna derecha de Hoy ya no es solo la captura rápida: en el móvil sus bloques van en la misma columna (no se esconde) */
+@media (max-width:899px){.hy-side{display:contents}}

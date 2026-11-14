@@ -16,6 +16,7 @@ import DayEditor from "@/components/DayEditor";
 import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
+import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
 import { borrarTarea } from "@/lib/deshacer";
 import PushBanner from "@/components/PushBanner";
@@ -84,8 +85,13 @@ export default function Hoy() {
         <div className="hy-col hy-side">
           <Capture />
           <Diario />
-          <SemanaAviso />
+          <ResumenSemana />
           <Aprendizajes />
+          <button className="hy-allday hy-ask" onClick={() => dispatchEvent(new Event("mi-semana:preguntar"))}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
+            <span>Pregúntale a la IA</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
           <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
             <button className="hy-allday" aria-expanded={verDia} aria-controls="hy-dia-lista" onClick={() => setVerDia(!verDia)}>
               <span id="hy-dia">{verDia ? "Ocultar el día" : "Ver todo el día"}</span>
@@ -272,30 +278,6 @@ function ReglasAviso() {
       ) : null}
       {quiz && <RulesQuiz modo={quiz} reglas={reglas} onClose={() => setQuiz(null)} onGuardar={guardar} />}
     </>
-  );
-}
-
-/* ---------- Domingo: proponer la semana que viene ---------- */
-function SemanaAviso() {
-  const { mode, offline, perfil, savePerfil, hoy, dias } = useData();
-  const d = new Date(hoy + "T12:00:00");
-  const dow = d.getDay();
-  if (mode !== "cloud" || offline || dow !== 0 || !perfil.reglas?.text?.trim()) return null;
-  const lunes = (() => {
-    const x = new Date(d);
-    x.setDate(x.getDate() + 1);
-    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
-  })();
-  if ((perfil.semanaVista as string | undefined) === lunes || dias[lunes]) return null;
-  return (
-    <section className="card pad hy-aviso" aria-labelledby="sem-h">
-      <h2 id="sem-h" className="hy-h">¿Te armo la semana que viene?</h2>
-      <p>Uso tus reglas, lo que aprendí de tus días, tus compromisos y tus tareas. Tú revisas cada día antes de aplicarlo.</p>
-      <div className="row actions">
-        <Link className="btn" href="/perfil/semana" onClick={() => savePerfil("semanaVista", lunes)}>Sí, proponla</Link>
-        <button className="btn ghost" onClick={() => savePerfil("semanaVista", lunes)}>Ahora no</button>
-      </div>
-    </section>
   );
 }
 

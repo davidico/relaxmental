@@ -7,18 +7,20 @@ import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/plan";
 import VoiceButton from "@/components/VoiceButton";
 import Compromisos from "@/components/Compromisos";
+import Memoria from "@/components/Memoria";
 import { armarPlantilla } from "@/lib/imagen";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
 import { NOVEDADES, VERSION, VERSION_FECHA } from "@/lib/version";
 
 type Prop = { fecha: string; bloques?: Bloque[]; error?: boolean };
 
-export type Ver = "cuenta" | "reglas" | "compromisos" | "semana" | "acerca";
+export type Ver = "cuenta" | "reglas" | "compromisos" | "semana" | "memoria" | "acerca";
 /** Las pantallas de tu cuenta: cada cosa en la suya (se abren desde el menú de arriba a la derecha) */
 export const PANTALLAS: { ver: Exclude<Ver, "cuenta">; href: string; titulo: string; sub: string }[] = [
   { ver: "reglas", href: "/perfil/reglas", titulo: "Mis reglas del horario", sub: "Cómo es tu día: horas, días y excepciones. La IA las usa para armar tu semana." },
   { ver: "compromisos", href: "/perfil/compromisos", titulo: "Mis compromisos", sub: "Lo que tiene fecha: iglesia, turnos, citas." },
   { ver: "semana", href: "/perfil/semana", titulo: "Mi semana con IA", sub: "Tu semana tipo y el horario de una semana concreta." },
+  { ver: "memoria", href: "/perfil/memoria", titulo: "Lo que la IA recuerda de mí", sub: "Lo usa para armar tu día y recomendarte. Tú decides qué se queda." },
   { ver: "acerca", href: "/perfil/acerca", titulo: "Acerca de", sub: "La versión de la app, sus novedades y cómo funciona la IA." },
 ];
 
@@ -27,11 +29,13 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Dictas con el micrófono", lee: "el audio.", da: "el texto escrito y, en las notas, un título corto." },
   { cuando: "Respondes las preguntas de «Armemos tu semana»", lee: "tus reglas, tus respuestas y tus compromisos próximos.", da: "más preguntas y, al final, tus reglas redactadas." },
   { cuando: "Subes una foto de tus compromisos", lee: "la foto, la fecha de hoy y tus reglas.", da: "la lista de compromisos con fecha y hora, que revisas antes de guardar." },
-  { cuando: "Armas tu semana tipo", lee: "tus reglas y tus últimos 30 días ajustados a mano.", da: "un día típico para cada día de la semana." },
-  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes y tus días ajustados.", da: "el horario de cada día; tú lo aplicas o no." },
+  { cuando: "Armas tu semana tipo", lee: "tus reglas, tus últimos 30 días ajustados a mano y lo que recuerda de ti.", da: "un día típico para cada día de la semana." },
+  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados y lo que recuerda de ti.", da: "el horario de cada día; tú lo aplicas o no." },
   { cuando: "Guardas un día que editaste", lee: "lo que la app te propuso y cómo lo dejaste (tus últimos 12 cambios), tus reglas y lo que ya decidiste.", da: "hasta 5 conclusiones sobre cómo armas tus días." },
-  { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es y tus reglas.", da: "un bloque de tiempo para cada meta." },
-  { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, lo que tienes apuntado para los próximos días y tus reglas.", da: "hasta 3 propuestas: pasar una tarea a otro día, dar un bloque a una meta o una regla nueva." },
+  { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
+  { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "hasta 3 propuestas y, si aprendió algo nuevo de ti, lo apunta en su memoria." },
+  { cuando: "Pides el resumen de tu semana", lee: "tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "un repaso de la semana, hasta 3 recomendaciones y, si aprendió algo nuevo, lo apunta en su memoria." },
+  { cuando: "Le haces una pregunta", lee: "tu pregunta, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "una respuesta corta. No cambia nada en la app." },
 ];
 
 export default function PerfilPantalla({ ver }: { ver: Ver }) {
@@ -236,6 +240,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
       {ver === "compromisos" && <Compromisos />}
 
+      {ver === "memoria" && <Memoria />}
+
       {ver === "semana" && (
         <>
       <section className="card pad" aria-label="Mi semana con IA">
@@ -383,9 +389,12 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
             <h3>Tus datos</h3>
             <ul>
               <li>La IA funciona en Cloudflare, el mismo servicio donde se guardan tus datos. Cloudflare no conserva lo que se le envía ni lo usa para entrenar modelos.</li>
-              <li>No tiene memoria propia: lo que sabe de ti son tus reglas y lo que tienes guardado en la app.</li>
-              <li>No lee tus notas ni tus diarios anteriores. El diario solo lo lee en el momento en que lo guardas.</li>
-              <li>Lo único que se guarda sin tu «Sí» es el texto que dictas y el título de una nota dictada. Puedes cambiarlos.</li>
+              <li>
+                Su memoria es una lista de frases que puedes ver, corregir y borrar en <Link href="/perfil/memoria">Lo que la IA recuerda de mí</Link>. No recuerda nada más.
+              </li>
+              <li>«Tus últimos 14 días» son tus diarios, tus metas y tareas (hechas y sin hacer) y tus hábitos. Solo los lee cuando guardas el diario, pides el resumen o le preguntas algo.</li>
+              <li>No lee tus notas del Cerebro.</li>
+              <li>Lo único que se guarda sin tu «Sí» es el texto que dictas, el título de una nota dictada y lo que apunta en su memoria. Puedes cambiarlo o borrarlo.</li>
             </ul>
 
             <h3>Sus límites</h3>

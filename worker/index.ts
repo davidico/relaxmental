@@ -10,7 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, propuestasDiario, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -96,6 +96,92 @@ async function perfilDe(env: Env, email: string) {
   }
   return o;
 }
+/** Lo que la IA recuerda de la persona (lo ve y lo edita en «Lo que la IA recuerda de mí») */
+async function memoriaDe(env: Env, email: string): Promise<string[]> {
+  const { results } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id = 'memoria'").bind(email).all<{ data: string }>();
+  try {
+    const v = results[0] ? JSON.parse(results[0].data) : [];
+    return Array.isArray(v) ? v.map((x) => String(x?.texto ?? "").trim().slice(0, 200)).filter(Boolean).slice(-40) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Los últimos 14 días de la persona, en texto para la IA: diarios, metas y tareas (hechas y sin hacer),
+ * lo apuntado para los próximos 7 días y sus hábitos. No incluye las notas del Cerebro.
+ */
+async function recienteDe(env: Env, email: string, hoy: string): Promise<string> {
+  const desde = fechaMas(hoy, -14);
+  const hasta = fechaMas(hoy, 7);
+  const dia = (f: string) => `${DIAS_ES[new Date(f + "T12:00:00Z").getUTCDay()]} ${f}`;
+  const [tq, nq, hq] = await Promise.all([
+    env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(email).all<{ data: string }>(),
+    env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'notas' AND json_extract(data, '$.folder') = 'diario' AND json_extract(data, '$.ref') >= ? ORDER BY json_extract(data, '$.ref') DESC LIMIT 14")
+      .bind(email, desde)
+      .all<{ data: string }>(),
+    env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'habitos'").bind(email).all<{ data: string }>(),
+  ]);
+  const leer = <T,>(rows: { data: string }[]) =>
+    rows.flatMap((r) => {
+      try {
+        return [JSON.parse(r.data) as T];
+      } catch {
+        return [];
+      }
+    });
+  type T = { title?: string; due?: string; hora?: string; done?: boolean; lado?: string; meta?: boolean };
+  const tareas = leer<T>(tq.results).filter((t) => t.title);
+  const et = (t: T) => `[${(t.meta ?? !!t.lado) ? "meta · " + (t.lado === "trabajo" ? "trabajo" : "personal") : "tarea"}] ${String(t.title).slice(0, 80)}`;
+  const partes: string[] = [];
+
+  const diarios = leer<{ ref?: string; text?: string }>(nq.results).filter((n) => n.ref && n.text);
+  if (diarios.length) partes.push("DIARIOS (del más reciente al más antiguo):\n" + diarios.map((n) => `- ${dia(n.ref!)}: ${String(n.text).replace(/\s+/g, " ").slice(0, 500)}`).join("\n"));
+
+  const pasadas = tareas.filter((t) => t.due && t.due >= desde && t.due <= hoy);
+  if (pasadas.length) {
+    const dias = [...new Set(pasadas.map((t) => t.due!))].sort().reverse();
+    partes.push(
+      `METAS Y TAREAS DE LOS ÚLTIMOS 14 DÍAS (${pasadas.filter((t) => t.done).length} hechas de ${pasadas.length}):\n` +
+        dias
+          .map((d) => {
+            const xs = pasadas.filter((t) => t.due === d);
+            const si = xs.filter((t) => t.done).map(et);
+            const no = xs.filter((t) => !t.done).map(et);
+            return `- ${dia(d)}: hechas: ${si.join("; ") || "ninguna"} | sin hacer: ${no.join("; ") || "ninguna"}`;
+          })
+          .join("\n"),
+    );
+  }
+  const viejas = tareas.filter((t) => !t.done && t.due && t.due < desde);
+  if (viejas.length) partes.push("SIN HACER DESDE HACE MÁS DE DOS SEMANAS:\n" + viejas.slice(0, 10).map((t) => `- ${t.due} ${et(t)}`).join("\n"));
+  const futuras = tareas.filter((t) => !t.done && t.due && t.due > hoy && t.due <= hasta).sort((a, b) => (a.due! + (a.hora ?? "")).localeCompare(b.due! + (b.hora ?? "")));
+  if (futuras.length) partes.push("YA APUNTADO PARA LOS PRÓXIMOS 7 DÍAS:\n" + futuras.slice(0, 30).map((t) => `- ${dia(t.due!)}${t.hora ? " " + t.hora : ""} ${et(t)}`).join("\n"));
+  const sinDia = tareas.filter((t) => !t.done && !t.due);
+  if (sinDia.length) partes.push("PENDIENTES SIN DÍA:\n" + sinDia.slice(0, 15).map((t) => `- ${String(t.title).slice(0, 80)}`).join("\n"));
+
+  const habitos = leer<{ name?: string; hechos?: Record<string, boolean> }>(hq.results).filter((h) => h.name);
+  if (habitos.length) {
+    const ult = Array.from({ length: 14 }, (_, i) => fechaMas(hoy, -i));
+    partes.push(
+      "HÁBITOS (últimos 14 días):\n" +
+        habitos
+          .map((h) => {
+            const n = ult.filter((f) => h.hechos?.[f]).length;
+            let racha = 0;
+            for (const f of h.hechos?.[hoy] ? ult : ult.slice(1)) {
+              if (!h.hechos?.[f]) break;
+              racha++;
+            }
+            return `- ${h.name}: ${n} de 14 días${racha > 1 ? `, racha actual de ${racha}` : ""}`;
+          })
+          .join("\n"),
+    );
+  }
+  return partes.join("\n\n");
+}
+const DIAS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
 /** Los días que la persona ajustó a mano (los últimos 30) */
 async function diasReales(env: Env, email: string) {
   const { results } = await env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'dias' ORDER BY id DESC LIMIT 30")
@@ -190,7 +276,7 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const { eventos } = await perfilDe(env, email);
     const reales = await diasReales(env, email);
     const ejemplos = resumenDias(reales.filter((d) => d.fecha !== fecha), new Date(fecha + "T12:00:00Z").getUTCDay());
-    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos });
+    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos, memoria: await memoriaDe(env, email) });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
   }
@@ -215,11 +301,12 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       return fechaMas(h, ((8 - dow) % 7) || 7);
     })();
     const reales = await diasReales(env, email);
+    const memoria = await memoriaDe(env, email);
     const dias = await Promise.all(
       Array.from({ length: 7 }, (_, i) => fechaMas(lunes, i)).map(async (f) => {
         const dow = new Date(f + "T12:00:00Z").getUTCDay();
         try {
-          return [String(dow), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true, ejemplos: resumenDias(reales, dow) })] as const;
+          return [String(dow), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true, ejemplos: resumenDias(reales, dow), memoria })] as const;
         } catch {
           return [String(new Date(f + "T12:00:00Z").getUTCDay()), []] as const;
         }
@@ -257,23 +344,54 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const metas = (Array.isArray(b.metas) ? b.metas : []).slice(0, 12).map((m) => ({ id: String(m?.id ?? "").slice(0, 60), t: String(m?.t ?? "").slice(0, 120), lado: m?.lado === "trabajo" ? "trabajo" : "personal" })).filter((m) => m.id && m.t);
     if (!metas.length) return json({ propuestas: [] });
     const bloques = Array.isArray(b.bloques) ? b.bloques.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
-    return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? "") }) });
+    return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? ""), memoria: await memoriaDe(env, email) }) });
   }
   /* El diario de la noche: propuestas para seguir organizándose */
   if (url.pathname === "/api/ai/diario" && req.method === "POST") {
     const b = (await req.json()) as { fecha?: string; texto?: string; hechas?: unknown; pendientes?: unknown; semana?: unknown; reglas?: string; decididas?: unknown };
     const lista = (x: unknown) => (Array.isArray(x) ? x.map((y) => String(y).slice(0, 200)).slice(0, 40) : []);
     if (typeof b.fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.fecha) || !String(b.texto ?? "").trim()) return json({ error: "bad_request" }, 400);
-    const propuestas = await propuestasDiario(env.AI, {
-      fecha: b.fecha,
-      texto: String(b.texto),
-      hechas: lista(b.hechas),
-      pendientes: lista(b.pendientes),
-      semana: lista(b.semana),
-      reglas: String(b.reglas ?? ""),
-      decididas: lista(b.decididas),
-    });
-    return json({ propuestas });
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, b.fecha)]);
+    return json(
+      await propuestasDiario(env.AI, {
+        fecha: b.fecha,
+        texto: String(b.texto),
+        hechas: lista(b.hechas),
+        pendientes: lista(b.pendientes),
+        semana: lista(b.semana),
+        reglas: String(b.reglas ?? ""),
+        decididas: lista(b.decididas),
+        memoria,
+        reciente,
+      }),
+    );
+  }
+  /* El resumen de la semana (domingo): repaso, recomendaciones y qué recordar */
+  if (url.pathname === "/api/ai/semana" && req.method === "POST") {
+    const b = (await req.json().catch(() => ({}))) as { decididas?: unknown };
+    const hoy = berlinNow().date;
+    const [memoria, reciente, perfil] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, hoy), perfilDe(env, email)]);
+    const decididas = Array.isArray(b.decididas) ? b.decididas.map((y) => String(y).slice(0, 200)).slice(0, 40) : [];
+    const r = await resumenSemana(env.AI, { hoy, reciente, memoria, reglas: perfil.reglas, decididas });
+    if (!r.resumen) return json({ error: "ai_empty" }, 502);
+    return json(r);
+  }
+  /* Pregúntale a la IA: responde con la memoria, los últimos días y el día de hoy */
+  if (url.pathname === "/api/ai/preguntar" && req.method === "POST") {
+    const b = (await req.json()) as { pregunta?: string; charla?: { de?: string; texto?: string }[]; itinerario?: unknown };
+    const pregunta = String(b.pregunta ?? "").trim();
+    if (!pregunta) return json({ error: "bad_request" }, 400);
+    const now = berlinNow();
+    const [memoria, reciente, perfil] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, now.date), perfilDe(env, email)]);
+    const charla = (Array.isArray(b.charla) ? b.charla : [])
+      .slice(-6)
+      .map((m) => ({ de: m?.de === "ia" ? ("ia" as const) : ("yo" as const), texto: String(m?.texto ?? "").slice(0, 1200) }))
+      .filter((m) => m.texto);
+    const itinerario = Array.isArray(b.itinerario) ? b.itinerario.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
+    const ahora = `${String(Math.floor(now.min / 60)).padStart(2, "0")}:${String(now.min % 60).padStart(2, "0")}`;
+    const respuesta = await responder(env.AI, { hoy: now.date, ahora, pregunta, charla, reciente, memoria, reglas: perfil.reglas, itinerario });
+    if (!respuesta) return json({ error: "ai_empty" }, 502);
+    return json({ respuesta });
   }
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };

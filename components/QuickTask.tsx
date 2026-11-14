@@ -8,8 +8,9 @@ import { DueChoice } from "./ui";
 import NoteView from "./NoteView";
 import TaskSheet from "./TaskSheet";
 import Entreno from "./Entreno";
+import Preguntar from "./Preguntar";
 
-type Mode = "task" | "note" | "entreno" | null;
+type Mode = "task" | "note" | "entreno" | "ask" | null;
 
 /**
  * Botón flotante.
@@ -48,8 +49,13 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
   /* Otras pantallas (p. ej. Hoy en escritorio) pueden abrir "Nueva tarea" con un evento */
   useEffect(() => {
     const h = () => open("task");
+    const q = () => open("ask");
     addEventListener("mi-semana:nueva-tarea", h);
-    return () => removeEventListener("mi-semana:nueva-tarea", h);
+    addEventListener("mi-semana:preguntar", q);
+    return () => {
+      removeEventListener("mi-semana:nueva-tarea", h);
+      removeEventListener("mi-semana:preguntar", q);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -63,6 +69,12 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
           {menu && <div className="dial-backdrop" onClick={() => setMenu(false)} />}
           {menu && (
             <div className="dial" role="menu">
+              <button role="menuitem" onClick={() => open("ask")}>
+                <span className="dial-ico" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12z" /></svg>
+                </span>{" "}
+                Preguntar a la IA
+              </button>
               <button role="menuitem" onClick={() => open("entreno")}>
                 <span className="dial-ico" aria-hidden="true">▶</span> Entrenar
               </button>
@@ -81,6 +93,7 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
       )}
 
       {mode === "entreno" && <Entreno onClose={close} />}
+      {mode === "ask" && <Preguntar onClose={close} />}
       {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
       {mode === "task" && <TaskSheet onClose={close} />}
     </>

@@ -119,6 +119,10 @@ export type Perfil = {
   historial?: unknown[];
   /** Conclusiones de la IA sobre cómo armas tus días */
   aprendizajes?: unknown[];
+  /** Lo que la IA recuerda de la persona (lib/aprender.ts: Recuerdo[]) */
+  memoria?: unknown[];
+  /** El último resumen semanal de la IA */
+  resumenSemana?: { semana: string; texto: string; fecha: string };
   [k: string]: unknown;
 };
 interface Snapshot { tareas: Tarea[]; notas: Nota[]; habitos: Habito[]; carpetas: Carpeta[]; dias: Dias; perfil?: Perfil }

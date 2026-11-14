@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { newId, useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd } from "@/lib/dates";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
@@ -21,6 +22,7 @@ export default function Diario() {
   const now = useNow();
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<"" | "leyendo" | "ok" | "sin" | "error">("");
+  const [aprendido, setAprendido] = useState(0);
   const yaEscrito = notas.some((n) => n.folder === "diario" && n.ref === hoy);
   if (now.getHours() < HORA_DIARIO || (yaEscrito && !estado)) return null;
 
@@ -48,7 +50,8 @@ export default function Diario() {
         pendientes: [...deHoy.filter((x) => !x.done), ...tareas.filter((x) => !x.done && x.due && x.due < hoy)].map((x) => `${x.due < hoy ? "(del " + x.due + ") " : ""}${et(x)}`),
         semana,
       });
-      setEstado(n ? "ok" : "sin");
+      setAprendido(n.recuerdos);
+      setEstado(n.propuestas ? "ok" : "sin");
     } catch {
       setEstado("error");
     }
@@ -66,6 +69,11 @@ export default function Diario() {
           {estado === "leyendo" && <p role="status">Lo estoy leyendo para proponerte cómo seguir…</p>}
           {estado === "ok" && mode === "cloud" && <p>Mira abajo mis propuestas para ti.</p>}
           {estado === "sin" && <p>Hoy no tengo propuestas nuevas. ¡Descansa!</p>}
+          {aprendido > 0 && (
+            <p>
+              Apunté {aprendido === 1 ? "1 cosa nueva" : `${aprendido} cosas nuevas`} en <Link href="/perfil/memoria">lo que recuerdo de ti</Link>.
+            </p>
+          )}
           {estado === "error" && <p className="verr" role="alert">⚠ No pude leerlo ahora. Tu diario está guardado.</p>}
         </>
       ) : (

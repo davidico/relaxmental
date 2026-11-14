@@ -1,7 +1,12 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.5";
+export const VERSION = "4.6";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "La IA ahora te recuerda: apunta lo que aprende de ti en «Lo que la IA recuerda de mí», donde puedes verlo, corregirlo o borrarlo",
+  "La IA lee tus últimos 14 días (diarios, metas, tareas y hábitos) para recomendarte mejor",
+  "Los domingos: «¿Repasamos tu semana?», con un resumen y recomendaciones para la siguiente",
+  "«Pregúntale a la IA»: en Hoy y en el botón +, para pedirle una recomendación cuando quieras",
+  "Arreglado: en el móvil vuelven a verse el diario de las 21:00, «Mis propuestas para ti» y «Ver todo el día»",
   "En Acerca de: «Cómo funciona la IA», con qué datos lee en cada momento, cómo decide y qué pasa con tus datos",
   "Los avisos ya muestran el ícono de la app en la barra de arriba (antes salía un cuadro blanco)",
   "En el móvil, Pendientes está arriba del planner, plegado: tócalo para abrirlo",
