@@ -51,8 +51,9 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
 
   /** Lo que abre el ícono de un bloque, si abre algo */
   const accionDe = (b: Bloque, paso: boolean): { label: string; pista: string; run: () => void } | null => {
-    if (esHoy && esEjercicio(b.t) && !estaHecho(b))
-      return { label: `Abrir el contador de entrenamiento: ${b.t}`, pista: "Toca el ícono para abrir tu contador", run: onEntreno };
+    /* El contador de series se abre desde cualquier actividad con el ícono de ejercicio, sea el día que sea */
+    if (esEjercicio(b.t) || iconoDe(b) === "ejercicio")
+      return { label: `Abrir el contador de series: ${b.t}`, pista: "Toca el ícono para elegir tus series", run: onEntreno };
     if (dia >= hoy && esDespertar(b.t)) {
       const pasado = esHoy && toMin(b.s) <= minuto;
       return {

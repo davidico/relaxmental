@@ -1908,8 +1908,13 @@ h2,h3,.sheet-title{text-wrap:balance}
 .lt-f.ahora .lt-h{color:var(--pine);font-weight:600}
 .lt-f.ahora .lt-s{color:var(--pine)}
 .lt-f.hecho .lt-t{color:var(--muted);text-decoration:line-through}
-.lt .hy-check{margin:0}
-.lt .hy-check::before{content:"";position:absolute;inset:-8px}
+.lt .hy-check{width:22px;height:22px;margin:0;border-width:1.5px}
+.lt .hy-check:checked{background-size:13px}
+.lt .hy-check::before{content:"";position:absolute;inset:-13px}
+/* Los círculos de «Sin hora» van del mismo tamaño que los de la línea */
+.hy-pro .hy-check{width:22px;height:22px;margin:9px 0 0;border-width:1.5px}
+.hy-pro .hy-check:checked{background-size:13px}
+.hy-pro .hy-check::before{content:"";position:absolute;inset:-13px}
 /* Tiempo libre entre actividades y el punto de «ahora» */
 .lt-hueco .lt-c{min-height:52px;padding:0}
 .lt-hueco .lt-hb{grid-column:3 / -1;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--e1) var(--e3);padding:6px 0}

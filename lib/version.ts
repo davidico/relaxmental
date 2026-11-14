@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.0";
+export const VERSION = "5.1";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Los círculos para marcar «lo hice» son más pequeños (siguen siendo fáciles de tocar)",
+  "El ícono de ejercicio abre el contador de series cualquier día, también en una actividad ya marcada",
   "Hoy gira como un dial: al deslizar, cada actividad crece al llegar al centro de la pantalla y se encoge al irse, como la rueda de la hora",
   "Despertador: toca el ícono del despertador (o el de Dormir, la noche antes) y elige la hora girando las ruedas; si la cambias, todo tu día se mueve lo mismo",
   "Diario: toca su ícono en la línea y se abre para escribir o dictar, a cualquier hora",
