@@ -11,6 +11,7 @@
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
 import { PRESUPUESTO, elegirNotas, type NotaTexto } from "./notas";
+import { PRESUPUESTO_CLAUDE, responderNotasClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
 import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
@@ -24,6 +25,8 @@ interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   /** "Application Audience (AUD) Tag" de la aplicación de Access */
   ACCESS_AUD?: string;
+  /** Secreto opcional: con él, «Pregúntale a tus notas» responde con Claude (Anthropic) */
+  ANTHROPIC_API_KEY?: string;
 }
 
 /* Tipos mínimos de D1 (evitan instalar @cloudflare/workers-types) */
@@ -378,7 +381,15 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     if (!notas.length) return json({ respuesta: "Todavía no tienes notas en tu Cerebro.", fuentes: [] });
     /* En una conversación, la pregunta anterior ayuda a entender «¿y qué más decía?» */
     const previa = [...charla].reverse().find((m) => m.de === "yo")?.texto ?? "";
-    /* Si todo el Cerebro cabe, la IA lo lee entero (no hace falta buscar por palabras); si no, se eligen las notas que más se parecen */
+    /* Con la clave de Anthropic, Claude lee el Cerebro entero de una vez (o lo que quepa, eligiendo por palabras si fuera enorme) */
+    if (env.ANTHROPIC_API_KEY) {
+      const total = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0);
+      const elegidas = total <= PRESUPUESTO_CLAUDE ? elegirNotas(notas, "", PRESUPUESTO_CLAUDE) : elegirNotas(notas, `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`, PRESUPUESTO_CLAUDE);
+      const r = await responderNotasClaude(env.ANTHROPIC_API_KEY, { pregunta, charla, notas: elegidas.notas });
+      if (r) return json({ respuesta: r.respuesta, fuentes: r.usadas.map((i) => ({ id: elegidas.notas[i].id, titulo: elegidas.notas[i].titulo || "Sin título" })) });
+    }
+    /* Sin Claude (o si falló), la IA de Cloudflare:
+       si todo el Cerebro cabe, la IA lo lee entero (no hace falta buscar por palabras); si no, se eligen las notas que más se parecen */
     const cabe = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0) <= PRESUPUESTO;
     const palabras = cabe ? "" : `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
     const elegidas = elegirNotas(notas, palabras);

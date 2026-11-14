@@ -591,7 +591,7 @@ export async function palabrasClave(ai: AI, pregunta: string): Promise<string> {
 }
 
 /** Cómo se le presentan las notas a la IA: numeradas, agrupadas por sección y con su fecha */
-function textoNotas(notas: { titulo: string; carpeta: string; fecha: string; texto: string }[]) {
+export function textoNotas(notas: { titulo: string; carpeta: string; fecha: string; texto: string }[]) {
   let seccion = "";
   return notas
     .map((n, i) => {
