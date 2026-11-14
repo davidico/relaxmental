@@ -1,7 +1,11 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.10";
+export const VERSION = "5.0";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hoy gira como un dial: al deslizar, cada actividad crece al llegar al centro de la pantalla y se encoge al irse, como la rueda de la hora",
+  "Despertador: toca el ícono del despertador (o el de Dormir, la noche antes) y elige la hora girando las ruedas; si la cambias, todo tu día se mueve lo mismo",
+  "Diario: toca su ícono en la línea y se abre para escribir o dictar, a cualquier hora",
+  "Hoy queda solo con tu día: los hábitos están en su pantalla, Hábitos",
   "Hoy, más simple: tu día es una sola línea que se va llenando con la hora (lo que ya pasó, en azul; lo que falta, punteado) y un punto marca dónde vas",
   "Cada actividad tiene su ícono según su nombre (despertador, pastillas, comida, ejercicio, leer, dormir…) y es más alta cuanto más dura",
   "El ícono es un botón cuando abre algo: en Ejercicio, tu contador; en Levantarse y en Dormir, el aviso para despertarte",
@@ -9,7 +13,7 @@ export const NOVEDADES = [
   "Hábitos de tres tipos: de marca, medibles (con cantidad: km, páginas, minutos…) y «para dejar» (marcas los días que lo logras)",
   "Cada hábito tiene su mes: toca «Ver mes» y marca cualquier día, también los anteriores",
   "Vista semanal de todos tus hábitos, con un círculo por día",
-  "En los medibles anotas la cantidad con atajos para sumar rápido, también desde Hoy",
+  "En los medibles anotas la cantidad con atajos para sumar rápido",
   "Tu día en una línea de tiempo: cada bloque con su círculo para marcar «lo hice», el tiempo libre entre bloques y «Planificar»",
   "Las metas y tareas con hora van en la línea de tiempo; las que no tienen hora, en «Para hoy, sin hora»",
   "La hora se elige girando una rueda (hora y minutos, al minuto), con atajos de duración: 15 min, 30 min, 1 h…",

@@ -87,9 +87,31 @@ export function bloquesDeTareas(fecha: string, tareas: TareaConHora[] = []): Blo
  * Encima van las tareas de ese día que tienen hora.
  */
 export function planDe(fecha: string, o: { dias?: Record<string, Bloque[]>; plantilla?: Plantilla; eventos?: Eventos; tareas?: TareaConHora[] }): Bloque[] {
+  return encajar(baseDe(fecha, o), bloquesDeTareas(fecha, o.tareas));
+}
+
+/** El horario de una fecha sin las tareas con hora (lo que se guarda al ajustar un día) */
+export function baseDe(fecha: string, o: { dias?: Record<string, Bloque[]>; plantilla?: Plantilla; eventos?: Eventos }): Bloque[] {
   const d = o.dias?.[fecha];
-  const base = d ? d.filter((b) => !b.tarea) : mezclar(o.plantilla?.[String(pd(fecha).getDay())] ?? [], o.eventos?.[fecha] ?? []);
-  return encajar(base, bloquesDeTareas(fecha, o.tareas));
+  return d ? d.filter((b) => !b.tarea) : mezclar(o.plantilla?.[String(pd(fecha).getDay())] ?? [], o.eventos?.[fecha] ?? []);
+}
+
+/**
+ * Mueve el día a partir de una hora: todo lo que empieza desde `desde` se atrasa (o adelanta) `delta` minutos.
+ * Los compromisos con fecha no se mueven, y lo que se saldría del día se recorta.
+ */
+export function moverDia(blocks: Bloque[], desde: string, delta: number): Bloque[] {
+  const base = blocks.filter((b) => !b.tarea);
+  const fijos = base.filter((b) => b.evento);
+  const movidos = base
+    .filter((b) => !b.evento)
+    .flatMap((b) => {
+      if (toMin(b.s) < toMin(desde)) return [b];
+      const s = Math.max(0, toMin(b.s) + delta);
+      const e = Math.min(1439, toMin(b.e) + delta);
+      return e - s >= 5 ? [{ ...b, s: hhmm(s), e: hhmm(e) }] : [];
+    });
+  return encajar(movidos, fijos);
 }
 
 /** Texto corto de los compromisos de un día: «Culto · Púlpito 18:30» */

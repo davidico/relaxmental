@@ -2,8 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+export const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+export const MINUTOS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 /** Alto de cada número de la rueda (px): también es su objetivo táctil */
 const ALTO = 44;
 const DURACIONES = [15, 30, 45, 60, 120, 180];
@@ -15,7 +15,7 @@ const textoDur = (m: number) => (m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m 
  * Una rueda que se gira con el dedo (o con las flechas del teclado): el número del centro es el elegido.
  * Para lectores de pantalla es un selector numérico (spinbutton).
  */
-function Rueda({ valores, valor, onChange, etiqueta }: { valores: string[]; valor: string; onChange: (v: string) => void; etiqueta: string }) {
+export function Rueda({ valores, valor, onChange, etiqueta }: { valores: string[]; valor: string; onChange: (v: string) => void; etiqueta: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const idx = Math.max(0, valores.indexOf(valor));
 

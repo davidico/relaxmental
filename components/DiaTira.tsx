@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useData } from "@/lib/data";
 import { addD, toMin } from "@/lib/dates";
 import type { Bloque } from "@/lib/plan";
-import IconoBloque, { esDespertar, esDormir, esEjercicio, iconoDe } from "./IconoBloque";
+import IconoBloque, { esDespertar, esDiario, esDormir, esEjercicio, iconoDe } from "./IconoBloque";
 import AvisoDespertar from "./AvisoDespertar";
+import Diario from "./Diario";
 
 const dur = (min: number) => (min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`);
 const libre = (min: number) => `${dur(min)} ${min === 1 || min === 60 ? "libre" : "libres"}`;
@@ -24,7 +25,8 @@ const alto = (min: number) => Math.round(Math.min(132, 44 + Math.max(0, min - 15
  */
 export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string; blocks: Bloque[]; minuto: number; onEditar: () => void; onEntreno: () => void }) {
   const { perfil, savePerfil, tareas, save, hoy, planFor } = useData();
-  const [aviso, setAviso] = useState<{ hora: string; cuando: string } | null>(null);
+  const [aviso, setAviso] = useState<{ fecha: string; hora: string; cuando: string; pasado?: boolean } | null>(null);
+  const [diario, setDiario] = useState(false);
   const hechos = new Set(perfil.hechos?.[dia] ?? []);
   const estaHecho = (b: Bloque) => (b.tarea ? !!b.hecha : hechos.has(clave(b)));
   const marcar = (b: Bloque) => {
@@ -51,14 +53,21 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
   const accionDe = (b: Bloque, paso: boolean): { label: string; pista: string; run: () => void } | null => {
     if (esHoy && esEjercicio(b.t) && !estaHecho(b))
       return { label: `Abrir el contador de entrenamiento: ${b.t}`, pista: "Toca el ícono para abrir tu contador", run: onEntreno };
-    if (dia >= hoy && !paso && esDespertar(b.t))
-      return { label: `Aviso para levantarte a las ${b.s}`, pista: "Toca el ícono para el aviso", run: () => setAviso({ hora: b.s, cuando }) };
+    if (dia >= hoy && esDespertar(b.t)) {
+      const pasado = esHoy && toMin(b.s) <= minuto;
+      return {
+        label: `Despertador: te levantas a las ${b.s}`,
+        pista: pasado ? "¿Te levantaste a otra hora? Toca el ícono" : "Toca el ícono para poner tu despertador",
+        run: () => setAviso({ fecha: dia, hora: b.s, cuando, pasado }),
+      };
+    }
     if (despertarSig && !paso && esDormir(b.t))
       return {
-        label: `Aviso para levantarte a las ${despertarSig}`,
-        pista: `Toca el ícono: aviso para levantarte a las ${despertarSig}`,
-        run: () => setAviso({ hora: despertarSig, cuando: dia === hoy ? "mañana" : "al día siguiente" }),
+        label: `Despertador de mañana: te levantas a las ${despertarSig}`,
+        pista: `Toca el ícono: despertador de las ${despertarSig}`,
+        run: () => setAviso({ fecha: addD(dia, 1), hora: despertarSig, cuando: dia === hoy ? "mañana" : "al día siguiente" }),
       };
+    if (esHoy && esDiario(b.t)) return { label: "Escribir tu diario de hoy", pista: "Toca el ícono para escribir tu diario", run: () => setDiario(true) };
     return null;
   };
 
@@ -140,7 +149,8 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
         <p className="hy-empty">Todavía no hay horario para este día.</p>
       )}
       <button className="linkbtn" onClick={onEditar}>{esHoy ? "Editar hoy" : "Editar este día"}</button>
-      {aviso && <AvisoDespertar hora={aviso.hora} cuando={aviso.cuando} onClose={() => setAviso(null)} />}
+      {aviso && <AvisoDespertar fecha={aviso.fecha} hora={aviso.hora} cuando={aviso.cuando} pasado={aviso.pasado} onClose={() => setAviso(null)} />}
+      {diario && <Diario hoja onClose={() => setDiario(false)} />}
     </section>
   );
 }

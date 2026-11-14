@@ -6,6 +6,7 @@ const llano = (t: string) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g
 
 export const esEjercicio = (t: string) => /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(t);
 export const esDespertar = (t: string) => /despert|levant/.test(llano(t));
+export const esDiario = (t: string) => /\bdiario\b/.test(llano(t));
 export const esDormir = (t: string) => /dormir|acostar|a la cama/.test(llano(t));
 
 const ICONOS: Record<string, ReactNode> = {

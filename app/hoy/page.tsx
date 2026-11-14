@@ -1,16 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
 import { textoEventos } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
-import { cantidad, conUnidad, num, sortHabits, tipoDe } from "@/lib/habits";
-import HabitoAnotar from "@/components/HabitoAnotar";
 import { esMeta, type Tarea } from "@/lib/types";
 import HorasMetas from "@/components/HorasMetas";
-import { openTasks, toggleHecho } from "@/components/ui";
 import { useFocus } from "@/components/Shell";
 import { folderOptions } from "@/lib/folders";
 import DayEditor from "@/components/DayEditor";
@@ -25,14 +21,6 @@ import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
 import VoiceButton from "@/components/VoiceButton";
-
-/* ---------- utilidades de texto ---------- */
-const lista = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`);
-const Check = ({ size = 16, color = "currentColor" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M5 12l5 5L20 7" />
-  </svg>
-);
 
 export default function Hoy() {
   const { eventos, planFor } = useData();
@@ -94,7 +82,6 @@ export default function Hoy() {
           {esHoy && <Atrasadas day={t} />}
           <SinHora day={dia} hoy={t} />
           <Tira dia={dia} blocks={blocks} minuto={esHoy ? minute : dia < t ? 1440 : -1} onEditar={() => setEditing(true)} onEntreno={() => setEntreno(true)} />
-          {dia <= t && <HabitRings day={dia} />}
         </div>
         {/* El orden del código es el que se ve (y el del teclado): en el móvil todo va en una columna */}
         <div className="hy-col hy-side">
@@ -259,43 +246,6 @@ function Atrasadas({ day }: { day: string }) {
         />
       )}
     </div>
-  );
-}
-
-/* ---------- Hábitos como círculos ---------- */
-function HabitRings({ day }: { day: string }) {
-  const { habitos, save } = useData();
-  const [anotando, setAnotando] = useState<string | null>(null);
-  const list = sortHabits(habitos);
-  const done = list.filter((h) => h.hechos[day]).length;
-  if (!list.length) return null;
-  const h0 = habitos.find((h) => h.id === anotando);
-  return (
-    <section aria-labelledby="hy-hab" className="hy-sec">
-      <div className="hy-sechead">
-        <h2 id="hy-hab" className="hy-h">Hábitos</h2>
-        <span className="hy-count">{done} de {list.length}</span>
-      </div>
-      <div className="hy-rings">
-        {list.map((h) => {
-          const on = !!h.hechos[day];
-          const medible = tipoDe(h) === "medible";
-          const c = cantidad(h, day);
-          return medible ? (
-            <button key={h.id} className={c && !on ? "parte" : undefined} aria-label={`Anotar ${h.name}${c ? `: llevas ${conUnidad(h, c)}` : ""}`} data-on={on || undefined} onClick={() => setAnotando(h.id)}>
-              <span className={`hy-ring${on ? " lleno" : ""}`} aria-hidden="true">{c ? <b>{num(c)}</b> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>}</span>
-              <span className="hy-ring-l">{h.name}</span>
-            </button>
-          ) : (
-            <button key={h.id} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, day))}>
-              <span className="hy-ring" aria-hidden="true">{on && <Check size={20} />}</span>
-              <span className="hy-ring-l">{h.name}</span>
-            </button>
-          );
-        })}
-      </div>
-      {h0 && <HabitoAnotar h={h0} dia={day} onClose={() => setAnotando(null)} />}
-    </section>
   );
 }
 
