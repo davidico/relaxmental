@@ -160,7 +160,7 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
   const sinDia = tareas.filter((t) => !t.done && !t.due);
   if (sinDia.length) partes.push("PENDIENTES SIN DÍA:\n" + sinDia.slice(0, 15).map((t) => `- ${String(t.title).slice(0, 80)}`).join("\n"));
 
-  const habitos = leer<{ name?: string; hechos?: Record<string, boolean> }>(hq.results).filter((h) => h.name);
+  const habitos = leer<{ name?: string; hechos?: Record<string, boolean>; tipo?: string; unidad?: string; cantidades?: Record<string, number> }>(hq.results).filter((h) => h.name);
   if (habitos.length) {
     const ult = Array.from({ length: 14 }, (_, i) => fechaMas(hoy, -i));
     partes.push(
@@ -173,7 +173,9 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
               if (!h.hechos?.[f]) break;
               racha++;
             }
-            return `- ${h.name}: ${n} de 14 días${racha > 1 ? `, racha actual de ${racha}` : ""}`;
+            const suma = h.tipo === "medible" ? Math.round(ult.reduce((t, f) => t + (h.cantidades?.[f] ?? 0), 0) * 100) / 100 : 0;
+            const clase = h.tipo === "dejar" ? " (lo quiere dejar; cuenta los días que lo logró)" : h.tipo === "medible" ? ` (medible: ${suma} ${h.unidad ?? ""} en total)` : "";
+            return `- ${h.name}${clase}: ${n} de 14 días${racha > 1 ? `, racha actual de ${racha}` : ""}`;
           })
           .join("\n"),
     );

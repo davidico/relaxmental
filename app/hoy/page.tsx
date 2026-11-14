@@ -6,7 +6,8 @@ import { useData, newId } from "@/lib/data";
 import { DOW, MES, addD, ds, pd, toMin } from "@/lib/dates";
 import { nowInfo, textoEventos, type Bloque } from "@/lib/plan";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
-import { sortHabits } from "@/lib/habits";
+import { cantidad, conUnidad, num, sortHabits, tipoDe } from "@/lib/habits";
+import HabitoAnotar from "@/components/HabitoAnotar";
 import { esMeta, type Tarea } from "@/lib/types";
 import HorasMetas from "@/components/HorasMetas";
 import { openTasks, toggleHecho } from "@/components/ui";
@@ -327,9 +328,11 @@ function Atrasadas({ day }: { day: string }) {
 /* ---------- Hábitos como círculos ---------- */
 function HabitRings({ day }: { day: string }) {
   const { habitos, save } = useData();
+  const [anotando, setAnotando] = useState<string | null>(null);
   const list = sortHabits(habitos);
   const done = list.filter((h) => h.hechos[day]).length;
   if (!list.length) return null;
+  const h0 = habitos.find((h) => h.id === anotando);
   return (
     <section aria-labelledby="hy-hab" className="hy-sec">
       <div className="hy-sechead">
@@ -339,7 +342,14 @@ function HabitRings({ day }: { day: string }) {
       <div className="hy-rings">
         {list.map((h) => {
           const on = !!h.hechos[day];
-          return (
+          const medible = tipoDe(h) === "medible";
+          const c = cantidad(h, day);
+          return medible ? (
+            <button key={h.id} className={c && !on ? "parte" : undefined} aria-label={`Anotar ${h.name}${c ? `: llevas ${conUnidad(h, c)}` : ""}`} data-on={on || undefined} onClick={() => setAnotando(h.id)}>
+              <span className={`hy-ring${on ? " lleno" : ""}`} aria-hidden="true">{c ? <b>{num(c)}</b> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>}</span>
+              <span className="hy-ring-l">{h.name}</span>
+            </button>
+          ) : (
             <button key={h.id} aria-pressed={on} onClick={() => save("habitos", toggleHecho(h, day))}>
               <span className="hy-ring" aria-hidden="true">{on && <Check size={20} />}</span>
               <span className="hy-ring-l">{h.name}</span>
@@ -347,6 +357,7 @@ function HabitRings({ day }: { day: string }) {
           );
         })}
       </div>
+      {h0 && <HabitoAnotar h={h0} dia={day} onClose={() => setAnotando(null)} />}
     </section>
   );
 }

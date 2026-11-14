@@ -1,7 +1,11 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "4.8";
+export const VERSION = "4.9";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hábitos de tres tipos: de marca, medibles (con cantidad: km, páginas, minutos…) y «para dejar» (marcas los días que lo logras)",
+  "Cada hábito tiene su mes: toca «Ver mes» y marca cualquier día, también los anteriores",
+  "Vista semanal de todos tus hábitos, con un círculo por día",
+  "En los medibles anotas la cantidad con atajos para sumar rápido, también desde Hoy",
   "Hoy tiene arriba la tira de la semana: toca un día para ver ese día",
   "Tu día en una línea de tiempo: cada bloque con su círculo para marcar «lo hice», el tiempo libre entre bloques y «Planificar»",
   "Las metas y tareas con hora van en la línea de tiempo; las que no tienen hora, en «Para hoy, sin hora»",

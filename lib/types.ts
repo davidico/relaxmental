@@ -64,8 +64,16 @@ export interface Habito {
   name: string;
   area: Area;
   orden: number;
-  hechos: Record<string, boolean>; // fecha -> hecho
+  hechos: Record<string, boolean>; // fecha -> hecho (en «dejar»: ese día lo lograste)
   created: string;
+  /** De marca (se hace o no), medible (con cantidad) o un mal hábito que se quiere dejar. Sin tipo = de marca */
+  tipo?: "marca" | "medible" | "dejar";
+  /** Medible: unidad (km, páginas, min…) */
+  unidad?: string;
+  /** Medible: cantidad de cada día (fecha -> cantidad) */
+  cantidades?: Record<string, number>;
+  /** Medible: meta diaria opcional; el día cuenta como hecho al llegar a ella (sin meta, con cualquier cantidad) */
+  objetivo?: number;
 }
 
 
