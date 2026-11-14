@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.6";
+export const VERSION = "5.7";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Más aire entre los momentos de tu día",
   "El «+» de la línea ya solo ofrece como subtarea el momento que tiene encima (no el de abajo): lo que añades antes del desayuno no es parte del desayuno",
   "Los botones del ícono (series de ejercicio, diario, temporizador) aparecen cuando llega su momento, no antes; el despertador sí se puede poner antes",
   "Pregúntale a tus notas: en el Cerebro, la IA busca en todas tus notas lo que preguntas (por ejemplo, en qué sueño hablabas de algo) y te dice en cuál está; tocas la nota y se abre",

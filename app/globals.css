@@ -2039,3 +2039,17 @@ textarea.ts-title{line-height:1.35;padding:10px 2px;min-height:48px}
 /* El botón de tu cuenta solo va por encima del velo cuando su menú está abierto (antes se veía encima de cualquier hoja) */
 .mc-btn{z-index:auto}
 .mc-btn[aria-expanded="true"]{z-index:21}
+
+/* ---------- Versión 5.7: más aire entre los momentos de la línea ---------- */
+.lt-c{min-height:80px;padding:18px 0}
+.lt-b{padding:10px 0}
+.lt-hueco .lt-c{min-height:60px;padding:0}
+.lt-hueco.ahora .lt-c{min-height:76px}
+/* El «+» entre dos momentos: se arrima un poco para que el hueco con «+» y sin él se parezcan */
+.lt-entre{margin-block:-6px}
+.lt-entre .lt-c{min-height:26px;padding:0}
+/* Con subtareas, la hora y el nombre empiezan a la altura del ícono */
+.lt-f:has(>.lt-subs)>.lt-b{padding-top:18px}
+.lt-f:has(>.lt-subs)>.lt-h{align-self:start;padding-top:30px}
+.lt-f:has(>.lt-subs)>.hy-check{align-self:start;margin-top:29px}
+.lt-subs{margin-bottom:var(--e4)}
