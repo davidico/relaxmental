@@ -290,7 +290,7 @@ function SemanaAviso() {
       <h2 id="sem-h" className="hy-h">¿Te armo la semana que viene?</h2>
       <p>Uso tus reglas, lo que aprendí de tus días, tus compromisos y tus tareas. Tú revisas cada día antes de aplicarlo.</p>
       <div className="row actions">
-        <Link className="btn" href="/perfil#ia-h" onClick={() => savePerfil("semanaVista", lunes)}>Sí, proponla</Link>
+        <Link className="btn" href="/perfil/semana" onClick={() => savePerfil("semanaVista", lunes)}>Sí, proponla</Link>
         <button className="btn ghost" onClick={() => savePerfil("semanaVista", lunes)}>Ahora no</button>
       </div>
     </section>

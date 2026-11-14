@@ -1,6 +1,7 @@
 "use client";
 
 import Deshacer from "./Deshacer";
+import MenuCuenta from "./MenuCuenta";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -91,9 +92,7 @@ function Frame({ children }: { children: ReactNode }) {
           <span className="brand">MI SEMANA</span>
           <span className="topr">
             <span className="sync">{status}</span>
-            <Link href="/perfil" className="avatar" aria-label="Tu perfil y reglas" aria-current={path === "/perfil" ? "page" : undefined}>
-              {(email ?? "D")[0].toUpperCase()}
-            </Link>
+            <MenuCuenta email={email} cloud={mode === "cloud"} path={path} />
           </span>
         </div>
         {mode === "cloud" && offline && (
