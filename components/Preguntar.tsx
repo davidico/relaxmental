@@ -35,6 +35,8 @@ export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => vo
   const [charla, setCharla] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<"" | "pensando" | "error">("");
+  /* Quién respondió la última vez (en las notas: Claude si está conectado, o la IA de Cloudflare) */
+  const [ia, setIa] = useState<"" | "claude" | "cloudflare">("");
   const fin = useRef<HTMLDivElement>(null);
   const puede = mode === "cloud" && !offline;
 
@@ -62,7 +64,8 @@ export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => vo
         body: JSON.stringify(modo === "notas" ? { pregunta: q, charla: charlaTxt } : { pregunta: q, charla: charlaTxt, itinerario: planFor(hoy).map((b) => `${b.s}-${b.e} ${b.t}`) }),
       });
       if (!r.ok) throw new Error();
-      const { respuesta, fuentes } = (await r.json()) as { respuesta: string; fuentes?: { id: string; titulo: string }[] };
+      const { respuesta, fuentes, ia: quien } = (await r.json()) as { respuesta: string; fuentes?: { id: string; titulo: string }[]; ia?: "claude" | "cloudflare" };
+      if (quien) setIa(quien);
       setCharla((c) => [...c, { de: "ia", texto: respuesta, fuentes: (fuentes ?? []).filter((f) => notas.some((n) => n.id === f.id)) }]);
       setEstado("");
     } catch {
@@ -141,7 +144,7 @@ export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => vo
           <input id="pq-in" value={texto} maxLength={600} placeholder="Escribe tu pregunta…" autoComplete="off" enterKeyHint="send" disabled={!puede} onChange={(e) => setTexto(e.target.value)} />
           <button className="btn" type="submit" disabled={!puede || !texto.trim() || estado === "pensando"}>Enviar</button>
         </form>
-        <p className="pq-nota">{T.nota}</p>
+        <p className="pq-nota">{modo === "notas" && ia === "claude" ? "Responde Claude. " : ""}{T.nota}</p>
       </div>
     </div>
     {/* La nota se abre fuera de la hoja, a pantalla completa, y al cerrarla sigues en la conversación */}

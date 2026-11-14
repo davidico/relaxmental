@@ -386,7 +386,7 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       const total = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0);
       const elegidas = total <= PRESUPUESTO_CLAUDE ? elegirNotas(notas, "", PRESUPUESTO_CLAUDE) : elegirNotas(notas, `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`, PRESUPUESTO_CLAUDE);
       const r = await responderNotasClaude(env.ANTHROPIC_API_KEY, { pregunta, charla, notas: elegidas.notas });
-      if (r) return json({ respuesta: r.respuesta, fuentes: r.usadas.map((i) => ({ id: elegidas.notas[i].id, titulo: elegidas.notas[i].titulo || "Sin título" })) });
+      if (r) return json({ respuesta: r.respuesta, ia: "claude", fuentes: r.usadas.map((i) => ({ id: elegidas.notas[i].id, titulo: elegidas.notas[i].titulo || "Sin título" })) });
     }
     /* Sin Claude (o si falló), la IA de Cloudflare:
        si todo el Cerebro cabe, la IA lo lee entero (no hace falta buscar por palabras); si no, se eligen las notas que más se parecen */
@@ -406,7 +406,7 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     }
     const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas, todas: elegidas.todas, delTema });
     if (!respuesta) return json({ error: "ai" }, 502);
-    return json({ respuesta, fuentes: usadas.map((i) => ({ id: halladas[i].id, titulo: halladas[i].titulo || "Sin título" })) });
+    return json({ respuesta, ia: "cloudflare", fuentes: usadas.map((i) => ({ id: halladas[i].id, titulo: halladas[i].titulo || "Sin título" })) });
   }
   /* Qué tipo de actividad es cada nombre del horario que la app no reconoce (para su ícono y su botón) */
   if (url.pathname === "/api/ai/tipos" && req.method === "POST") {
