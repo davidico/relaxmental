@@ -2104,3 +2104,15 @@ textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8p
 .hm-box.cp{margin:var(--e2) 0 var(--e3)}
 .cp-t{display:flex;flex-direction:column;gap:2px}
 .cp-t small{font-size:14px;color:var(--muted);line-height:1.35}
+
+/* ---------- Versión 6.0: el momento en que estás va en un cuadro dorado ---------- */
+/* El dorado se usa solo para esto: decir dónde vas en el día. El resto sigue en petróleo y grises. */
+:root{--oro-bg:#fbf3dc;--oro-b:#d9b44a;--oro-t:#7a5c0c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--oro-bg:#3a3220;--oro-b:#c9a646;--oro-t:#e8cf85}}
+:root[data-theme="dark"]{--oro-bg:#3a3220;--oro-b:#c9a646;--oro-t:#e8cf85}
+.lt-f.ahora{margin:4px -10px;padding:0 10px;border-radius:18px;background:var(--oro-bg);border:1.5px solid var(--oro-b)}
+.lt-f.ahora .lt-h,.lt-f.ahora .lt-txt .lt-s,.lt-hueco.ahora .lt-t{color:var(--oro-t)}
+.lt-hueco.ahora .lt-s{color:var(--muted)}
+.lt-f.ahora .lt-dot{border-color:var(--oro-bg);box-shadow:0 0 0 1px var(--oro-b)}
+.lt-f.ahora+.lt-entre{margin-top:0}
+.lt-entre:has(+.lt-f.ahora){margin-bottom:0}
