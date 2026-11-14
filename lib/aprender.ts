@@ -118,9 +118,11 @@ export async function leerDiario(
     body: JSON.stringify({ ...o, reglas: perfil.reglas?.text ?? "", decididas: decididas(perfil) }),
   });
   if (!r.ok) throw new Error("diario");
-  const { propuestas, recuerdos } = (await r.json()) as { propuestas: Propuesta[]; recuerdos?: string[] };
+  const { propuestas, recuerdos, temas } = (await r.json()) as { propuestas: Propuesta[]; recuerdos?: string[]; temas?: unknown };
   const aprendido = anadirRecuerdos(perfil, savePerfil, recuerdos ?? [], "diario");
-  return { propuestas: guardarPropuestas(perfil, savePerfil, propuestas, "d"), recuerdos: aprendido };
+  /* Los temas del diario que la persona podría hablar con alguien (no se guardan: ella decide si los apunta en una lista) */
+  const hablar = Array.isArray(temas) ? temas.map((t) => String(t).trim()).filter(Boolean).slice(0, 5) : [];
+  return { propuestas: guardarPropuestas(perfil, savePerfil, propuestas, "d"), recuerdos: aprendido, temas: hablar };
 }
 
 /** El resumen de la semana: lo guarda en el perfil, deja sus recomendaciones como propuestas y apunta lo aprendido */

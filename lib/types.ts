@@ -55,6 +55,8 @@ export interface Nota {
   tipo?: "texto" | "lista";
   items?: ItemLista[];
   updated?: string;
+  /** Lista «Hablar con…» que se alimenta desde el diario: con quién (en minúsculas y sin tildes), para volver a encontrarla */
+  hablar?: string;
 }
 
 export interface ItemLista {

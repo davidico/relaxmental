@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate, toMin } from "@/lib/dates";
-import { claveDe } from "@/lib/momentos";
+import { bloqueDeSub, claveDe } from "@/lib/momentos";
+import { borrarTarea } from "@/lib/deshacer";
+import type { Tarea } from "@/lib/types";
 import WhenDialog from "./WhenDialog";
 import TextoCrece from "./TextoCrece";
 import { TIEMPOS, textoTiempo } from "./AnadirAqui";
@@ -16,17 +18,22 @@ const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${S
  * sin hora (para un día, a tu ritmo), a una hora (un momento de tu día, con su duración),
  * dentro de un momento (una subtarea suya) o más tarde (queda en Pendientes).
  * «Guardar» (o Enter) la guarda y deja el campo listo para otra. Si tiene hora, llega un aviso a esa hora.
+ * Con `editar` es la misma hoja para cambiar una tarea que ya existe (todo se puede cambiar) o borrarla.
  */
-export default function TaskSheet({ onClose, inicial }: { onClose: () => void; inicial?: { due?: string; hora?: string } }) {
-  const { save, hoy, planFor } = useData();
-  const [title, setTitle] = useState("");
-  const [step, setStep] = useState("");
-  const [due, setDue] = useState(inicial?.due ?? hoy);
-  const [hora, setHora] = useState(inicial?.hora ?? "");
-  const [modo, setModo] = useState<Modo>(inicial?.hora ? "hora" : "sinhora");
-  const [min, setMin] = useState(15);
-  const [momento, setMomento] = useState("");
-  const [verPaso, setVerPaso] = useState(false);
+export default function TaskSheet({ onClose, inicial, editar }: { onClose: () => void; inicial?: { due?: string; hora?: string }; editar?: Tarea }) {
+  const { save, remove, hoy, planFor } = useData();
+  const [title, setTitle] = useState(editar?.title ?? "");
+  const [step, setStep] = useState(editar?.step ?? "");
+  const [due, setDue] = useState(editar ? editar.due || hoy : inicial?.due ?? hoy);
+  const [hora, setHora] = useState(editar?.hora ?? inicial?.hora ?? "");
+  const [modo, setModo] = useState<Modo>(editar ? (!editar.due ? "luego" : editar.hora ? "hora" : editar.momento ? "dentro" : "sinhora") : inicial?.hora ? "hora" : "sinhora");
+  const [min, setMin] = useState(() => {
+    if (editar?.min) return editar.min;
+    const d = editar?.hora && editar.fin ? toMin(editar.fin) - toMin(editar.hora) : 0;
+    return d > 0 ? d : editar?.hora ? 30 : 15;
+  });
+  const [momento, setMomento] = useState(editar?.momento ?? "");
+  const [verPaso, setVerPaso] = useState(!!editar?.step);
   const [verCuando, setVerCuando] = useState(false);
   const [guardadas, setGuardadas] = useState(0);
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -44,8 +51,11 @@ export default function TaskSheet({ onClose, inicial }: { onClose: () => void; i
   const diaTxt = !due ? "Sin fecha" : due === hoy ? "Hoy" : due === addD(hoy, 1) ? "Mañana" : fdate(due);
   /* Los momentos de ese día donde puede ir como subtarea (hoy, solo los que no han terminado) */
   const ahora = new Date().getHours() * 60 + new Date().getMinutes();
-  const momentos = modo === "dentro" && due ? planFor(due).filter((b) => !b.tarea && (due !== hoy || toMin(b.e) > ahora)) : [];
-  const elegido = momentos.find((b) => claveDe(b) === momento) ?? momentos[0];
+  const delDia = modo === "dentro" && due ? planFor(due).filter((b) => !b.tarea) : [];
+  /* El momento donde ya está (al editar) sigue en la lista aunque haya terminado */
+  const suyo = momento ? bloqueDeSub(momento, delDia) : undefined;
+  const momentos = delDia.filter((b) => due !== hoy || toMin(b.e) > ahora || b === suyo);
+  const elegido = suyo ?? momentos[0];
 
   const elegir = (m: Modo) => {
     setModo(m);
@@ -57,6 +67,20 @@ export default function TaskSheet({ onClose, inicial }: { onClose: () => void; i
   const puede = !!title.trim() && (modo !== "dentro" || !!elegido) && (modo !== "hora" || !!hora);
   const guardar = () => {
     if (!puede) return;
+    if (editar) {
+      /* Se cambia lo que haga falta y se quita lo que ya no aplica a la forma elegida */
+      const campos =
+        modo === "luego"
+          ? { due: "", hora: "", fin: undefined, momento: undefined, min: undefined }
+          : modo === "sinhora"
+            ? { due, hora: "", fin: undefined, momento: undefined, min: undefined }
+            : modo === "hora"
+              ? { due, hora, fin: aHora(Math.min(1439, toMin(hora) + min)), momento: undefined, min }
+              : { due, hora: "", fin: undefined, momento: claveDe(elegido!), min };
+      save("tareas", { ...editar, title: title.trim(), step: step.trim(), ...campos });
+      onClose();
+      return;
+    }
     const base = { id: newId(), title: title.trim(), step: step.trim(), done: false, created: new Date().toISOString(), meta: false };
     if (modo === "luego") save("tareas", { ...base, due: "", hora: "" });
     else if (modo === "sinhora") save("tareas", { ...base, due, hora: "" });
@@ -90,18 +114,18 @@ export default function TaskSheet({ onClose, inicial }: { onClose: () => void; i
         className="sheet ts"
         role="dialog"
         aria-modal="true"
-        aria-label="Nueva tarea"
+        aria-label={editar ? "Editar tarea" : "Nueva tarea"}
         onSubmit={(e) => {
           e.preventDefault();
           guardar();
         }}
       >
-        <label htmlFor="ts-title" className="sr-only">Nueva tarea</label>
-        <TextoCrece ref={titleRef} id="ts-title" className="ts-title" autoFocus autoComplete="off" enterKeyHint="done" placeholder="Nueva tarea" value={title} onTexto={setTitle} onEnter={() => formRef.current?.requestSubmit()} />
+        <label htmlFor="ts-title" className="sr-only">{editar ? "Nombre de la tarea" : "Nueva tarea"}</label>
+        <TextoCrece ref={titleRef} id="ts-title" className="ts-title" autoFocus={!editar} autoComplete="off" enterKeyHint="done" placeholder="Nueva tarea" value={title} onTexto={setTitle} onEnter={() => formRef.current?.requestSubmit()} />
         {verPaso && (
           <>
             <label htmlFor="ts-step" className="sr-only">Primer paso</label>
-            <input ref={stepRef} id="ts-step" className="ts-step" autoFocus enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
+            <input ref={stepRef} id="ts-step" className="ts-step" autoFocus={!editar} enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
           </>
         )}
         <fieldset className="ts-modo">
@@ -165,6 +189,9 @@ export default function TaskSheet({ onClose, inicial }: { onClose: () => void; i
             </button>
           )}
           <span style={{ flex: 1 }} />
+          {editar && (
+            <button type="button" className="ts-save ts-borrar" onClick={() => { borrarTarea(editar, save, remove); onClose(); }}>Borrar</button>
+          )}
           <button type="submit" className="ts-save" disabled={!puede}>Guardar</button>
         </div>
         {verCuando && (

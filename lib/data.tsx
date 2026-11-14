@@ -125,6 +125,8 @@ export type Perfil = {
   hechos?: Record<string, string[]>;
   /** Qué tipo de actividad es cada nombre que la app no reconoce por sus palabras (lo dice la IA): nombre → tipo */
   tipos?: Record<string, string>;
+  /** Con quién suele hablar sus temas (para la lista «Hablar con…» del diario) */
+  hablarCon?: string;
   /** El último resumen semanal de la IA */
   resumenSemana?: { semana: string; texto: string; fecha: string };
   [k: string]: unknown;

@@ -1,7 +1,11 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "5.7";
+export const VERSION = "5.8";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Toca el nombre de un momento de tu día y se abre ahí mismo una hoja para cambiarlo: nombre, descripción y horas, o quitarlo de ese día",
+  "Las tareas se pueden cambiar enteras: toca su nombre (en la línea, en una subtarea o en «Sin hora») y cambias nombre, forma, día, hora, tiempo o la borras",
+  "El círculo marca «lo hice»; el nombre abre para cambiar. «Editar todo» sigue arriba para el día entero",
+  "Diario: si salen temas personales, te propone apuntarlos en una lista «Hablar con…» (tú eliges cuáles y con quién); la lista queda en tu Cerebro y se va llenando cada noche",
   "Más aire entre los momentos de tu día",
   "El «+» de la línea ya solo ofrece como subtarea el momento que tiene encima (no el de abajo): lo que añades antes del desayuno no es parte del desayuno",
   "Los botones del ícono (series de ejercicio, diario, temporizador) aparecen cuando llega su momento, no antes; el despertador sí se puede poner antes",

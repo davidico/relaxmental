@@ -2053,3 +2053,31 @@ textarea.ts-title{line-height:1.35;padding:10px 2px;min-height:48px}
 .lt-f:has(>.lt-subs)>.lt-h{align-self:start;padding-top:30px}
 .lt-f:has(>.lt-subs)>.hy-check{align-self:start;margin-top:29px}
 .lt-subs{margin-bottom:var(--e4)}
+
+/* ---------- Versión 5.8: tocar el nombre de un momento o de una tarea lo abre para cambiarlo ahí mismo ---------- */
+.lt-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;min-width:0;padding:0;border:none;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:6px}
+.lt-txt .lt-t{cursor:pointer}
+.lt-txt:focus-visible,.lt-subt:focus-visible,.hy-task-btn:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.lt-subt{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding:0;border:none;background:none;font:inherit;font-size:15px;line-height:1.35;color:inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer;border-radius:6px}
+.lt-subs li.hecho .lt-subt{color:var(--muted);text-decoration:line-through}
+.hy-task-btn{display:flex;flex-direction:column;align-items:flex-start;border:none;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:6px}
+.hy-task-t{font-weight:400;overflow-wrap:anywhere}
+.hy-pro.hecho .hy-task-t{text-decoration:line-through;color:var(--muted)}
+/* Las hojas de cambiar */
+.ts-borrar{color:var(--warn)}
+.ts-campo>span{font-size:14px;color:var(--muted)}
+.ms-horas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e3)}
+.ms-horas .hora-btn{width:100%}
+textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8px;background:var(--surface);font-size:16px;line-height:1.4;min-height:44px}
+.ms-nota{margin:0;font-size:14px;color:var(--muted)}
+.ms-preg{font-size:15px}
+/* Diario: los temas para hablar con alguien */
+.dia-temas{display:flex;flex-direction:column;gap:var(--e3);padding-top:var(--e3);border-top:1px solid var(--line)}
+.dia-temas fieldset{border:none;margin:0;padding:0;min-width:0;display:flex;flex-direction:column}
+.dia-temas legend{padding:0;margin-bottom:var(--e2);line-height:1.45}
+.dia-temas fieldset label{display:flex;align-items:flex-start;gap:var(--e2);min-height:44px;padding:10px 0;cursor:pointer}
+.dia-temas fieldset input{width:20px;height:20px;min-height:0;margin:1px 0 0;padding:0;flex:none;accent-color:var(--primary)}
+.dia-temas fieldset span{min-width:0;overflow-wrap:anywhere;line-height:1.4}
+.dia-quien{display:flex;flex-direction:column;gap:var(--e1)}
+.dia-quien label{font-size:14px;color:var(--muted)}
+.diario a{color:var(--pine);font-weight:500;text-underline-offset:3px}

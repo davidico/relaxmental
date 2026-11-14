@@ -405,7 +405,7 @@ export async function conclusiones(
 export async function propuestasDiario(
   ai: AI,
   o: { fecha: string; texto: string; hechas: string[]; pendientes: string[]; semana: string[]; reglas: string; decididas: string[]; memoria: string[]; reciente: string },
-): Promise<{ propuestas: Propuesta[]; recuerdos: string[] }> {
+): Promise<{ propuestas: Propuesta[]; recuerdos: string[]; temas: string[] }> {
   const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
   const manana = new Date(Date.parse(o.fecha + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
   const r = await ai.run(LLM, {
@@ -419,7 +419,10 @@ export async function propuestasDiario(
           EXPLICA_PROPUESTA +
           "Básate solo en lo que escribió y en sus datos; no inventes. Si se siente cansada o agobiada, propone aligerar, no añadir. No repitas lo ya decidido ni lo que ya está apuntado. " +
           EXPLICA_RECUERDOS +
-          'Responde SOLO con JSON: {"propuestas":[{"texto":"…","regla":"…"} o {"texto":"…","tarea":{"title":"…","due":"…","hora":"…","lado":"personal","meta":false}}],"recuerdos":["…"]}',
+          'Además, en "temas", apunta hasta 5 temas personales que salen en su diario de hoy y que le vendría bien hablar con alguien de confianza: sentimientos, preocupaciones, decisiones difíciles o roces con otras personas ' +
+          "(por ejemplo «El cansancio de estas semanas» o «La discusión con mi hermano»). Frases cortas, con sus propias palabras, en primera persona si hace falta, sin juzgar, sin interpretar y sin dar consejos. " +
+          "No pongas tareas, compras ni logística. Si su diario no trae nada así, deja la lista vacía. Si habla de hacerse daño o de no querer seguir viviendo, el primer tema es «Pedir ayuda hoy a alguien de confianza o a un profesional». " +
+          'Responde SOLO con JSON: {"propuestas":[{"texto":"…","regla":"…"} o {"texto":"…","tarea":{"title":"…","due":"…","hora":"…","lado":"personal","meta":false}}],"recuerdos":["…"],"temas":["…"]}',
       },
       {
         role: "user",
@@ -431,13 +434,18 @@ export async function propuestasDiario(
     ],
     response_format: {
       type: "json_schema",
-      json_schema: { type: "object", properties: { propuestas: { type: "array", items: ESQUEMA_PROPUESTA }, recuerdos: { type: "array", items: { type: "string" } } }, required: ["propuestas"] },
+      json_schema: {
+        type: "object",
+        properties: { propuestas: { type: "array", items: ESQUEMA_PROPUESTA }, recuerdos: { type: "array", items: { type: "string" } }, temas: { type: "array", items: { type: "string" } } },
+        required: ["propuestas"],
+      },
     },
-    max_tokens: 1000,
+    max_tokens: 1200,
     temperature: 0.3,
   });
-  const x = parsed<{ propuestas: unknown; recuerdos: unknown }>(r);
-  return { propuestas: limpiarPropuestas(x?.propuestas, o.fecha), recuerdos: limpiarRecuerdos(x?.recuerdos, o.memoria) };
+  const x = parsed<{ propuestas: unknown; recuerdos: unknown; temas: unknown }>(r);
+  const temas = Array.isArray(x?.temas) ? [...new Set(x!.temas.map((t) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, 120)).filter(Boolean))].slice(0, 5) : [];
+  return { propuestas: limpiarPropuestas(x?.propuestas, o.fecha), recuerdos: limpiarRecuerdos(x?.recuerdos, o.memoria), temas };
 }
 
 /** El resumen del domingo: cómo fue la semana, qué recomienda para la siguiente y qué conviene recordar */

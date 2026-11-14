@@ -7,7 +7,8 @@ import { DOW, MES, addD, mondayOf, pd } from "@/lib/dates";
 import { useNow, submitOnCtrlEnter } from "@/lib/hooks";
 import { leerDiario } from "@/lib/aprender";
 import VoiceButton from "./VoiceButton";
-import { esMeta, type Tarea } from "@/lib/types";
+import { esMeta, type Nota, type Tarea } from "@/lib/types";
+import { llano } from "@/lib/tipos";
 
 /** A partir de esta hora aparece el momento del diario */
 export const HORA_DIARIO = 21;
@@ -24,6 +25,11 @@ export default function Diario({ hoja, onClose }: { hoja?: boolean; onClose?: ()
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<"" | "leyendo" | "ok" | "sin" | "error">("");
   const [aprendido, setAprendido] = useState(0);
+  /* Temas del diario que podría hablar con alguien: elige cuáles y con quién, y van a una lista del Cerebro */
+  const [temas, setTemas] = useState<string[]>([]);
+  const [fuera, setFuera] = useState<string[]>([]);
+  const [quien, setQuien] = useState(perfil.hablarCon ?? "");
+  const [lista, setLista] = useState<"" | "hecha" | "no">("");
   const yaEscrito = notas.some((n) => n.folder === "diario" && n.ref === hoy);
   useEffect(() => {
     if (!hoja || !onClose) return;
@@ -61,10 +67,28 @@ export default function Diario({ hoja, onClose }: { hoja?: boolean; onClose?: ()
         semana,
       });
       setAprendido(n.recuerdos);
+      setTemas(n.temas);
       setEstado(n.propuestas ? "ok" : "sin");
     } catch {
       setEstado("error");
     }
+  };
+
+  const elegidos = temas.filter((t) => !fuera.includes(t));
+  const apuntar = () => {
+    const q = quien.trim();
+    if (!q || !elegidos.length) return;
+    const clave = llano(q);
+    const ya = notas.find((n) => n.tipo === "lista" && n.hablar === clave);
+    const viejos = ya?.items ?? [];
+    const nuevos = elegidos.filter((t) => !viejos.some((i) => llano(i.t) === llano(t))).map((t) => ({ id: newId(), t, ok: false }));
+    const items = [...viejos, ...nuevos];
+    const nota: Nota = ya
+      ? { ...ya, items, text: items.map((i) => i.t).join("\n"), updated: new Date().toISOString() }
+      : { id: newId(), folder: "notas", kind: "nota", tipo: "lista", title: `Hablar con ${q}`, items, text: items.map((i) => i.t).join("\n"), ref: "", created: new Date().toISOString(), hablar: clave };
+    save("notas", nota);
+    if (q !== perfil.hablarCon) savePerfil("hablarCon", q);
+    setLista("hecha");
   };
 
   const hechas = tareas.filter((x) => x.due === hoy && x.done).length;
@@ -84,6 +108,40 @@ export default function Diario({ hoja, onClose }: { hoja?: boolean; onClose?: ()
             </p>
           )}
           {estado === "error" && <p className="verr" role="alert">⚠ No pude leerlo ahora. Tu diario está guardado.</p>}
+          {lista === "hecha" ? (
+            <p className="vok" role="status">
+              ✓ Apuntado en tu lista «Hablar con {quien.trim()}», en el <Link href="/cerebro">Cerebro</Link>.
+            </p>
+          ) : (
+            temas.length > 0 &&
+            lista !== "no" && (
+              <form
+                className="dia-temas"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  apuntar();
+                }}
+              >
+                <fieldset>
+                  <legend>En lo que escribiste salen estos temas. ¿Los apunto en una lista para que los hables con alguien?</legend>
+                  {temas.map((t) => (
+                    <label key={t}>
+                      <input type="checkbox" checked={!fuera.includes(t)} onChange={() => setFuera((f) => (f.includes(t) ? f.filter((x) => x !== t) : [...f, t]))} />
+                      <span>{t}</span>
+                    </label>
+                  ))}
+                </fieldset>
+                <div className="dia-quien">
+                  <label htmlFor={`${id}-quien`}>¿Con quién?</label>
+                  <input id={`${id}-quien`} value={quien} maxLength={40} autoComplete="off" placeholder="Dios, mi pareja, un amigo…" onChange={(e) => setQuien(e.target.value)} />
+                </div>
+                <div className="row actions">
+                  <button className="btn ghost" type="button" onClick={() => setLista("no")}>Ahora no</button>
+                  <button className="btn" type="submit" disabled={!quien.trim() || !elegidos.length}>Apuntar en la lista</button>
+                </div>
+              </form>
+            )
+          )}
         </>
       ) : yaEscrito ? (
         <p>

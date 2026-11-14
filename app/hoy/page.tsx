@@ -15,6 +15,7 @@ import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
 import { Tira } from "@/components/DiaTira";
 import { bloqueDeSub } from "@/lib/momentos";
+import TaskSheet from "@/components/TaskSheet";
 import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
 import { borrarTarea } from "@/lib/deshacer";
@@ -167,6 +168,7 @@ function ReglasAviso() {
 function SinHora({ day, hoy }: { day: string; hoy: string }) {
   const { tareas, save, planFor } = useData();
   const startFocus = useFocus();
+  const [cambiar, setCambiar] = useState<Tarea | null>(null);
   const delDia = tareas.filter((x) => x.due === day);
   /* Las subtareas de un momento del día se ven en la línea, debajo de ese momento */
   const bloques = planFor(day);
@@ -183,12 +185,13 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
       <ul className="hy-pros">
         {xs.map((x) => (
           <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
-            <input type="checkbox" className="hy-check" id={`hy-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
-            <span className="hy-task-b">
-              <label htmlFor={`hy-${x.id}`}>{x.title}</label>
+            <input type="checkbox" className="hy-check" checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} aria-label={`Hecho: ${x.title}`} />
+            {/* Tocar el nombre abre la tarea para cambiarla; el círculo la marca */}
+            <button type="button" className="hy-task-b hy-task-btn" onClick={() => setCambiar(x)} aria-label={`Cambiar ${x.title}`}>
+              <span className="hy-task-t">{x.title}</span>
               <span className="hy-step">{etiqueta(x)}</span>
               {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
-            </span>
+            </button>
             {x.id === primera?.id && (
               <button className="hy-start" onClick={() => startFocus(x)} aria-label={`Empezar 10 minutos: ${x.title}`}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
@@ -199,6 +202,7 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
         ))}
       </ul>
       {day === hoy && <HorasMetas day={day} metas={delDia.filter(esMeta)} />}
+      {cambiar && <TaskSheet editar={cambiar} onClose={() => setCambiar(null)} />}
     </section>
   );
 }

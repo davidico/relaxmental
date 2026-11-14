@@ -8,6 +8,8 @@ import { tipoDe } from "@/lib/tipos";
 import { useTipos } from "@/lib/usarTipos";
 import IconoBloque from "./IconoBloque";
 import AnadirAqui from "./AnadirAqui";
+import MomentoSheet from "./MomentoSheet";
+import TaskSheet from "./TaskSheet";
 import { useFocus } from "./Shell";
 import { bloqueDeSub } from "@/lib/momentos";
 import type { Tarea } from "@/lib/types";
@@ -24,7 +26,8 @@ const alto = (min: number) => Math.round(Math.min(132, 44 + Math.max(0, min - 15
 
 /**
  * El día en una línea: cada actividad es una cápsula con su ícono (más alta cuanto más dura),
- * con su hora a la izquierda y un círculo a la derecha para decir «lo hice».
+ * con su hora a la izquierda y un círculo a la derecha para decir «lo hice». Tocar el nombre lo abre para cambiarlo
+ * ahí mismo (`MomentoSheet` si es del horario, `TaskSheet` si es una tarea); «Editar todo» abre el día entero.
  * La línea que las une se va llenando con la hora: continua lo que ya pasó, punteada lo que falta.
  * Entre dos actividades que aún no pasaron hay un «+» en la línea (en los ratos libres, «Planificar») que abre `AnadirAqui`:
  * lo nuevo va como subtarea de un momento vecino (se ve debajo de él, con su círculo y su temporizador) o como momento nuevo a esa hora.
@@ -36,6 +39,12 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
   const [aviso, setAviso] = useState<{ fecha: string; hora: string; cuando: string; pasado?: boolean } | null>(null);
   const [diario, setDiario] = useState(false);
   const [anadir, setAnadir] = useState<{ hora: string; dentro: { clave: string; nombre: string }[]; inicial: number } | null>(null);
+  /* Tocar el nombre de algo lo abre para cambiarlo ahí mismo: un momento del horario o una tarea */
+  const [cambiar, setCambiar] = useState<{ bloque?: Bloque; tarea?: Tarea } | null>(null);
+  const abrir = (b: Bloque) => {
+    const t = b.tarea ? tareas.find((x) => x.id === b.tarea) : undefined;
+    setCambiar(t ? { tarea: t } : b.tarea ? null : { bloque: b });
+  };
   const empezar = useFocus();
   const hechos = new Set(perfil.hechos?.[dia] ?? []);
   const estaHecho = (b: Bloque) => (b.tarea ? !!b.hecha : hechos.has(clave(b)));
@@ -126,7 +135,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
       <div className="hy-sechead">
         <h2 id="lt-h" className="hy-h">{esHoy ? "Tu día" : "Ese día"}</h2>
         {blocks.length > 0 && <span className="hy-count">{nHechos} de {blocks.length}</span>}
-        <button type="button" className="lt-editar" onClick={onEditar} aria-label={esHoy ? "Editar hoy" : "Editar este día"}>Editar</button>
+        <button type="button" className="lt-editar" onClick={onEditar} aria-label={esHoy ? "Editar todo el día de hoy" : "Editar todo ese día"}>Editar todo</button>
       </div>
       {blocks.length ? (
         <ol className="lt">
@@ -154,20 +163,22 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                   )}
                 </span>
                 <span className="lt-b">
-                  <label htmlFor={id} className="lt-t">{b.t}</label>
-                  <span className="lt-s">
-                    {ahora ? `Ahora, hasta las ${b.e}` : largo > 45 ? `${b.s} a ${b.e}, ${dur(largo)}` : dur(largo)}
-                    {b.sub ? ` · ${b.sub}` : ""}
-                  </span>
+                  <button type="button" className="lt-txt" onClick={() => abrir(b)} aria-label={`Cambiar ${b.t}`}>
+                    <span className="lt-t">{b.t}</span>
+                    <span className="lt-s">
+                      {ahora ? `Ahora, hasta las ${b.e}` : largo > 45 ? `${b.s} a ${b.e}, ${dur(largo)}` : dur(largo)}
+                      {b.sub ? ` · ${b.sub}` : ""}
+                    </span>
+                  </button>
                   {accion && <span className="lt-s lt-pista">{accion.pista}</span>}
                 </span>
-                <input type="checkbox" className="hy-check" id={id} checked={hecho} onChange={() => marcar(b)} />
+                <input type="checkbox" className="hy-check" id={id} checked={hecho} onChange={() => marcar(b)} aria-label={`Hecho: ${b.t}`} />
                 {subs.has(b) && (
                   <ul className="lt-subs" aria-label={`Subtareas de ${b.t}`}>
                     {subs.get(b)!.map((x) => (
                       <li key={x.id} className={x.done ? "hecho" : undefined}>
-                        <input type="checkbox" className="hy-check" id={`lt-sub-${x.id}`} checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} />
-                        <label htmlFor={`lt-sub-${x.id}`}>{x.title}</label>
+                        <input type="checkbox" className="hy-check" checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} aria-label={`Hecho: ${x.title}`} />
+                        <button type="button" className="lt-subt" onClick={() => setCambiar({ tarea: x })} aria-label={`Cambiar ${x.title}`}>{x.title}</button>
                         {!!x.min && !x.done && (
                           <button type="button" className="lt-tiempo" onClick={() => empezar(x)} aria-label={`Empezar el temporizador de ${x.min} minutos: ${x.title}`}>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
@@ -211,6 +222,8 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
       )}
       {aviso && <AvisoDespertar fecha={aviso.fecha} hora={aviso.hora} cuando={aviso.cuando} pasado={aviso.pasado} onClose={() => setAviso(null)} />}
       {diario && <Diario hoja onClose={() => setDiario(false)} />}
+      {cambiar?.bloque && <MomentoSheet dia={dia} bloque={cambiar.bloque} onClose={() => setCambiar(null)} />}
+      {cambiar?.tarea && <TaskSheet editar={cambiar.tarea} onClose={() => setCambiar(null)} />}
       {anadir && <AnadirAqui dia={dia} hora={anadir.hora} dentro={anadir.dentro} inicial={anadir.inicial} onClose={() => setAnadir(null)} />}
     </section>
   );
