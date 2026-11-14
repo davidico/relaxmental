@@ -37,7 +37,7 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "hasta 3 propuestas; si aprendió algo nuevo de ti, lo apunta en su memoria; y los temas personales que podrías hablar con alguien, que solo se guardan si tú los apuntas en una lista." },
   { cuando: "Pides el resumen de tu semana", lee: "tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "un repaso de la semana, hasta 3 recomendaciones y, si aprendió algo nuevo, lo apunta en su memoria." },
   { cuando: "En tu horario hay una actividad que la app no reconoce por su nombre", lee: "el nombre y la descripción de esa actividad (no tus tareas ni tus notas).", da: "qué tipo de actividad es (despertar, ejercicio, diario…), para ponerle su ícono y su botón. Lo guarda y no vuelve a preguntar por ella." },
-  { cuando: "Le preguntas a tus notas (en el Cerebro)", lee: "tu pregunta y las notas de tu Cerebro que hablan de eso: la app las busca por palabras en todas tus secciones, también las privadas, y le pasa hasta 8.", da: "la respuesta y en qué notas está, para que las abras. No guarda nada." },
+  { cuando: "Le preguntas a tus notas (en el Cerebro)", lee: "tu pregunta y tus notas del Cerebro, de todas las secciones, también las privadas. Si caben, las lee todas; si son muchas, solo las que más se parecen a lo que preguntas.", da: "la respuesta, con la lista por fechas si está en varias notas, y esas notas para que las abras. No guarda nada." },
   { cuando: "Le haces una pregunta", lee: "tu pregunta, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "una respuesta corta. No cambia nada en la app." },
 ];
 
@@ -396,7 +396,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
                 Su memoria es una lista de frases que puedes ver, corregir y borrar en <Link href="/perfil/memoria">Lo que la IA recuerda de mí</Link>. No recuerda nada más.
               </li>
               <li>«Tus últimos 14 días» son tus diarios, tus metas y tareas (hechas y sin hacer) y tus hábitos. Solo los lee cuando guardas el diario, pides el resumen o le preguntas algo.</li>
-              <li>Tus notas del Cerebro solo las lee cuando tú le preguntas por ellas en «Pregúntale a tus notas», y solo las que hablan de lo que preguntas. En todo lo demás no las lee.</li>
+              <li>Tus notas del Cerebro solo las lee cuando tú le preguntas por ellas en «Pregúntale a tus notas». En todo lo demás no las lee.</li>
               <li>Lo único que se guarda sin tu «Sí» es el texto que dictas, el título de una nota dictada y lo que apunta en su memoria. Puedes cambiarlo o borrarlo.</li>
             </ul>
 

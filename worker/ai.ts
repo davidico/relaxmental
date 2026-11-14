@@ -590,40 +590,111 @@ export async function palabrasClave(ai: AI, pregunta: string): Promise<string> {
   }
 }
 
-/** Responde una pregunta con las notas de la persona que se encontraron. Dice en cuáles está (sus números) */
-export async function responderNotas(
+/** Cómo se le presentan las notas a la IA: numeradas, agrupadas por sección y con su fecha */
+function textoNotas(notas: { titulo: string; carpeta: string; fecha: string; texto: string }[]) {
+  let seccion = "";
+  return notas
+    .map((n, i) => {
+      const cab = n.carpeta !== seccion ? `\n===== SECCIÓN: ${n.carpeta || "Notas"} =====\n` : "";
+      seccion = n.carpeta;
+      return `${cab}[${i + 1}] «${n.titulo || "Sin título"}» · ${n.fecha}\n${n.texto}`;
+    })
+    .join("\n\n");
+}
+
+/**
+ * Primer paso de «Pregúntale a tus notas»: de todas las notas, cuáles hablan del tema (sus posiciones).
+ * Hacerlo aparte, como única tarea, evita que la respuesta se quede con las dos o tres primeras que encuentra.
+ * Devuelve null si la IA no respondió bien (entonces se responde con todas).
+ */
+export async function notasDelTema(
   ai: AI,
   o: { pregunta: string; charla: { de: "yo" | "ia"; texto: string }[]; notas: { titulo: string; carpeta: string; fecha: string; texto: string }[] },
+): Promise<number[] | null> {
+  try {
+    const r = await ai.run(LLM, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "Te doy todas las notas personales de una persona, numeradas, agrupadas por sección y ordenadas por fecha. Tu única tarea es decir qué notas hay que leer para responder a lo que pregunta. " +
+            "Repásalas todas, una por una, hasta la última. Incluye cada nota que hable del tema aunque sea de pasada o con otras palabras " +
+            "(por ejemplo, para «lo laboral» cuentan trabajo, empleo, salario, dinero que gana, empresa, proyectos, contratos y papeles de trabajo). Ante la duda, inclúyela. " +
+            "Si la pregunta es por una sección entera («mis sueños», «mis profecías»), incluye todas las de esa sección que vengan al caso. " +
+            'Responde SOLO con JSON: {"notas":[números]}',
+        },
+        { role: "user", content: `MIS NOTAS (no es una pregunta):\n${textoNotas(o.notas)}` },
+        { role: "assistant", content: "Entendido. ¿Qué quieres encontrar?" },
+        ...o.charla.slice(-4).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1000) })),
+        { role: "user", content: o.pregunta.slice(0, 600) },
+      ],
+      response_format: { type: "json_schema", json_schema: { type: "object", properties: { notas: { type: "array", items: { type: "number" } } }, required: ["notas"] } },
+      max_tokens: 500,
+      temperature: 0,
+    });
+    const xs = parsed<{ notas: unknown }>(r)?.notas;
+    if (!Array.isArray(xs)) return null;
+    return [...new Set(xs.map((n) => Number(n) - 1).filter((n) => Number.isInteger(n) && n >= 0 && n < o.notas.length))].sort((a, b) => a - b);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Responde una pregunta con las notas de la persona (todas las que caben, o las que se encontraron). Dice en cuáles está (sus números).
+ * Las notas llegan ordenadas por sección y fecha; `todas` indica si son el Cerebro entero o solo una parte.
+ */
+export async function responderNotas(
+  ai: AI,
+  o: { pregunta: string; charla: { de: "yo" | "ia"; texto: string }[]; notas: { titulo: string; carpeta: string; fecha: string; texto: string }[]; todas: boolean; delTema?: boolean },
 ): Promise<{ respuesta: string; usadas: number[] }> {
-  const r = await ai.run(LLM, {
-    messages: [
-      {
-        role: "system",
-        content:
-          "Ayudas a una persona a encontrar cosas en sus propias notas. Respondes SOLO con lo que dicen las notas que te doy: no inventes ni completes con lo que tú sepas. " +
-          "Di en qué nota está (su título, su sección y su fecha) y qué decía, con sus palabras cuando se pueda. Si aparece en varias, dilo. " +
-          "Si las notas no lo dicen, dilo claramente y sugiere con qué otra palabra probar. Un trozo marcado con […] es un recorte de una nota más larga. " +
-          "No interpretes sueños ni des consejos médicos, legales o financieros: solo cuenta lo que está escrito. Responde en español, en segunda persona, en menos de 150 palabras y sin formato especial. " +
-          'Responde SOLO con JSON: {"respuesta":"…","notas":[números de las notas que usaste]}',
-      },
-      {
-        role: "user",
-        content: `MIS NOTAS (no es una pregunta):\n\n${o.notas.map((n, i) => `NOTA ${i + 1} · «${n.titulo || "Sin título"}» · sección ${n.carpeta || "Notas"} · ${n.fecha}\n${n.texto}`).join("\n\n---\n\n") || "(no tengo notas)"}`,
-      },
-      { role: "assistant", content: "Entendido. ¿Qué quieres encontrar?" },
-      ...o.charla.slice(-6).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1200) })),
-      { role: "user", content: o.pregunta.slice(0, 600) },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: { type: "object", properties: { respuesta: { type: "string" }, notas: { type: "array", items: { type: "number" } } }, required: ["respuesta", "notas"] },
+  const cuerpo = textoNotas(o.notas);
+  const mensajes = [
+    {
+      role: "system",
+      content:
+        "Ayudas a una persona a encontrar cosas en sus propias notas. Respondes SOLO con lo que dicen las notas que te doy: no inventes ni completes con lo que tú sepas. " +
+        (o.delTema
+          ? "Ya se han apartado de entre todas sus notas las que hablan del tema: son las que tienes, agrupadas por sección y ordenadas por fecha. Úsalas todas, salvo alguna que de verdad no venga al caso. "
+          : o.todas
+            ? "Tienes TODAS sus notas, agrupadas por sección y ordenadas por fecha. "
+            : "Tienes las notas que más se parecen a lo que pregunta (no todas), agrupadas por sección y ordenadas por fecha. ") +
+        "Antes de responder, repasa una por una TODAS las notas de la sección que toca y recoge cada una que hable del tema, también si lo dice con otras palabras " +
+        "(por ejemplo, para «lo laboral» cuentan trabajo, empleo, salario, empresa, proyectos, contratos o papeles de trabajo). No te quedes con las dos o tres primeras: la persona quiere el repaso completo. " +
+        "Si varias notas hablan del tema, responde con una lista ordenada de la más antigua a la más reciente: una línea por nota, que empieza con «• », su fecha tal como sale en el título, dos puntos y lo que decía, con sus palabras y en segunda persona. " +
+        "Si es una sola, dilo en una frase con su fecha. Si le piden «lo de antes» o «algo más», busca las notas anteriores que no hayas mencionado. " +
+        "Si las notas no dicen nada del tema, dilo claramente" + (o.todas ? ". " : " y sugiere con qué otra palabra probar. ") +
+        "Un trozo marcado con […] es un recorte de una nota más larga. No interpretes sueños ni profecías y no des consejos médicos, legales o financieros: solo cuenta lo que está escrito. " +
+        "Sin asteriscos ni otro formato; como mucho 350 palabras. " +
+        'Responde SOLO con JSON: {"respuesta":"…","notas":[los números de todas las notas que citas]}',
     },
-    max_tokens: 600,
-    temperature: 0.2,
-  });
-  const x = parsed<{ respuesta: unknown; notas: unknown }>(r);
-  const usadas = Array.isArray(x?.notas) ? [...new Set(x!.notas.map((n) => Number(n) - 1).filter((n) => Number.isInteger(n) && n >= 0 && n < o.notas.length))] : [];
-  return { respuesta: String(x?.respuesta ?? "").trim().slice(0, 2500), usadas };
+    { role: "user", content: `MIS NOTAS (no es una pregunta):\n${cuerpo || "(no tengo notas)"}` },
+    { role: "assistant", content: "Entendido. ¿Qué quieres encontrar?" },
+    ...o.charla.slice(-6).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1500) })),
+    { role: "user", content: o.pregunta.slice(0, 600) },
+  ];
+  try {
+    const r = await ai.run(LLM, {
+      messages: mensajes,
+      response_format: {
+        type: "json_schema",
+        json_schema: { type: "object", properties: { respuesta: { type: "string" }, notas: { type: "array", items: { type: "number" } } }, required: ["respuesta", "notas"] },
+      },
+      max_tokens: 1400,
+      temperature: 0.1,
+    });
+    const x = parsed<{ respuesta: unknown; notas: unknown }>(r);
+    const respuesta = String(x?.respuesta ?? "").trim().slice(0, 5000);
+    if (respuesta) {
+      const usadas = Array.isArray(x?.notas) ? [...new Set(x!.notas.map((n) => Number(n) - 1).filter((n) => Number.isInteger(n) && n >= 0 && n < o.notas.length))] : [];
+      return { respuesta, usadas: usadas.sort((a, b) => a - b).slice(0, 12) };
+    }
+  } catch {
+    /* el modelo no pudo dar la respuesta en el formato pedido (pasa con respuestas largas): se pide en texto normal */
+  }
+  mensajes[0] = { role: "system", content: mensajes[0].content.replace(/Responde SOLO con JSON:.*$/, "Responde solo con el texto de la respuesta.") };
+  const r2 = await ai.run(LLM, { messages: mensajes, max_tokens: 1400, temperature: 0.1 });
+  return { respuesta: String((r2 as { response?: unknown }).response ?? "").trim().slice(0, 5000), usadas: [] };
 }
 
 /**

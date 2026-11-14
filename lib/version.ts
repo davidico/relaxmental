@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "6.0";
+export const VERSION = "6.1";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "«Pregúntale a tus notas» responde mucho mejor: ahora lee todas tus notas (no solo unas pocas) y te da la lista completa por fechas, con cada nota para abrirla",
   "El momento en que estás va dentro de un cuadro dorado, redondeado: se ve de un vistazo en qué hora del día vas",
   "«¿Cuándo las hago?»: en Pendientes (Semana) y en Tareas, la IA mira tu semana y te propone un día para cada tarea sin fecha, con su motivo; tú dices sí o no",
   "Nueva tarea, más simple: solo el nombre y un reloj. Sin tocar el reloj queda en Pendientes, sin presión; con el reloj le pones un día y, si quieres, una hora",

@@ -10,9 +10,9 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
-import { buscarNotas, type NotaTexto } from "./notas";
+import { PRESUPUESTO, elegirNotas, type NotaTexto } from "./notas";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -378,9 +378,22 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     if (!notas.length) return json({ respuesta: "Todavía no tienes notas en tu Cerebro.", fuentes: [] });
     /* En una conversación, la pregunta anterior ayuda a entender «¿y qué más decía?» */
     const previa = [...charla].reverse().find((m) => m.de === "yo")?.texto ?? "";
-    const palabras = `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
-    const halladas = buscarNotas(notas, palabras);
-    const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas });
+    /* Si todo el Cerebro cabe, la IA lo lee entero (no hace falta buscar por palabras); si no, se eligen las notas que más se parecen */
+    const cabe = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0) <= PRESUPUESTO;
+    const palabras = cabe ? "" : `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
+    const elegidas = elegirNotas(notas, palabras);
+    let halladas = elegidas.notas;
+    let delTema = false;
+    /* Con todo el Cerebro delante, primero se apartan las notas que hablan del tema y luego se responde solo con esas:
+       así la respuesta trae el repaso completo y no solo lo primero que encuentra */
+    if (elegidas.todas && halladas.length > 12) {
+      const pos = await notasDelTema(env.AI, { pregunta, charla, notas: halladas });
+      if (pos && pos.length && pos.length <= 60) {
+        halladas = pos.map((i) => halladas[i]);
+        delTema = true;
+      }
+    }
+    const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas, todas: elegidas.todas, delTema });
     if (!respuesta) return json({ error: "ai" }, 502);
     return json({ respuesta, fuentes: usadas.map((i) => ({ id: halladas[i].id, titulo: halladas[i].titulo || "Sin título" })) });
   }

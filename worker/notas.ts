@@ -76,3 +76,25 @@ export function buscarNotas(notas: NotaTexto[], palabras: string, cuantas = 8, m
   }
   return puntuadas.map((d) => ({ ...d.n, texto: trozos(d.n.texto, d.texto, rs, maxPorNota) }));
 }
+
+/** Lo que cabe con holgura en una sola pregunta a la IA (el modelo admite unas 24 000 fichas; esto son unas 12 000) */
+export const PRESUPUESTO = 40000;
+
+/**
+ * Las notas que se le pasan a la IA para responder, ya ordenadas para leerlas: por sección y, dentro, de la más antigua a la más nueva.
+ * - Si todas las notas caben (lo normal en un Cerebro personal), van TODAS enteras: así la respuesta no depende de acertar con la palabra.
+ * - Si no caben, van las que mejor responden a las palabras, enteras mientras quepan (las muy largas, recortadas alrededor de lo buscado).
+ */
+export function elegirNotas(notas: NotaTexto[], palabras: string, presupuesto = PRESUPUESTO): { notas: NotaTexto[]; todas: boolean } {
+  const peso = (n: NotaTexto) => n.texto.length + n.titulo.length + 60;
+  const orden = (xs: NotaTexto[]) => [...xs].sort((a, b) => a.carpeta.localeCompare(b.carpeta) || a.fecha.localeCompare(b.fecha));
+  if (notas.reduce((s, n) => s + peso(n), 0) <= presupuesto) return { notas: orden(notas), todas: true };
+  const elegidas: NotaTexto[] = [];
+  let usado = 0;
+  for (const n of buscarNotas(notas, palabras, 60, 3000)) {
+    if (usado + peso(n) > presupuesto) continue;
+    elegidas.push(n);
+    usado += peso(n);
+  }
+  return { notas: orden(elegidas), todas: false };
+}
