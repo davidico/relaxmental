@@ -76,11 +76,16 @@ export default function Hoy() {
       <div className="hy-grid">
         <div className="hy-col">
           <NowCard blocks={blocks} minute={minute} onEntreno={() => setEntreno(true)} />
+          <Atrasadas day={t} />
           <OneTask day={t} />
+          <HabitRings day={t} />
+        </div>
+        {/* El orden del código es el que se ve (y el del teclado): en el móvil todo va en una columna */}
+        <div className="hy-col hy-side">
+          <Capture />
           <Diario />
           <SemanaAviso />
           <Aprendizajes />
-          <HabitRings day={t} />
           <section aria-labelledby="hy-dia" className="hy-sec hy-dia">
             <button className="hy-allday" aria-expanded={verDia} aria-controls="hy-dia-lista" onClick={() => setVerDia(!verDia)}>
               <span id="hy-dia">{verDia ? "Ocultar el día" : "Ver todo el día"}</span>
@@ -94,9 +99,6 @@ export default function Hoy() {
               </div>
             )}
           </section>
-        </div>
-        <div className="hy-col hy-side">
-          <Capture />
         </div>
       </div>
       {editing && <DayEditor date={t} onClose={() => setEditing(false)} />}
@@ -328,7 +330,6 @@ function OneTask({ day }: { day: string }) {
   return (
     <>
       <section aria-labelledby="hy-una" className="hy-sec">
-        <Atrasadas day={day} />
         <div className="hy-sechead">
           <h2 id="hy-una" className="hy-h">Tus metas de hoy</h2>
           {metas.length > 0 && <span className="hy-count">{metas.filter((x) => x.done).length} de {metas.length}</span>}

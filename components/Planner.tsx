@@ -115,7 +115,9 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
             </li>
           ) : (
             <li key={x.id} className={x.done ? "hecho" : ""}>
-              <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => save("tareas", { ...x, done: !x.done })} />
+              <label className="pl-tap">
+                <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => save("tareas", { ...x, done: !x.done })} />
+              </label>
               <button className="pl-txt" onClick={() => setAbierto(x.id)} aria-label={`Cambiar: ${x.title}`}>
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
               </button>
