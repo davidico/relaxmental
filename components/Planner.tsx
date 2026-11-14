@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
@@ -38,8 +38,38 @@ export function leerHora(texto: string): { title: string; hora?: string; fin?: s
 export default function Planner({ days, hoy }: { days: string[]; hoy: string }) {
   const { tareas } = useData();
   const pendientes = tareas.filter((x) => !x.done && !x.due).sort(orden);
+  const [verPend, setVerPend] = useState(false);
+  /* En pantallas anchas (dos columnas) Pendientes está siempre abierto */
+  const [ancho, setAncho] = useState(false);
+  useEffect(() => {
+    const m = matchMedia("(min-width:1180px)");
+    const on = () => setAncho(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
   return (
     <div className="pl">
+      {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}
+      <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby="pl-pend-h">
+        <h2 id="pl-pend-h">
+          {ancho ? (
+            "Pendientes"
+          ) : (
+            <button className="pl-pend-btn" aria-expanded={verPend} aria-controls="pl-pend-cuerpo" onClick={() => setVerPend(!verPend)}>
+              <span>Pendientes</span>
+              <span className="pl-pend-n">{pendientes.length === 0 ? "ninguno" : pendientes.length}</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+          )}
+        </h2>
+        {(ancho || verPend) && (
+          <div id="pl-pend-cuerpo">
+            <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
+            <Lista titulo="" tipo="tarea" lado="personal" due="" items={pendientes} days={days} />
+          </div>
+        )}
+      </section>
       <div className="pl-dias">
         {days.map((d, i) => {
           const f = pd(d);
@@ -66,11 +96,6 @@ export default function Planner({ days, hoy }: { days: string[]; hoy: string }) 
           );
         })}
       </div>
-      <section className="pl-pend" aria-labelledby="pl-pend-h">
-        <h2 id="pl-pend-h">Pendientes</h2>
-        <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
-        <Lista titulo="" tipo="tarea" lado="personal" due="" items={pendientes} days={days} />
-      </section>
     </div>
   );
 }

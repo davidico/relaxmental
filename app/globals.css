@@ -1672,3 +1672,21 @@ h2,h3,.sheet-title{text-wrap:balance}
 .pl-tareas .pl-lado:not(:has(.pl-items li)) .pl-items{display:none}
 .pl-tareas .pl-lado:not(:has(.pl-items li)) .pl-form{flex:1 1 100%;padding-bottom:var(--e2)}
 .pl-items li.pl-visto{gap:6px}.pl-visto .pl-marca{width:28px}
+
+/* ---------- Versión 4.3: Pendientes arriba y plegado en el móvil ---------- */
+.pl-pend{padding:0}
+.pl-pend.abierto{padding:0 14px 10px}
+.pl-pend h2{line-height:1.3}
+.pl-pend-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 14px;border:none;border-radius:10px;background:none;font:inherit;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+.pl-pend.abierto .pl-pend-btn{padding-inline:0}
+.pl-pend-btn span:first-child{flex:1}
+.pl-pend-n{font-size:14px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.pl-pend-btn svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.pl-pend-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
+.pl-pend-btn:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.pl-pend .pl-nota{margin-top:0}
+@media (min-width:1180px){
+  .pl-dias{grid-column:1;grid-row:1}
+  .pl-pend,.pl-pend.abierto{grid-column:2;grid-row:1;padding:14px}
+}
+@media (prefers-reduced-motion:reduce){.pl-pend-btn svg{transition:none}}
