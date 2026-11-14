@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "3.10";
+export const VERSION = "4.0";
 export const VERSION_FECHA = "13 de noviembre de 2026";
 export const NOVEDADES = [
+  "Al borrar una tarea o una meta sale «Deshacer» durante unos segundos, por si fue sin querer",
   "Diseño nuevo, más limpio: una sola letra (Inter), fondo blanco, grises neutros y listas con líneas finas",
   "Semana con título corto y las fechas debajo; pestañas Planner y Horario con subrayado",
   "Las cuentas nuevas empiezan con hábitos y carpetas generales, listas para cualquier persona",

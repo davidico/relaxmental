@@ -4,6 +4,7 @@ import { useState } from "react";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
+import { borrarTarea } from "@/lib/deshacer";
 
 /**
  * Weekly planner: cada día con tus metas (en lo que quieres avanzar), separadas en
@@ -209,7 +210,7 @@ function Editar({ x, days, onClose }: { x: Tarea; days: string[]; onClose: () =>
           type="button"
           className="btn ghost sm pl-borrar"
           onClick={() => {
-            remove("tareas", x.id);
+            borrarTarea(x, save, remove);
             onClose();
           }}
         >

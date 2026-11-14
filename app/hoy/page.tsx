@@ -17,6 +17,7 @@ import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
 import WhenDialog from "@/components/WhenDialog";
+import { borrarTarea } from "@/lib/deshacer";
 import PushBanner from "@/components/PushBanner";
 import RulesQuiz, { type Modo } from "@/components/RulesQuiz";
 import { armarPlantilla } from "@/lib/imagen";
@@ -389,7 +390,7 @@ function Atrasadas({ day }: { day: string }) {
             <div className="hy-atr-b">
               <button className="btn sm" onClick={() => save("tareas", { ...x, due: day })} aria-label={`Pasar a hoy: ${x.title}`}>Hoy</button>
               <button className="btn ghost sm" onClick={() => setOtroDia(x)} aria-label={`Pasar a otro día: ${x.title}`}>Otro día</button>
-              <button className="btn ghost sm" onClick={() => remove("tareas", x.id)} aria-label={`Ya no hacerlo: ${x.title}`}>Ya no</button>
+              <button className="btn ghost sm" onClick={() => borrarTarea(x, save, remove)} aria-label={`Ya no hacerlo: ${x.title}`}>Ya no</button>
             </div>
           </li>
         ))}

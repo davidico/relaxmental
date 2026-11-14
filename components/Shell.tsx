@@ -1,5 +1,6 @@
 "use client";
 
+import Deshacer from "./Deshacer";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -108,6 +109,7 @@ function Frame({ children }: { children: ReactNode }) {
         {mode === "loading" ? <div className="empty">Cargando…</div> : children}
       </div>
       {mode !== "loading" && <QuickTask enPagina={path === "/tareas"} />}
+      <Deshacer />
       {focus && <FocusBar key={focus.id + focus.created} task={focus} onClose={() => setFocus(null)} />}
       <nav className="tabs" aria-label="Secciones">
         <div className="side-brand">

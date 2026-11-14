@@ -1,5 +1,6 @@
 "use client";
 
+import { borrarTarea } from "@/lib/deshacer";
 import { useData } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
 import type { Bloque } from "@/lib/plan";
@@ -126,7 +127,7 @@ export function TaskRow({ x }: { x: Tarea }) {
           )}
         </div>
       </div>
-      <button className="x" aria-label={`Borrar tarea: ${x.title}`} onClick={() => remove("tareas", x.id)}>✕</button>
+      <button className="x" aria-label={`Borrar tarea: ${x.title}`} onClick={() => borrarTarea(x, save, remove)}>✕</button>
     </div>
   );
 }
