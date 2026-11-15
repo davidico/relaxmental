@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/lib/data";
-import VoiceButton from "@/components/VoiceButton";
 import Compromisos from "@/components/Compromisos";
 import Avisos from "@/components/Avisos";
+import ReglasEditor from "@/components/ReglasEditor";
 import Memoria from "@/components/Memoria";
 import SemanaTipo from "@/components/SemanaTipo";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
@@ -40,32 +40,19 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
 export default function PerfilPantalla({ ver }: { ver: Ver }) {
   const { email, mode, perfil, savePerfil } = useData();
   const cloud = mode === "cloud";
-  const [reglas, setReglas] = useState("");
-  const [guardadas, setGuardadas] = useState("");
-  const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
+  const [estado, setEstado] = useState<"" | "ok">("");
   const [editando, setEditando] = useState(false);
   const [quiz, setQuiz] = useState(false);
   const [quizModo, setQuizModo] = useState<Modo>("completar");
   const [confirmCero, setConfirmCero] = useState(false);
   const [pendiente, setPendiente] = useState(false);
   useEffect(() => setPendiente(hayPreguntasPendientes()), [quiz]);
-  const [todas, setTodas] = useState(true);
 
   /* Las reglas vienen del perfil (se guardan en la nube, o en el teléfono sin conexión) */
-  const txtPerfil = perfil.reglas?.text ?? "";
-  useEffect(() => {
-    if (mode === "loading") return;
-    setGuardadas(txtPerfil);
-    setReglas((r) => (editando ? r : txtPerfil));
-  }, [mode, txtPerfil]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const cambiado = reglas !== guardadas;
-
-  const guardar = async (texto: string = reglas) => {
+  const guardadas = mode === "loading" ? "" : (perfil.reglas?.text ?? "");
+  const guardar = (texto: string) => {
     savePerfil("reglas", { text: texto, updated: new Date().toISOString() });
     savePerfil("revision", { mes: new Date().toISOString().slice(0, 7) });
-    setReglas(texto);
-    setGuardadas(texto);
     setEstado("ok");
     setEditando(false);
     return true;
@@ -74,15 +61,10 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
   const deCero = () => {
     if (guardadas.trim()) savePerfil("reglasRespaldo", { text: guardadas, updated: new Date().toISOString() });
     savePerfil("reglas", { text: "", updated: new Date().toISOString() });
-    setReglas("");
-    setGuardadas("");
-    setTodas(false);
     setConfirmCero(false);
     setQuizModo("inicio");
     setQuiz(true);
   };
-
-
 
   const inicial = (email ?? "D")[0].toUpperCase();
   const pant = PANTALLAS.find((p) => p.ver === (ver === "reglas" ? "memoria" : ver));
@@ -116,41 +98,22 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
       {ver === "memoria" && (
         <>
-      <h2 className="banda" id="reglas-h">Mis reglas: lo que tú le dices</h2>
+      <div className="banda banda-fila">
+        <h2 id="reglas-h">Mis reglas: lo que tú le dices</h2>
+        {/* El lápiz: las abre a pantalla completa para leerlas y cambiarlas con tranquilidad */}
+        <button className="banda-btn" aria-label="Leer y editar mis reglas" title="Leer y editar" onClick={() => setEditando(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" /></svg>
+        </button>
+      </div>
       <section className="card pad rules-card" aria-labelledby="reglas-h">
-        {estado === "ok" && !todas && <p role="status" className="vok">✓ Reglas guardadas</p>}
-        <div id="reglas-zona">
-        {(todas || editando) && <p className="hint">
-          Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las usa para armar tu semana. Tus compromisos con fecha y tus tareas pendientes se añaden solos.
-        </p>}
-        {editando ? (
+        {guardadas.trim() ? (
           <>
-            <label htmlFor="reglas" className="sr-only">Mis reglas</label>
-            <textarea id="reglas" className="rules" value={reglas} onChange={(e) => { setReglas(e.target.value); setEstado(""); }} spellCheck autoFocus />
-            <VoiceButton onText={(p) => { setReglas((r) => [r.trimEnd(), ...p].filter(Boolean).join("\n\n")); setEstado(""); }} />
+            {/* Un resumen: tocarlo (o el lápiz) abre las reglas enteras */}
+            <button type="button" className="rules-previa" onClick={() => setEditando(true)} aria-label="Leer y editar mis reglas">
+              <span className="rules-view" id="reglas-texto">{guardadas}</span>
+              <span className="rules-mas">Leer todo y editar</span>
+            </button>
             <div className="row actions">
-              <button className="btn" onClick={() => guardar()} disabled={!cambiado || estado === "guardando"}>
-                {estado === "guardando" ? "Guardando…" : "Guardar reglas"}
-              </button>
-              <button className="btn ghost" onClick={() => { setReglas(guardadas); setEstado(""); setEditando(false); }}>Cancelar</button>
-            </div>
-            <p role="status" className={estado === "error" ? "verr" : "hint"}>
-              {estado === "error" ? "⚠ No se pudieron guardar. Inténtalo otra vez." : cambiado ? "Tienes cambios sin guardar" : ""}
-            </p>
-          </>
-        ) : todas && !guardadas.trim() ? (
-          <>
-            <p className="rules-view all">Aún no tienes reglas. Te hago unas preguntas y las escribo por ti.</p>
-            <div className="row actions">
-              <button className="btn" onClick={() => { setQuizModo("inicio"); setQuiz(true); }}>Empezar</button>
-              <button className="btn ghost" onClick={() => setEditando(true)}>Escribirlas yo</button>
-            </div>
-          </>
-        ) : todas ? (
-          <>
-            <p className="rules-view all" id="reglas-texto">{guardadas}</p>
-            <div className="row actions">
-              <button className="btn" onClick={() => setEditando(true)}>Editar reglas</button>
               {cloud && (
                 <button className="btn ghost" onClick={() => { setQuizModo("completar"); setQuiz(true); }}>{pendiente ? "Seguir con las preguntas" : "Completar con preguntas"}</button>
               )}
@@ -166,9 +129,17 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
               <button className="linkbtn rq-reset" onClick={() => setConfirmCero(true)}>Empezar de cero</button>
             )}
           </>
-        ) : null}
-        </div>
+        ) : (
+          <>
+            <p className="rules-view all">Aún no tienes reglas. Te hago unas preguntas y las escribo por ti.</p>
+            <div className="row actions">
+              <button className="btn" onClick={() => { setQuizModo("inicio"); setQuiz(true); }}>Empezar</button>
+              <button className="btn ghost" onClick={() => setEditando(true)}>Escribirlas yo</button>
+            </div>
+          </>
+        )}
       </section>
+      {editando && <ReglasEditor texto={guardadas} onGuardar={guardar} onClose={() => setEditando(false)} />}
       {quiz && <RulesQuiz modo={quizModo} reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
       <h2 className="banda" id="mem-h">Lo que ha aprendido de ti</h2>
       <p className="sub ia-sabe-sub">Lo apunta sola cuando guardas tu diario o pides el resumen de la semana. Puedes corregirlo, borrarlo o añadirle cosas.</p>

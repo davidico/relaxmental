@@ -2358,3 +2358,20 @@ textarea.st-nombre:focus{border-color:var(--primary);background:var(--surface);o
 @media (prefers-reduced-motion:reduce){.av-sw::before,.av-sw::after{transition:none}}
 .av-info p{margin:0}
 .av-info ul{margin:var(--e2) 0 var(--e3);padding-left:20px;display:flex;flex-direction:column;gap:var(--e1)}
+
+/* ---------- Versión 8.6: las reglas, con lápiz y a pantalla completa ---------- */
+.banda-fila{display:flex;align-items:center;justify-content:space-between;gap:var(--e3);padding-block:2px}
+.banda-fila h2{margin:0;font:inherit;color:inherit}
+.banda-btn{flex:none;width:44px;height:44px;margin-right:-10px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--primary);display:grid;place-items:center;cursor:pointer}
+.banda-btn:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.banda-btn:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.banda-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rules-previa{display:flex;flex-direction:column;gap:var(--e2);width:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.rules-previa .rules-view{display:block;max-height:9.6em}
+.rules-mas{color:var(--primary);font-weight:500;font-size:15px;min-height:28px}
+.rules-previa:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:8px}
+.re-h{margin:0 0 0 var(--e1);font-size:18px;font-weight:600;color:var(--ink)}
+.re-descartar{min-height:44px;padding:0 var(--e2);color:var(--muted)}
+.re-ayuda{margin:0 0 var(--e3)}
+textarea.re-texto{display:block;width:100%;min-height:50vh;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;resize:none;overflow:hidden;font-size:17px;line-height:1.65;color:var(--ink)}
+textarea.re-texto:focus{outline:none;box-shadow:none}
