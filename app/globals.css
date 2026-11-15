@@ -2247,3 +2247,7 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .et-op[aria-checked="true"]>svg:first-child{stroke:var(--primary)}
 .et-op:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .et-pie{display:flex;justify-content:flex-end;padding-top:var(--e2)}
+/* En el móvil la nota nueva sale del botón +; «Nueva» solo en pantallas anchas, donde el + es solo para tareas */
+@media (max-width:899px){.k-nueva{display:none}}
+.kd-borrar{color:var(--warn)}
+.k-head{margin-bottom:var(--e3)}

@@ -69,7 +69,6 @@ export default function Cerebro() {
   const [abierta, setAbierta] = useState<number | null>(null);
   const [nueva, setNueva] = useState<"texto" | "lista" | null>(null);
   const [secMenu, setSecMenu] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [newMenu, setNewMenu] = useState(false);
   const [form, setForm] = useState<{ mode: "seccion" | "carpeta" | "renombrar"; name: string; privada: boolean } | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -114,7 +113,7 @@ export default function Cerebro() {
   const guardarForm = () => {
     if (!form || !form.name.trim() || !sec) return;
     const name = form.name.trim();
-    if (form.mode === "renombrar") save("carpetas", { ...sec, name, privada: form.privada });
+    if (form.mode === "renombrar") save("carpetas", sub ? { ...sub, name } : { ...sec, name, privada: form.privada });
     else if (form.mode === "seccion") {
       const c: Carpeta = { id: newId(), name, parent: null, privada: form.privada, area: COLORS[secciones.length % COLORS.length], orden: secciones.length, created: new Date().toISOString() };
       save("carpetas", c);
@@ -141,7 +140,7 @@ export default function Cerebro() {
           {sec.privada && <Lock />}
         </div>
         <div className="k-actions">
-          <div className="nv-more">
+          <div className="nv-more k-nueva">
             <button className="btn sm" aria-haspopup="menu" aria-expanded={newMenu} onClick={() => setNewMenu(!newMenu)}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nueva
             </button>
@@ -155,22 +154,6 @@ export default function Cerebro() {
                   <button role="menuitem" onClick={() => { setNewMenu(false); setNueva("lista"); }}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12l3 3 5-6" /></svg> Lista
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="nv-more">
-            <button className="nv-ib" aria-haspopup="menu" aria-expanded={menu} aria-label={`Opciones de ${sec.name}`} onClick={() => setMenu(!menu)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-            </button>
-            {menu && (
-              <>
-                <div className="dial-backdrop clear" onClick={() => setMenu(false)} />
-                <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu(false)}>
-                  <button role="menuitem" autoFocus onClick={() => { setMenu(false); setForm({ mode: "carpeta", name: "", privada: false }); }}>Nueva etiqueta en {sec.name}</button>
-                  <button role="menuitem" onClick={() => { setMenu(false); setForm({ mode: "renombrar", name: sec.name, privada: !!sec.privada }); }}>Renombrar o hacer privada</button>
-                  {sub && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sub) ? `c:${sub.id}` : "ocupada"); }}>Borrar etiqueta «{sub.name}»</button>}
-                  {!sub && sec.id !== "notas" && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sec) ? `c:${sec.id}` : "ocupada"); }}>Borrar sección</button>}
                 </div>
               </>
             )}
@@ -216,6 +199,17 @@ export default function Cerebro() {
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               <span>Nueva sección</span>
             </button>
+            <hr />
+            <button className="kd-fila" onClick={() => { setSecMenu(false); setForm({ mode: "renombrar", name: (sub ?? sec).name, privada: !!sec.privada }); }}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" /></svg>
+              <span>Renombrar «{(sub ?? sec).name}»</span>
+            </button>
+            {(sub || sec.id !== "notas") && (
+              <button className="kd-fila kd-borrar" onClick={() => { setSecMenu(false); const c = sub ?? sec; setConfirm(borrable(c) ? `c:${c.id}` : "ocupada"); }}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" /></svg>
+                <span>Borrar «{(sub ?? sec).name}»</span>
+              </button>
+            )}
           </nav>
         </div>,
         document.body,
@@ -230,10 +224,10 @@ export default function Cerebro() {
       {form && (
         <form className="card pad k-form" onSubmit={(e) => { e.preventDefault(); guardarForm(); }}>
           <label htmlFor="k-name" className="flabel">
-            {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva etiqueta en ${sec.name}` : "Nombre de la sección"}
+            {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva etiqueta en ${sec.name}` : sub ? "Nombre de la etiqueta" : "Nombre de la sección"}
           </label>
           <input id="k-name" autoFocus placeholder={form.mode === "carpeta" ? "Ej. Cosas por orar, Inspiración…" : "Ej. Espiritual, Trabajo…"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          {form.mode !== "carpeta" && (
+          {form.mode !== "carpeta" && !(form.mode === "renombrar" && sub) && (
             <label className="k-check">
               <input type="checkbox" checked={form.privada} onChange={(e) => setForm({ ...form, privada: e.target.checked })} />
               <span>Privada: no se muestra al abrir Cerebro, solo desde el menú ☰</span>

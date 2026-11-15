@@ -12,13 +12,20 @@ import Preguntar, { type ModoPregunta } from "./Preguntar";
 
 type Mode = "task" | "note" | "entreno" | "ask" | null;
 
+/** En el Cerebro, la nota nueva va a la sección o etiqueta que se está viendo (/cerebro#seccion/etiqueta) */
+function carpetaActual(carpetas: { id: string }[]) {
+  if (typeof location === "undefined" || !location.pathname.startsWith("/cerebro")) return "notas";
+  const [sec, sub] = decodeURIComponent(location.hash.slice(1)).split("/");
+  return [sub, sec].find((x) => x && carpetas.some((c) => c.id === x)) ?? "notas";
+}
+
 /**
  * Botón flotante.
  * - Escritorio: "+ Nueva tarea" (la captura de notas está en el panel).
  * - Móvil: "+" que abre dos opciones: Nueva tarea / Nueva nota.
  */
 export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) {
-  const { save, hoy } = useData();
+  const { save, hoy, carpetas } = useData();
   const wide = useWide();
   const [menu, setMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
@@ -103,7 +110,7 @@ export default function QuickTask({ enPagina = false }: { enPagina?: boolean }) 
 
       {mode === "entreno" && <Entreno onClose={close} />}
       {mode === "ask" && <Preguntar modo={modoPregunta} onClose={close} />}
-      {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: "notas", tipo: "texto" }} onClose={close} />}
+      {mode === "note" && <NoteView list={[]} index={0} nueva={{ folder: carpetaActual(carpetas), tipo: "texto" }} onClose={close} />}
       {mode === "task" && <TaskSheet onClose={() => { close(); setInicial(undefined); }} inicial={inicial} />}
     </>
   );
