@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
 import { anotar, bestStreak, cantidad, conUnidad, streak, tipoDe, total, type TipoHabito } from "@/lib/habits";
@@ -32,7 +33,7 @@ export function CamposHabito({
       {!sinNombre && (
       <div className="hf-campo">
         <label htmlFor={`${idp}-n`}>Nombre</label>
-        <input id={`${idp}-n`} required autoComplete="off" placeholder={v.tipo === "dejar" ? "Ej.: Redes sociales…" : v.tipo === "medible" ? "Ej.: Correr…" : "Ej.: Leer un capítulo…"} value={v.name} onChange={(e) => onChange({ name: e.target.value })} />
+        <input id={`${idp}-n`} required autoFocus autoComplete="off" placeholder={v.tipo === "dejar" ? "Ej.: Redes sociales…" : v.tipo === "medible" ? "Ej.: Correr…" : "Ej.: Leer un capítulo…"} value={v.name} onChange={(e) => onChange({ name: e.target.value })} />
       </div>
       )}
       <div className="hf-campo">
@@ -246,7 +247,7 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
         </div>
       </div>
       {anotando && <HabitoAnotar h={h} dia={anotando} onClose={() => setAnotando(null)} />}
-      {ventana === "ajustes" && (
+      {ventana === "ajustes" && createPortal(
         <div className="modal hd-modal" onClick={(e) => e.target === e.currentTarget && setVentana("")}>
           <form
             className="sheet hf hd-hoja"
@@ -266,9 +267,10 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
               <button type="submit" className="btn">Guardar</button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body,
       )}
-      {ventana === "borrar" && (
+      {ventana === "borrar" && createPortal(
         <div className="modal hd-modal" onClick={(e) => e.target === e.currentTarget && setVentana("")}>
           <div className="sheet hd-hoja" role="alertdialog" aria-modal="true" aria-labelledby="hd-bo" aria-describedby="hd-bo-d">
             <h2 id="hd-bo" className="hd-hoja-h">¿Borrar «{h.name}»?</h2>
@@ -278,7 +280,8 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
               <button type="button" className="btn warn" onClick={() => { remove("habitos", h.id); onClose(); }}>Borrar</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

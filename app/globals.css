@@ -2276,3 +2276,8 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 @media (min-width:900px){.hd-modal{align-items:center}.hd-hoja{border-radius:14px}}
 .hd-hoja-h{color:var(--ink)}
 .ts-campo>.aq-hab-nota{margin:0;color:var(--ok)}
+
+/* ---------- Versión 7.9: «Nuevo hábito» arriba a la derecha, en una ventanita ---------- */
+.hb-head{align-items:center}
+.btn.sm.hb-nuevo{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px}
+.hb-nuevo svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}

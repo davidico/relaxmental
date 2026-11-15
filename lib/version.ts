@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "7.8";
+export const VERSION = "7.9";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hábitos: «Nuevo» está arriba a la derecha y se abre en una ventanita; ya no hay un formulario al final de la lista",
   "Hábitos: toca la tarjeta entera y se abre su mes (ya no hay «Ver mes»); el check sigue marcando hoy",
   "Dentro de un hábito, los tres puntitos de arriba abren el menú: cambiar nombre, «Tipo y meta» y borrar, cada uno en su ventanita",
   "Al añadir algo a tu día o tocar un momento, el hábito se elige en un desplegable en vez de una fila de botones",

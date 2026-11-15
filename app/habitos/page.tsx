@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
 import { bestStreak, cantidad, conUnidad, sortHabits, streak, tipoDe, type TipoHabito } from "@/lib/habits";
@@ -46,11 +47,17 @@ export default function Habitos() {
   const [abierto, setAbierto] = useState<string | null>(null);
   const [anotando, setAnotando] = useState<Habito | null>(null);
   const [nuevo, setNuevo] = useState(VACIO);
+  const [creando, setCreando] = useState(false);
   const list = sortHabits(habitos);
 
   return (
     <>
-      <h1>Hábitos</h1>
+      <div className="hb-head">
+        <h1>Hábitos</h1>
+        <button className="btn ghost sm hb-nuevo" onClick={() => { setNuevo(VACIO); setCreando(true); }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nuevo
+        </button>
+      </div>
       <div className="sem-vista" role="tablist" aria-label="Cómo ver tus hábitos">
         <button role="tab" aria-selected={vista === "lista"} onClick={() => setVista("lista")}>Mis hábitos</button>
         <button role="tab" aria-selected={vista === "semana"} onClick={() => setVista("semana")}>Semana</button>
@@ -105,29 +112,38 @@ export default function Habitos() {
                 );
               })
             ) : (
-              <div className="card empty">Todavía no tienes hábitos. Añade el primero abajo.</div>
+              <div className="card empty">Todavía no tienes hábitos. Toca «Nuevo», arriba, para añadir el primero.</div>
             )}
           </div>
-          <h2 className="banda" id="hb-nuevo-h">Nuevo hábito</h2>
+        </>
+      )}
+
+      {/* Nuevo hábito: una ventanita con lo que hay que escribir */}
+      {creando && createPortal(
+        <div className="modal hd-modal" onClick={(e) => e.target === e.currentTarget && setCreando(false)} onKeyDown={(e) => e.key === "Escape" && setCreando(false)}>
           <form
-            className="card pad hf newhabit"
+            className="sheet hf hd-hoja"
+            role="dialog"
+            aria-modal="true"
             aria-labelledby="hb-nuevo-h"
             onSubmit={(e) => {
               e.preventDefault();
               const c = leerCampos(nuevo);
               if (!c.name) return;
               save("habitos", { id: newId(), ...c, area: "salud", orden: habitos.length, hechos: {}, created: new Date().toISOString() });
-              setNuevo(VACIO);
+              setCreando(false);
             }}
           >
+            <h2 id="hb-nuevo-h" className="hd-hoja-h">Nuevo hábito</h2>
             <CamposHabito v={nuevo} onChange={(p) => setNuevo((x) => ({ ...x, ...p }))} idp="hn" />
-            <div>
-              <button className="btn" type="submit" disabled={!nuevo.name.trim()}>Añadir hábito</button>
+            <div className="hd-hoja-pie">
+              <button type="button" className="btn ghost" onClick={() => setCreando(false)}>Cancelar</button>
+              <button type="submit" className="btn" disabled={!nuevo.name.trim()}>Añadir</button>
             </div>
           </form>
-        </>
+        </div>,
+        document.body,
       )}
-
       {abierto && <HabitoDetalle id={abierto} onClose={() => setAbierto(null)} />}
       {anotando && <HabitoAnotar h={habitos.find((x) => x.id === anotando.id) ?? anotando} dia={t} onClose={() => setAnotando(null)} />}
     </>
