@@ -10,6 +10,7 @@
 
 import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
+import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, responderNotasClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
@@ -584,13 +585,17 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
 
   /* Tareas con hora: aviso a esa hora (una sola vez) */
   const { results: ts } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(user_email).all<{ data: string }>();
+  type T = { id?: string; title?: string; step?: string; due?: string; hora?: string; done?: boolean; momento?: string };
+  const tareas: T[] = [];
   for (const r of ts) {
-    let x: { id?: string; title?: string; step?: string; due?: string; hora?: string; done?: boolean } | null = null;
     try {
-      x = JSON.parse(r.data);
+      const x = JSON.parse(r.data) as T | null;
+      if (x && typeof x === "object") tareas.push(x);
     } catch {
-      continue;
+      /* una tarea rara no deja sin avisos a las demás */
     }
+  }
+  for (const x of tareas) {
     if (!x || x.done || x.due !== date || typeof x.hora !== "string" || !/^\d{2}:\d{2}$/.test(x.hora) || typeof x.title !== "string") continue;
     const m = toMin(x.hora);
     if (!(m <= min && min - m < 10)) continue;
@@ -602,6 +607,24 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
       body: x.step ? `Tarea. Primer paso: ${x.step}` : "Es la hora de esta tarea.",
       tag: `tarea-${x.id}`,
       url: "/hoy",
+    });
+    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  }
+
+  /* Subtareas sin hacer: cuando termina el momento al que pertenecen, un aviso que vibra y se queda en pantalla (uno por momento) */
+  for (const [b, titulos] of subtareasQueQuedaron(tareas, blocks, date, min)) {
+    const key = `sub ${date} ${b.s}|${b.t}`;
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes === 0) continue;
+    const { sent, failed } = await notifyUser(env, user_email, {
+      title: titulos.length === 1 ? `Te quedó: ${titulos[0]}` : `Te quedaron ${titulos.length} cosas de «${b.t}»`,
+      body:
+        titulos.length === 1
+          ? `Era parte de «${b.t}», que terminó a las ${b.e}. ¿La haces ahora? Toca para verla.`
+          : `${titulos.map((t) => `• ${t}`).join("\n")}\n«${b.t}» terminó a las ${b.e}. Toca para verlas.`,
+      tag: `sub-${date}-${b.s}`,
+      url: "/hoy",
+      fuerte: "1",
     });
     if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
   }

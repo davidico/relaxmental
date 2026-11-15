@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "6.4";
+export const VERSION = "6.5";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Si termina un momento y una de sus subtareas sigue sin hacer, te llega un aviso que vibra fuerte y se queda en pantalla hasta que lo toques",
   "Semana, más simple: es tu planner, con una pestaña para lo personal y otra para el trabajo (metas, tareas y pendientes de cada lado)",
   "El horario de la semana, hora por hora, ahora está en Hoy, en la pestaña «Semana»",
   "En el planner, los días que ya pasaron sin nada ocupan una sola línea",

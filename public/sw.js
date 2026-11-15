@@ -68,6 +68,8 @@ self.addEventListener("push", (e) => {
       /* Insignia de la barra de avisos de Android: tiene que ser de un solo color con fondo transparente
          (con el ícono normal, Android pinta un cuadro blanco) */
       badge: "/badge-96.png",
+      /* Los avisos importantes (algo que se quedó sin hacer) vibran más y se quedan en pantalla hasta tocarlos */
+      ...(d.fuerte ? { vibrate: [300, 150, 300, 150, 600], requireInteraction: true, silent: false } : { vibrate: [200, 100, 200] }),
       data: { url: d.url || "/hoy" },
     }),
   );
