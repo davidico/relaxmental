@@ -10,6 +10,28 @@ import VoiceButton from "./VoiceButton";
 import Etiqueta from "./Etiqueta";
 import { appendParas, suggestTitle } from "@/lib/voice";
 
+/** Dónde se tocó la nota para editarla */
+type Foco = { titulo?: number; texto?: number; item?: string };
+
+/** Cuántas letras hay desde el principio de `caja` hasta el punto tocado (para poner el cursor ahí al editar) */
+function letrasHasta(caja: Element, x: number, y: number): number | undefined {
+  const d = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  let nodo: Node | null = null;
+  let off = 0;
+  if (d.caretPositionFromPoint) {
+    const p = d.caretPositionFromPoint(x, y);
+    if (p) [nodo, off] = [p.offsetNode, p.offset];
+  } else if (document.caretRangeFromPoint) {
+    const r = document.caretRangeFromPoint(x, y);
+    if (r) [nodo, off] = [r.startContainer, r.startOffset];
+  }
+  if (!nodo || !caja.contains(nodo)) return undefined;
+  const r = document.createRange();
+  r.setStart(caja, 0);
+  r.setEnd(nodo, off);
+  return r.toString().length;
+}
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const textOf = (n: Pick<Nota, "tipo" | "items" | "text">) =>
   n.tipo === "lista" ? (n.items ?? []).map((i) => i.t).join("\n") : n.text;
@@ -37,7 +59,8 @@ export default function NoteView({
   const { save, remove } = useData();
   const note = nueva ? null : list[index];
   const [editing, setEditing] = useState(!!nueva);
-  const [menu, setMenu] = useState(false);
+  /* Dónde se tocó la nota para editarla: en el título, en el texto (cuántas letras desde el principio) o en un elemento de la lista */
+  const [foco, setFoco] = useState<Foco>({});
   const [confirm, setConfirm] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -45,7 +68,6 @@ export default function NoteView({
   const go = (d: number) => {
     const i = index + d;
     if (!onIndex || i < 0 || i >= list.length) return;
-    setMenu(false);
     setConfirm(false);
     onIndex(i);
     box.current?.scrollTo({ top: 0 });
@@ -53,8 +75,9 @@ export default function NoteView({
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") (editing && !nueva ? setEditing(false) : onClose());
+      /* Editando, Escape lo maneja el editor (guarda y cierra) */
       if (editing) return;
+      if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") go(1);
       if (e.key === "ArrowLeft") go(-1);
     };
@@ -66,7 +89,8 @@ export default function NoteView({
     };
   });
 
-  if (editing) return <NoteEdit key={note?.id ?? "nueva"} note={note} nueva={nueva} onDone={() => (nueva ? onClose() : setEditing(false))} />;
+  /* Como en Google Keep: al volver de editar se guarda y se cierra la nota */
+  if (editing) return <NoteEdit key={note?.id ?? "nueva"} note={note} nueva={nueva} foco={foco} onDone={onClose} />;
   if (!note) return null;
 
   const toggle = (it: ItemLista) =>
@@ -82,20 +106,9 @@ export default function NoteView({
         </button>
         {list.length > 1 && <span className="nv-count">{index + 1} de {list.length}</span>}
         <span style={{ flex: 1 }} />
-        <button className="btn sm nv-edit" onClick={() => setEditing(true)}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" /></svg>
-          Editar
+        <button className="nv-ib nv-borrar" aria-label="Borrar nota" title="Borrar nota" onClick={() => setConfirm(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6" /></svg>
         </button>
-        <div className="nv-more">
-          <button className="nv-ib" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-          </button>
-          {menu && (
-            <div className="menu" role="menu">
-              <button role="menuitem" autoFocus className="danger" onClick={() => { setMenu(false); setConfirm(true); }}>Borrar nota</button>
-            </div>
-          )}
-        </div>
       </div>
 
       <div
@@ -111,7 +124,19 @@ export default function NoteView({
           if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
         }}
       >
-        <article className="nv-paper">
+        <article
+          className="nv-paper nv-tocar"
+          onClick={(e) => {
+            /* Tocar en cualquier parte de la nota la abre para editar, con el cursor donde se tocó (menos en botones, casillas y enlaces) */
+            const t = e.target as HTMLElement;
+            if (t.closest("button, a, input, label, .confirm")) return;
+            if (t.closest(".nv-title")) setFoco({ titulo: letrasHasta(t.closest(".nv-title")!, e.clientX, e.clientY) });
+            else if (t.closest(".nv-item")) setFoco({ item: t.closest<HTMLElement>(".nv-item")!.dataset.id });
+            else if (t.closest(".nv-text")) setFoco({ texto: letrasHasta(t.closest(".nv-text")!, e.clientX, e.clientY) });
+            else setFoco({});
+            setEditing(true);
+          }}
+        >
           {confirm && (
             <div className="confirm">
               ¿Borrar esta nota?
@@ -126,23 +151,23 @@ export default function NoteView({
           {note.tipo === "lista" ? (
             <div className="nv-list">
               {pend.map((it) => (
-                <label key={it.id} className="nv-item">
-                  <input type="checkbox" checked={false} onChange={() => toggle(it)} />
+                <div key={it.id} className="nv-item" data-id={it.id}>
+                  <label className="nv-ck"><input type="checkbox" checked={false} aria-label={`Marcar hecho: ${it.t}`} onChange={() => toggle(it)} /></label>
                   <span>{it.t}</span>
-                </label>
+                </div>
               ))}
               {hechas.length > 0 && (
                 <>
                   <p className="nv-done">{hechas.length} {hechas.length === 1 ? "hecha" : "hechas"}</p>
                   {hechas.map((it) => (
-                    <label key={it.id} className="nv-item ok">
-                      <input type="checkbox" checked onChange={() => toggle(it)} />
+                    <div key={it.id} className="nv-item ok" data-id={it.id}>
+                      <label className="nv-ck"><input type="checkbox" checked aria-label={`Desmarcar: ${it.t}`} onChange={() => toggle(it)} /></label>
                       <span>{it.t}</span>
-                    </label>
+                    </div>
                   ))}
                 </>
               )}
-              {!note.items?.length && <p className="nv-empty">Lista vacía. Toca «Editar» para añadir.</p>}
+              {!note.items?.length && <p className="nv-empty">Lista vacía. Toca aquí para añadir.</p>}
             </div>
           ) : (
             <RichView html={note.html} text={note.text} className="nv-text" />
@@ -171,8 +196,17 @@ export default function NoteView({
  * Editar (o crear) una nota, como Google Keep: una hoja limpia con «Título» y «Nota».
  * Las opciones están arriba a la derecha. Al volver (←) se guarda sola.
  */
-function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder: string; tipo: "texto" | "lista" }; onDone: () => void }) {
-  const { save } = useData();
+function NoteEdit({ note, nueva, foco = {}, onDone }: { note: Nota | null; nueva?: { folder: string; tipo: "texto" | "lista" }; foco?: Foco; onDone: () => void }) {
+  const { save, remove } = useData();
+  const [confirm, setConfirm] = useState(false);
+  const tituloRef = useRef<HTMLTextAreaElement>(null);
+  /* Si se tocó el título, el cursor va ahí */
+  useEffect(() => {
+    if (foco.titulo === undefined || !tituloRef.current) return;
+    tituloRef.current.focus();
+    tituloRef.current.setSelectionRange(foco.titulo, foco.titulo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const inicial = useRef<string>("");
   const [d, setD] = useState(() => {
     const v = {
@@ -186,8 +220,7 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
     inicial.current = JSON.stringify(v);
     return v;
   });
-  const [focusId, setFocusId] = useState<string | null>(null);
-  const [menu, setMenu] = useState<"" | "mas">("");
+  const [focusId, setFocusId] = useState<string | null>(foco.item ?? null);
   const [formato, setFormato] = useState(false);
   const items = d.items.filter((i) => i.t.trim());
   const vacia = d.tipo === "lista" ? !items.length && !d.title.trim() : !d.text.trim() && !d.title.trim();
@@ -232,7 +265,13 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
       });
     }
     onDone();
-  };
+  };  /* Escape = volver (guardando), salvo que haya una hoja o un aviso abiertos encima */
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".et-sheet, .wd") && volver();
+    addEventListener("keydown", k);
+    return () => removeEventListener("keydown", k);
+  });
+
 
   return (
     <div className="nv ke" role="dialog" aria-modal="true" aria-label={note ? "Editar nota" : "Nueva nota"}>
@@ -266,27 +305,25 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
             if (title) setD((x) => (x.title.trim() ? x : { ...x, title }));
           }}
         />
-        <div className="nv-more">
-          <button className="nv-ib ke-ib" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu === "mas"} onClick={() => setMenu(menu === "mas" ? "" : "mas")}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
-          </button>
-          {menu === "mas" && (
-            <>
-              <div className="dial-backdrop clear" onClick={() => setMenu("")} />
-              <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu("")}>
-                <button role="menuitem" autoFocus onClick={onDone}>{note ? "Descartar cambios" : "Descartar nota"}</button>
-              </div>
-            </>
-          )}
-        </div>
+        {/* El basurero: una nota nueva se descarta; una que ya existía se borra (después de preguntar) */}
+        <button className="nv-ib ke-ib nv-borrar" aria-label={note ? "Borrar nota" : "Descartar nota"} title={note ? "Borrar nota" : "Descartar nota"} onClick={() => (note ? setConfirm(true) : onDone())}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6" /></svg>
+        </button>
       </div>
 
       <div className="nv-body">
         <div className="nv-paper ke-paper">
+          {confirm && note && (
+            <div className="confirm">
+              ¿Borrar esta nota?
+              <button className="btn sm warn" onClick={() => { remove("notas", note.id); onDone(); }}>Borrar</button>
+              <button className="btn sm ghost" onClick={() => setConfirm(false)}>No</button>
+            </div>
+          )}
           <label htmlFor="ne-title" className="sr-only">Título</label>
-          <TextoCrece id="ne-title" className="ke-title" placeholder="Título" value={d.title} onTexto={(title) => setD((x) => ({ ...x, title }))} />
+          <TextoCrece ref={tituloRef} id="ne-title" className="ke-title" placeholder="Título" value={d.title} onTexto={(title) => setD((x) => ({ ...x, title }))} />
           {d.tipo === "texto" ? (
-            <RichEditor id="ne-text" big bare tools={formato} autoFocus={!note} value={d.html} placeholder="Nota" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={volver} />
+            <RichEditor id="ne-text" big bare tools={formato} autoFocus={!note} foco={foco.titulo === undefined && foco.item === undefined ? (foco.texto ?? (note ? -1 : undefined)) : undefined} value={d.html} placeholder="Nota" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={volver} />
           ) : (
             <ul className="ne-list" aria-label="Elementos de la lista">
               {d.items.map((it, i) => (

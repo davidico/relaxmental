@@ -23,6 +23,7 @@ export default function RichEditor({
   id,
   bare,
   tools = true,
+  foco,
 }: {
   value: string;
   onChange: (html: string, text: string) => void;
@@ -35,6 +36,8 @@ export default function RichEditor({
   bare?: boolean;
   /** Mostrar la barra de formato */
   tools?: boolean;
+  /** Dónde poner el cursor al abrir: cuántas letras desde el principio del texto (al tocar una nota para editarla) */
+  foco?: number;
 }) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -59,6 +62,29 @@ export default function RichEditor({
     },
     onUpdate: ({ editor: ed }) => onChange(ed.isEmpty ? "" : ed.getHTML(), ed.getText({ blockSeparator: "\n" }).replace(/\n{3,}/g, "\n\n")),
   });
+
+  /* Al tocar una nota para editarla, el cursor va justo donde se tocó (contando letras, igual que en la vista) */
+  useEffect(() => {
+    if (!editor || foco === undefined) return;
+    if (foco < 0) {
+      editor.commands.focus("end");
+      return;
+    }
+    let pos = -1;
+    let antes = 0;
+    editor.state.doc.descendants((n, p) => {
+      if (pos >= 0) return false;
+      if (n.isText) {
+        const largo = n.text?.length ?? 0;
+        if (foco <= antes + largo) pos = p + (foco - antes);
+        antes += largo;
+      }
+      return true;
+    });
+    if (pos >= 0) editor.chain().focus().setTextSelection(pos).run();
+    else editor.commands.focus("end");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   /* Si el valor cambia desde fuera (p. ej. tras guardar se vacía), actualizar el editor */
   useEffect(() => {
