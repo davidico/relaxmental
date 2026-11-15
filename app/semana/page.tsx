@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Planner, { type Lado } from "@/components/Planner";
 import { MES, addD, mondayOf, pd, today } from "@/lib/dates";
 
-/** Semana: el planner de lo que te propones, con una pestaña para tu vida personal y otra para el trabajo */
+/** Planner: lo que te propones cada día de la semana, con una pestaña para tu vida personal y otra para el trabajo, cada una con su color */
 export default function Semana() {
   const [lado, setLado] = useState<Lado>("personal");
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function Semana() {
 
   return (
     <>
-      <h1>Semana</h1>
+      <h1>Planner</h1>
       <div className="sem-nav">
         <p className="sem-rango">{rango}</p>
         <div className="wnav">
@@ -42,11 +42,14 @@ export default function Semana() {
           </button>
         </div>
       </div>
-      <div className="sem-vista" role="tablist" aria-label="Qué parte de tu vida">
-        <button role="tab" aria-selected={lado === "personal"} onClick={() => cambiar("personal")}>Personal</button>
-        <button role="tab" aria-selected={lado === "trabajo"} onClick={() => cambiar("trabajo")}>Trabajo</button>
+      {/* Cada lado tiene su color: lo personal, el verde petróleo de la app; el trabajo, índigo. Dentro, todo lo que lleva acento usa el de su lado */}
+      <div className="plan" data-lado={lado}>
+        <div className="sem-vista plan-tabs" role="tablist" aria-label="Qué parte de tu vida">
+          <button role="tab" className="plan-tab personal" aria-selected={lado === "personal"} onClick={() => cambiar("personal")}>Personal</button>
+          <button role="tab" className="plan-tab trabajo" aria-selected={lado === "trabajo"} onClick={() => cambiar("trabajo")}>Trabajo</button>
+        </div>
+        <Planner days={days} hoy={t} lado={lado} />
       </div>
-      <Planner days={days} hoy={t} lado={lado} />
     </>
   );
 }

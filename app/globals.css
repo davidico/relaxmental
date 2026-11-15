@@ -2423,3 +2423,24 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
   .wrap>.pag-lista{max-width:860px;margin-inline:0}
 }
 .profile a.btn{text-decoration:none}
+
+/* ---------- Versión 9.4: el Planner, con un color para lo personal y otro para el trabajo ---------- */
+/* Lo personal usa el verde petróleo de la app; el trabajo, índigo. Dentro del planner, todo lo que lleva acento
+   (checks, «+ Añadir», el punto de hoy, botones de sus hojas) toma el color de su lado. */
+.plan{--lado-personal:#2f5d62;--lado-trabajo:#4a5ab0}
+.plan[data-lado="trabajo"]{--primary:#4a5ab0;--primary-hover:#3e4c98;--primary-edge:#4a5ab0;--pine:#4a5ab0;--pine-soft:#eceefa;--sage:#d5daf3;--focus:#4a5ab0}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .plan{--lado-personal:#9ccbcc;--lado-trabajo:#aab6f0}
+  :root:not([data-theme="light"]) .plan[data-lado="trabajo"]{--primary:#aab6f0;--primary-hover:#c1caf5;--primary-edge:#aab6f0;--pine:#b7c1f3;--pine-soft:#262a3d;--sage:#30365a;--focus:#aab6f0}
+}
+:root[data-theme="dark"] .plan{--lado-personal:#9ccbcc;--lado-trabajo:#aab6f0}
+:root[data-theme="dark"] .plan[data-lado="trabajo"]{--primary:#aab6f0;--primary-hover:#c1caf5;--primary-edge:#aab6f0;--pine:#b7c1f3;--pine-soft:#262a3d;--sage:#30365a;--focus:#aab6f0}
+/* Las dos pestañas enseñan siempre su color (un punto delante); la elegida, además, en el texto y la raya */
+.plan-tab{display:inline-flex;align-items:center;gap:var(--e2)}
+.plan-tab::before{content:"";width:9px;height:9px;border-radius:50%;flex:none;background:var(--lado-personal)}
+.plan-tab.trabajo::before{background:var(--lado-trabajo)}
+.plan-tabs .plan-tab[aria-selected="true"]{color:var(--lado-personal);border-bottom-color:var(--lado-personal)}
+.plan-tabs .plan-tab.trabajo[aria-selected="true"]{color:var(--lado-trabajo);border-bottom-color:var(--lado-trabajo)}
+/* La cabecera de cada día, con un tinte del color de su lado (el día de hoy, un poco más) */
+.plan .pl-cab,.plan .pl-cab.petroleo,.plan .pl-cab.suave,.plan .pl-cab.apagado,.plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}
+.plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--primary) 14%,var(--surface))}
