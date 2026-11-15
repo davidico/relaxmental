@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "6.3";
+export const VERSION = "6.4";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Semana, más simple: es tu planner, con una pestaña para lo personal y otra para el trabajo (metas, tareas y pendientes de cada lado)",
+  "El horario de la semana, hora por hora, ahora está en Hoy, en la pestaña «Semana»",
+  "En el planner, los días que ya pasaron sin nada ocupan una sola línea",
   "Al ponerle hora a una tarea, si esa hora cae dentro de un momento de tu día (por ejemplo, en medio de «Iglesia»), te pregunta si va dentro de ese momento o aparte",
   "«Pregúntale a tus notas» puede responder con Claude: en cuanto guardes tu clave de Anthropic en Cloudflare, Claude lee todo tu Cerebro y te responde (debajo verás «Responde Claude»)",
   "«Pregúntale a tus notas» responde mucho mejor: ahora lee todas tus notas (no solo unas pocas) y te da la lista completa por fechas, con cada nota para abrirla",

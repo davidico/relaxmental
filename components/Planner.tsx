@@ -9,15 +9,11 @@ import { borrarTarea } from "@/lib/deshacer";
 import HoraInput from "./HoraInput";
 
 /**
- * Weekly planner: cada día con tus metas (en lo que quieres avanzar), separadas en
- * Personal y Trabajo; debajo, las tareas puntuales de ese día; a un lado, las tareas sin día.
+ * Weekly planner de un lado de tu vida (Personal o Trabajo, una pestaña cada uno): cada día con tus metas
+ * (en lo que quieres avanzar) y debajo las tareas puntuales de ese día; arriba (o a un lado), las tareas sin día.
  * Todo sale en Hoy (y en el itinerario si tiene hora).
  */
-type Lado = "personal" | "trabajo";
-const LADOS: { id: Lado; label: string }[] = [
-  { id: "personal", label: "Personal" },
-  { id: "trabajo", label: "Trabajo" },
-];
+export type Lado = "personal" | "trabajo";
 const ladoDe = (x: Tarea): Lado => (x.lado === "trabajo" ? "trabajo" : "personal");
 const orden = (a: Tarea, b: Tarea) => (a.hora || "99").localeCompare(b.hora || "99") || a.created.localeCompare(b.created);
 
@@ -37,9 +33,9 @@ export function leerHora(texto: string): { title: string; hora?: string; fin?: s
   return title ? { title, hora } : { title: texto.trim() };
 }
 
-export default function Planner({ days, hoy }: { days: string[]; hoy: string }) {
+export default function Planner({ days, hoy, lado }: { days: string[]; hoy: string; lado: Lado }) {
   const { tareas } = useData();
-  const pendientes = tareas.filter((x) => !x.done && !x.due).sort(orden);
+  const pendientes = tareas.filter((x) => !x.done && !x.due && ladoDe(x) === lado).sort(orden);
   const [verPend, setVerPend] = useState(false);
   /* En pantallas anchas (dos columnas) Pendientes está siempre abierto */
   const [ancho, setAncho] = useState(false);
@@ -69,31 +65,35 @@ export default function Planner({ days, hoy }: { days: string[]; hoy: string }) 
           <div id="pl-pend-cuerpo">
             <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
             <CuandoPendientes pendientes={pendientes} />
-            <Lista titulo="" tipo="tarea" lado="personal" due="" items={pendientes} days={days} />
+            <Lista titulo="" tipo="tarea" lado={lado} due="" items={pendientes} days={days} />
           </div>
         )}
       </section>
       <div className="pl-dias">
         {days.map((d, i) => {
           const f = pd(d);
-          const deDia = tareas.filter((x) => x.due === d).sort(orden);
-          /* Los días que ya pasaron se ven, pero apagados y sin tocar */
+          const deDia = tareas.filter((x) => x.due === d && ladoDe(x) === lado).sort(orden);
+          const metas = deDia.filter(esMeta);
+          const sueltas = deDia.filter((x) => !esMeta(x));
+          /* Los días que ya pasaron se ven, pero apagados y sin tocar; si no tuvieron nada, en una sola línea */
           const pasado = d < hoy;
+          const vacio = pasado && !deDia.length;
           const tono = d === hoy ? "pl-hoy" : pasado ? "apagado" : i >= 5 ? "suave" : "petroleo";
           return (
-            <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${d < hoy ? " pasado" : ""}`} aria-labelledby={`pl-${d}`}>
+            <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${pasado ? " pasado" : ""}${vacio ? " vacio" : ""}`} aria-labelledby={`pl-${d}`}>
               <h2 id={`pl-${d}`} className={`pl-cab ${tono}`}>
                 {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : pasado ? " · Ya pasó" : ""}`}
+                {vacio && <span className="pl-cab-n"> · nada</span>}
               </h2>
-              <div className="pl-lados">
-                {LADOS.map((l) => (
-                  <Lista key={l.id} titulo={l.label} tipo="meta" lado={l.id} due={d} items={deDia.filter((x) => esMeta(x) && ladoDe(x) === l.id)} days={days} soloVer={pasado} />
-                ))}
-              </div>
-              {(!pasado || deDia.some((x) => !esMeta(x))) && (
-                <div className="pl-tareas">
-                  <Lista titulo="Tareas" tipo="tarea" lado="personal" due={d} items={deDia.filter((x) => !esMeta(x))} days={days} soloVer={pasado} />
-                </div>
+              {!vacio && (
+                <>
+                  {(!pasado || metas.length > 0) && <Lista titulo="Metas" tipo="meta" lado={lado} due={d} items={metas} days={days} soloVer={pasado} />}
+                  {(!pasado || sueltas.length > 0) && (
+                    <div className="pl-tareas">
+                      <Lista titulo="Tareas" tipo="tarea" lado={lado} due={d} items={sueltas} days={days} soloVer={pasado} />
+                    </div>
+                  )}
+                </>
               )}
             </section>
           );
@@ -119,7 +119,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
       ...(t.hora && due ? { hora: t.hora, ...(t.fin ? { fin: t.fin } : {}) } : {}),
       done: false,
       created: new Date().toISOString(),
-      ...(tipo === "meta" ? { lado, meta: true } : { meta: false }),
+      ...(tipo === "meta" ? { lado, meta: true } : { meta: false, ...(lado === "trabajo" ? { lado } : {}) }),
     });
     setNuevo("");
   };
@@ -151,7 +151,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
         )}
       </ul>
       {soloVer ? null : nuevo === null ? (
-        <button className="pl-add" onClick={() => setNuevo("")} aria-label={tipo === "meta" ? `Añadir meta en ${titulo}` : due ? "Añadir tarea" : "Añadir pendiente"}>
+        <button className="pl-add" onClick={() => setNuevo("")} aria-label={`${tipo === "meta" ? "Añadir meta" : due ? "Añadir tarea" : "Añadir pendiente"} ${lado === "trabajo" ? "de trabajo" : "personal"}`}>
           + Añadir
         </button>
       ) : (
@@ -162,7 +162,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
             anadir();
           }}
         >
-          <label htmlFor={id} className="sr-only">{tipo === "meta" ? `Nueva meta en ${titulo}` : "Nueva tarea"}</label>
+          <label htmlFor={id} className="sr-only">{tipo === "meta" ? `Nueva meta ${lado === "trabajo" ? "de trabajo" : "personal"}` : "Nueva tarea"}</label>
           <input
             id={id}
             autoFocus
@@ -241,15 +241,13 @@ function Editar({ x, days, onClose }: { x: Tarea; days: string[]; onClose: () =>
                 <option value="tarea">Tarea</option>
               </select>
             </div>
-            {meta && (
-              <div className="pl-campo">
-                <label htmlFor={`pe-l-${x.id}`}>Lado</label>
-                <select id={`pe-l-${x.id}`} value={lado} onChange={(e) => setLado(e.target.value as Lado)}>
-                  <option value="personal">Personal</option>
-                  <option value="trabajo">Trabajo</option>
-                </select>
-              </div>
-            )}
+            <div className="pl-campo">
+              <label htmlFor={`pe-l-${x.id}`}>Pestaña</label>
+              <select id={`pe-l-${x.id}`} value={lado} onChange={(e) => setLado(e.target.value as Lado)}>
+                <option value="personal">Personal</option>
+                <option value="trabajo">Trabajo</option>
+              </select>
+            </div>
           </div>
           {due && (
             <div className="pl-campo">

@@ -14,6 +14,7 @@ import Entreno from "@/components/Entreno";
 import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
 import { Tira } from "@/components/DiaTira";
+import HorarioSemana from "@/components/HorarioSemana";
 import { bloqueDeSub } from "@/lib/momentos";
 import TaskSheet from "@/components/TaskSheet";
 import ResumenSemana from "@/components/ResumenSemana";
@@ -39,6 +40,19 @@ export default function Hoy() {
   const blocks = planFor(dia);
   const evs = eventos[dia] ?? [];
   const [editing, setEditing] = useState(false);
+  /* Dos pestañas: el día (la línea) y la semana hora por hora */
+  const [vista, setVista] = useState<"dia" | "semana">("dia");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("mi-semana-hoy-vista") === "semana") setVista("semana");
+    } catch {}
+  }, []);
+  const cambiarVista = (v: "dia" | "semana") => {
+    setVista(v);
+    try {
+      localStorage.setItem("mi-semana-hoy-vista", v);
+    } catch {}
+  };
   const [entreno, setEntreno] = useState(false);
   /* El aviso del bloque de ejercicio abre directamente el entrenamiento (/hoy#entreno) */
   useEffect(() => {
@@ -65,6 +79,7 @@ export default function Hoy() {
           <span className="hy-month-m">{MES[fecha.getMonth()][0].toUpperCase() + MES[fecha.getMonth()].slice(1)}{evTxt ? " · " : ""}</span>
           {evTxt}
         </p>
+        {vista === "dia" && (
         <div className="hy-dias" role="group" aria-label="Cambiar de día">
           <button type="button" className="hy-dia-b" aria-label="Día anterior" onClick={() => ir(addD(dia, -1))}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" /></svg>
@@ -74,12 +89,20 @@ export default function Hoy() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg>
           </button>
         </div>
+        )}
       </header>
+      <div className="sem-vista hy-vista" role="tablist" aria-label="Cómo ver tu tiempo">
+        <button role="tab" aria-selected={vista === "dia"} onClick={() => cambiarVista("dia")}>Día</button>
+        <button role="tab" aria-selected={vista === "semana"} onClick={() => cambiarVista("semana")}>Semana</button>
+      </div>
       {esHoy && <PushBanner />}
 
       <div className="hy-dots" aria-hidden="true" />
       {esHoy && <ReglasAviso />}
 
+      {vista === "semana" ? (
+        <HorarioSemana />
+      ) : (
       <div className="hy-grid">
         <div className="hy-col">
           {esHoy && <Atrasadas day={t} />}
@@ -106,6 +129,7 @@ export default function Hoy() {
           )}
         </div>
       </div>
+      )}
       {editing && <DayEditor date={dia} onClose={() => setEditing(false)} />}
       {entreno && <Entreno onClose={() => setEntreno(false)} />}
     </div>

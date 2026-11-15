@@ -2121,3 +2121,8 @@ textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8p
 .ts-dentro legend{line-height:1.4;overflow-wrap:anywhere}
 .ts-dentro .ts-modos label{max-width:100%}
 .ts-dentro .ts-modos span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Versión 6.4: Hoy con pestañas Día | Semana; Semana es el planner con pestañas Personal | Trabajo ---------- */
+.hy-vista{margin:var(--e2) 0 var(--e4)}
+.pl-dia.vacio .pl-cab{border-bottom:none}
+.pl-cab-n{font-weight:400;color:var(--muted)}
