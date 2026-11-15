@@ -7,7 +7,7 @@ import type { ItemLista, Nota } from "@/lib/types";
 import TextoCrece from "./TextoCrece";
 import RichEditor, { RichView } from "./RichEditor";
 import VoiceButton from "./VoiceButton";
-import { folderOptions } from "@/lib/folders";
+import Etiqueta from "./Etiqueta";
 import { appendParas, suggestTitle } from "@/lib/voice";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -18,7 +18,7 @@ const textOf = (n: Pick<Nota, "tipo" | "items" | "text">) =>
  * Una nota a pantalla completa.
  * - Lectura (por defecto): título, fecha y texto. Deslizar o las flechas pasan a la anterior/siguiente.
  *   «Editar» a la derecha. En una lista se pueden marcar casillas sin entrar a editar.
- * - Edición: título, texto o lista, carpeta y dictado.
+ * - Edición: título, texto o lista, etiqueta (su carpeta, en la cajita de abajo) y dictado.
  */
 export default function NoteView({
   list,
@@ -34,7 +34,7 @@ export default function NoteView({
   /** Crear una nota nueva en esta carpeta, del tipo indicado */
   nueva?: { folder: string; tipo: "texto" | "lista" };
 }) {
-  const { save, remove, carpetas } = useData();
+  const { save, remove } = useData();
   const note = nueva ? null : list[index];
   const [editing, setEditing] = useState(!!nueva);
   const [menu, setMenu] = useState(false);
@@ -69,8 +69,6 @@ export default function NoteView({
   if (editing) return <NoteEdit key={note?.id ?? "nueva"} note={note} nueva={nueva} onDone={() => (nueva ? onClose() : setEditing(false))} />;
   if (!note) return null;
 
-  const folder = carpetas.find((c) => c.id === note.folder);
-  const parent = folder?.parent ? carpetas.find((c) => c.id === folder.parent) : undefined;
   const toggle = (it: ItemLista) =>
     save("notas", { ...note, items: (note.items ?? []).map((x) => (x.id === it.id ? { ...x, ok: !x.ok } : x)), updated: new Date().toISOString() });
   const pend = (note.items ?? []).filter((i) => !i.ok);
@@ -124,7 +122,6 @@ export default function NoteView({
           <h1 id="nv-title" className="nv-title">{note.title || (note.tipo === "lista" ? "Lista" : "Sin título")}</h1>
           <p className="nv-date">
             {note.created && fdate(note.created)}
-            {folder && <span> · {parent ? `${parent.name} › ` : ""}{folder.name}</span>}
           </p>
           {note.tipo === "lista" ? (
             <div className="nv-list">
@@ -150,6 +147,9 @@ export default function NoteView({
           ) : (
             <RichView html={note.html} text={note.text} className="nv-text" />
           )}
+          <div className="et-fila">
+            <Etiqueta folder={note.folder ?? "notas"} onChange={(id) => save("notas", { ...note, folder: id, updated: new Date().toISOString() })} />
+          </div>
         </article>
       </div>
 
@@ -172,7 +172,7 @@ export default function NoteView({
  * Las opciones están arriba a la derecha. Al volver (←) se guarda sola.
  */
 function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder: string; tipo: "texto" | "lista" }; onDone: () => void }) {
-  const { save, carpetas } = useData();
+  const { save } = useData();
   const inicial = useRef<string>("");
   const [d, setD] = useState(() => {
     const v = {
@@ -187,12 +187,10 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
     return v;
   });
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [menu, setMenu] = useState<"" | "carpeta" | "mas">("");
+  const [menu, setMenu] = useState<"" | "mas">("");
   const [formato, setFormato] = useState(false);
   const items = d.items.filter((i) => i.t.trim());
   const vacia = d.tipo === "lista" ? !items.length && !d.title.trim() : !d.text.trim() && !d.title.trim();
-  const opciones = folderOptions(carpetas);
-  const carpeta = opciones.find((o) => o.id === d.folder)?.label ?? "Notas";
 
   const setTipo = () => {
     if (d.tipo === "texto") {
@@ -269,25 +267,6 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
           }}
         />
         <div className="nv-more">
-          <button className="nv-ib ke-ib" aria-label="Carpeta" title="Carpeta" aria-haspopup="menu" aria-expanded={menu === "carpeta"} onClick={() => setMenu(menu === "carpeta" ? "" : "carpeta")}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
-          </button>
-          {menu === "carpeta" && (
-            <>
-              <div className="dial-backdrop clear" onClick={() => setMenu("")} />
-              <div className="menu ke-menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu("")}>
-                <p className="k-menulabel">Guardar en</p>
-                {opciones.map((o, i) => (
-                  <button key={o.id} role="menuitemradio" aria-checked={o.id === d.folder} autoFocus={o.id === d.folder || (i === 0 && !opciones.some((x) => x.id === d.folder))} onClick={() => { setD({ ...d, folder: o.id }); setMenu(""); }}>
-                    <span>{o.label}</span>
-                    {o.id === d.folder && <svg className="ke-ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        <div className="nv-more">
           <button className="nv-ib ke-ib" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu === "mas"} onClick={() => setMenu(menu === "mas" ? "" : "mas")}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="12" cy="19" r="1.6" /></svg>
           </button>
@@ -306,7 +285,6 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
         <div className="nv-paper ke-paper">
           <label htmlFor="ne-title" className="sr-only">Título</label>
           <TextoCrece id="ne-title" className="ke-title" placeholder="Título" value={d.title} onTexto={(title) => setD((x) => ({ ...x, title }))} />
-          <p className="ke-where">En {carpeta}</p>
           {d.tipo === "texto" ? (
             <RichEditor id="ne-text" big bare tools={formato} autoFocus={!note} value={d.html} placeholder="Nota" onChange={(html, text) => setD((x) => ({ ...x, html, text }))} onSubmit={volver} />
           ) : (
@@ -341,6 +319,9 @@ function NoteEdit({ note, nueva, onDone }: { note: Nota | null; nueva?: { folder
               </li>
             </ul>
           )}
+          <div className="et-fila">
+            <Etiqueta folder={d.folder} onChange={(folder) => setD((x) => ({ ...x, folder }))} />
+          </div>
         </div>
       </div>
     </div>

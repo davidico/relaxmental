@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useData, newId } from "@/lib/data";
 import { fdate } from "@/lib/dates";
 import type { Area, Carpeta, Nota } from "@/lib/types";
 import { RichView } from "@/components/RichEditor";
 import NoteView from "@/components/NoteView";
+import { IconoEtiqueta } from "@/components/Etiqueta";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
@@ -132,32 +134,11 @@ export default function Cerebro() {
     <>
       <div className="k-head">
         <div className="k-sec">
-          <button className="k-secbtn" aria-haspopup="menu" aria-expanded={secMenu} onClick={() => setSecMenu(!secMenu)}>
-            <h1>{sec.name}</h1>
-            {sec.privada && <Lock />}
-            <svg className="k-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-            <span className="sr-only">Cambiar de sección</span>
+          <button className="nv-ib k-burger" aria-label="Secciones y etiquetas" aria-haspopup="dialog" aria-expanded={secMenu} onClick={() => setSecMenu(true)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
           </button>
-          {secMenu && (
-            <>
-              <div className="dial-backdrop clear" onClick={() => setSecMenu(false)} />
-              <div className="menu k-secmenu" role="menu" onKeyDown={(e) => e.key === "Escape" && setSecMenu(false)}>
-                {visibles.map((c, i) => (
-                  <button key={c.id} role="menuitem" autoFocus={i === 0} aria-current={c.id === sec.id || undefined} onClick={() => { setSecMenu(false); setQ(""); go(c.id); }}>
-                    <span>{c.name}</span><small>{count(c)}</small>
-                  </button>
-                ))}
-                {privadas.length > 0 && <p className="k-menulabel">Privadas</p>}
-                {privadas.map((c) => (
-                  <button key={c.id} role="menuitem" aria-current={c.id === sec.id || undefined} onClick={() => { setSecMenu(false); setQ(""); go(c.id); }}>
-                    <span><Lock /> {c.name}</span><small>{count(c)}</small>
-                  </button>
-                ))}
-                <hr />
-                <button role="menuitem" onClick={() => { setSecMenu(false); setForm({ mode: "seccion", name: "", privada: false }); }}>+ Nueva sección</button>
-              </div>
-            </>
-          )}
+          <h1 className="k-titulo">{sub?.name ?? sec.name}</h1>
+          {sec.privada && <Lock />}
         </div>
         <div className="k-actions">
           <div className="nv-more">
@@ -186,9 +167,9 @@ export default function Cerebro() {
               <>
                 <div className="dial-backdrop clear" onClick={() => setMenu(false)} />
                 <div className="menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setMenu(false)}>
-                  <button role="menuitem" autoFocus onClick={() => { setMenu(false); setForm({ mode: "carpeta", name: "", privada: false }); }}>Nueva carpeta en {sec.name}</button>
+                  <button role="menuitem" autoFocus onClick={() => { setMenu(false); setForm({ mode: "carpeta", name: "", privada: false }); }}>Nueva etiqueta en {sec.name}</button>
                   <button role="menuitem" onClick={() => { setMenu(false); setForm({ mode: "renombrar", name: sec.name, privada: !!sec.privada }); }}>Renombrar o hacer privada</button>
-                  {sub && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sub) ? `c:${sub.id}` : "ocupada"); }}>Borrar carpeta «{sub.name}»</button>}
+                  {sub && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sub) ? `c:${sub.id}` : "ocupada"); }}>Borrar etiqueta «{sub.name}»</button>}
                   {!sub && sec.id !== "notas" && <button role="menuitem" className="danger" onClick={() => { setMenu(false); setConfirm(borrable(sec) ? `c:${sec.id}` : "ocupada"); }}>Borrar sección</button>}
                 </div>
               </>
@@ -196,6 +177,49 @@ export default function Cerebro() {
           </div>
         </div>
       </div>
+      {secMenu && createPortal(
+        <div className="kd-fondo" onClick={(e) => e.target === e.currentTarget && setSecMenu(false)} onKeyDown={(e) => e.key === "Escape" && setSecMenu(false)}>
+          <nav className="kd" aria-label="Secciones y etiquetas">
+            <div className="kd-head">
+              <p className="kd-marca">Cerebro</p>
+              <button className="nv-ib" aria-label="Cerrar" onClick={() => setSecMenu(false)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+            {[...visibles, ...privadas].map((c, i) => {
+              const hijas = carpetas.filter((x) => x.parent === c.id).sort(byOrder);
+              const ir = (sub2 = "") => { setSecMenu(false); setQ(""); go(c.id, sub2); };
+              return (
+                <div key={c.id} className="kd-grupo">
+                  {i === visibles.length && <p className="kd-lbl">Privadas</p>}
+                  <button className="kd-fila" autoFocus={c.id === sec.id && !sub} aria-current={c.id === sec.id && !sub ? "page" : undefined} onClick={() => ir()}>
+                    {c.privada ? <Lock /> : c.id === "notas" ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" /></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>}
+                    <span>{c.name}</span>
+                    <small>{count(c)}</small>
+                  </button>
+                  {hijas.map((k) => (
+                    <button key={k.id} className="kd-fila hija" autoFocus={sub?.id === k.id} aria-current={sub?.id === k.id ? "page" : undefined} onClick={() => ir(k.id)}>
+                      <IconoEtiqueta />
+                      <span>{k.name}</span>
+                      <small>{count(k)}</small>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+            <hr />
+            <button className="kd-fila" onClick={() => { setSecMenu(false); setForm({ mode: "carpeta", name: "", privada: false }); }}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Nueva etiqueta en {sec.name}</span>
+            </button>
+            <button className="kd-fila" onClick={() => { setSecMenu(false); setForm({ mode: "seccion", name: "", privada: false }); }}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Nueva sección</span>
+            </button>
+          </nav>
+        </div>,
+        document.body,
+      )}
       <div className="k-dots" aria-hidden="true" />
       <button className="hy-allday hy-ask k-ask" onClick={() => dispatchEvent(new CustomEvent("mi-semana:preguntar", { detail: { modo: "notas" } }))}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>
@@ -206,13 +230,13 @@ export default function Cerebro() {
       {form && (
         <form className="card pad k-form" onSubmit={(e) => { e.preventDefault(); guardarForm(); }}>
           <label htmlFor="k-name" className="flabel">
-            {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva carpeta en ${sec.name}` : "Nombre de la sección"}
+            {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva etiqueta en ${sec.name}` : "Nombre de la sección"}
           </label>
           <input id="k-name" autoFocus placeholder={form.mode === "carpeta" ? "Ej. Cosas por orar, Inspiración…" : "Ej. Espiritual, Trabajo…"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           {form.mode !== "carpeta" && (
             <label className="k-check">
               <input type="checkbox" checked={form.privada} onChange={(e) => setForm({ ...form, privada: e.target.checked })} />
-              <span>Privada: no se muestra al abrir Cerebro, solo desde el menú de secciones</span>
+              <span>Privada: no se muestra al abrir Cerebro, solo desde el menú ☰</span>
             </label>
           )}
           <div className="row actions">
@@ -223,7 +247,7 @@ export default function Cerebro() {
       )}
       {confirm === "ocupada" && (
         <div className="confirm">
-          Para borrarla tiene que estar vacía (sin notas ni carpetas).
+          Para borrarla tiene que estar vacía (sin notas ni etiquetas).
           <button className="btn sm ghost" onClick={() => setConfirm(null)}>Entendido</button>
         </div>
       )}
@@ -232,15 +256,6 @@ export default function Cerebro() {
           ¿Borrar «{byId[confirm.slice(2)]?.name}»?
           <button className="btn sm warn" onClick={() => { const id = confirm.slice(2); remove("carpetas", id); setConfirm(null); go(id === sec.id ? "notas" : sec.id); }}>Borrar</button>
           <button className="btn sm ghost" onClick={() => setConfirm(null)}>No</button>
-        </div>
-      )}
-
-      {kids.length > 0 && (
-        <div className="seg k-chips" role="group" aria-label={`Carpetas de ${sec.name}`}>
-          <button aria-pressed={!sub} onClick={() => go(sec.id)}>Todo · {count(sec)}</button>
-          {kids.map((k) => (
-            <button key={k.id} aria-pressed={sub?.id === k.id} onClick={() => go(sec.id, k.id)}>{k.name} · {count(k)}</button>
-          ))}
         </div>
       )}
 
@@ -284,7 +299,7 @@ export default function Cerebro() {
               {g.items.map(({ n, i }) => (
                 <button key={n.id} className="k-card" onClick={() => setAbierta(i)}>
                   {n.title && <span className="k-title">{n.title}</span>}
-                  {n.created && <span className="k-date">{fdate(n.created)}{mezcla && n.folder !== sec.id && byId[n.folder ?? ""] ? ` · ${byId[n.folder ?? ""].name}` : ""}</span>}
+                  {n.created && <span className="k-date">{fdate(n.created)}</span>}
                   {n.tipo === "lista" ? (
                     <span className="k-items">
                       {(n.items ?? []).filter((x) => !x.ok).slice(0, 6).map((x) => (
@@ -295,6 +310,7 @@ export default function Cerebro() {
                   ) : (
                     <RichView html={n.html} text={n.text} className="k-text" />
                   )}
+                  {mezcla && n.folder !== sec.id && byId[n.folder ?? ""] && <span className="et-chip mini">{byId[n.folder ?? ""].name}</span>}
                 </button>
               ))}
             </div>
