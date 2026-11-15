@@ -13,7 +13,7 @@ import TaskSheet from "./TaskSheet";
 import { useFocus } from "./Shell";
 import { bloqueDeSub } from "@/lib/momentos";
 import { useMarcarTarea } from "@/lib/usarMarcar";
-import { habitoDeNombre, habitoDeTarea, marcarHabito } from "@/lib/habits";
+import { habitoDeMomento, habitoDeTarea, marcarHabito } from "@/lib/habits";
 import type { Tarea } from "@/lib/types";
 import AvisoDespertar from "./AvisoDespertar";
 import Diario from "./Diario";
@@ -57,7 +57,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
       const t = tareas.find((x) => x.id === b.tarea);
       return t ? habitoDeTarea(t, habitos) : undefined;
     }
-    return habitoDeNombre(b.t, habitos);
+    return habitoDeMomento(b.t, habitos, perfil.habitosMomento);
   };
   const marcar = (b: Bloque) => {
     if (b.tarea) {
@@ -66,7 +66,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
       return;
     }
     const k = clave(b);
-    const h = habitoDeNombre(b.t, habitos);
+    const h = habitoDeMomento(b.t, habitos, perfil.habitosMomento);
     if (h) save("habitos", marcarHabito(h, dia, !hechos.has(k)));
     const lista = hechos.has(k) ? [...hechos].filter((x) => x !== k) : [...hechos, k];
     /* Se guardan los últimos 45 días */

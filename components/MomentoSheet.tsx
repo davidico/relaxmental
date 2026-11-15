@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useData } from "@/lib/data";
+import { newId, useData } from "@/lib/data";
+import { claveMomento, habitoDeMomento, sortHabits } from "@/lib/habits";
 import { toMin } from "@/lib/dates";
 import { baseDe, encajar, type Bloque } from "@/lib/plan";
 import { claveDe } from "@/lib/momentos";
@@ -15,7 +16,7 @@ import TextoCrece from "./TextoCrece";
  * Si cambia de hora o de nombre, su marca de «hecho» y sus subtareas lo siguen.
  */
 export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bloque: Bloque; onClose: () => void }) {
-  const { dias, saveDia, perfil, savePerfil, tareas, save } = useData();
+  const { dias, saveDia, perfil, savePerfil, tareas, save, habitos } = useData();
   const base = baseDe(dia, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos });
   /* En la línea, una tarea con hora puede partir un momento en dos: aquí se cambia el momento entero */
   const orig =
@@ -27,6 +28,11 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
   const [s, setS] = useState(orig.s);
   const [e, setE] = useState(orig.e);
   const [quitar, setQuitar] = useState(false);
+  /* El hábito que cuenta este momento (vale para todos los días que lo tengan): id, "" = ninguno, "nuevo" = crear uno con su nombre */
+  const actual = habitoDeMomento(orig.t, habitos, perfil.habitosMomento)?.id ?? "";
+  const [hab, setHab] = useState(actual);
+  const listaHab = sortHabits(habitos);
+  const yaExiste = habitos.some((h) => claveMomento(h.name) === claveMomento(t));
 
   useEffect(() => {
     const k = (ev: KeyboardEvent) => {
@@ -39,7 +45,22 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
   const horasMal = toMin(e) <= toMin(s);
   const puede = !!t.trim() && !horasMal;
 
+  /** Guarda a qué hábito cuenta este momento (por su nombre), creando el hábito si se pidió */
+  const guardarHabito = (nombre: string) => {
+    let id = hab;
+    if (hab === "nuevo") {
+      id = newId();
+      save("habitos", { id, name: nombre, area: "salud", orden: habitos.length, hechos: {}, created: new Date().toISOString(), tipo: "marca" });
+    }
+    const k = claveMomento(nombre);
+    const antes = perfil.habitosMomento ?? {};
+    if (hab !== actual || k !== claveMomento(orig.t)) savePerfil("habitosMomento", { ...antes, [k]: id });
+  };
+
   const aplicar = (nuevo: Bloque | null) => {
+    if (nuevo) guardarHabito(nuevo.t);
+    /* Si solo cambió el hábito, el día no se toca (sigue tu semana tipo) */
+    if (nuevo && nuevo.t === orig.t && (nuevo.sub ?? "") === (orig.sub ?? "") && nuevo.s === orig.s && nuevo.e === orig.e) return onClose();
     const resto = base.filter((b) => b !== orig);
     const despues = nuevo ? encajar(resto, [nuevo]) : resto;
     saveDia(dia, despues);
@@ -88,6 +109,22 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
         </div>
         {horasMal && <p className="verr" role="alert">⚠ Tiene que terminar después de empezar.</p>}
         <p className="ms-nota">Cambia solo este día. Si se cruza con otro momento, ese se recorta.</p>
+
+        <div role="group" aria-labelledby="ms-hab">
+          <p id="ms-hab" className="aq-lbl">¿Cuenta como hábito?</p>
+          <div className="rd-chips aq-habs">
+            <button type="button" aria-pressed={hab === ""} onClick={() => setHab("")}>No</button>
+            {listaHab.map((h) => (
+              <button key={h.id} type="button" aria-pressed={hab === h.id} onClick={() => setHab(h.id)}>{h.name}</button>
+            ))}
+            {!yaExiste && t.trim() && (
+              <button type="button" aria-pressed={hab === "nuevo"} onClick={() => setHab("nuevo")}>+ Nuevo hábito «{t.trim()}»</button>
+            )}
+          </div>
+          <p className="ms-nota ms-hab-nota">
+            {hab ? `Al marcar «${t.trim() || orig.t}» como hecho, se marca también el hábito. Vale para todos los días que tengan este momento.` : "Vale para todos los días que tengan este momento."}
+          </p>
+        </div>
 
         {quitar ? (
           <div className="aq-pie" role="group" aria-label="Confirmar">

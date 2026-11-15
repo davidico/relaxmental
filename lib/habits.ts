@@ -122,3 +122,16 @@ export function marcarHabito(h: Habito, dia: string, hecho: boolean): Habito {
   else delete hechos[dia];
   return { ...h, hechos };
 }
+
+/** La clave con la que se recuerda el hábito de un momento: su nombre en minúsculas y sin tildes */
+export const claveMomento = (nombre: string) => llanoH(nombre).replace(/\s+/g, " ").trim();
+
+/**
+ * El hábito que cuenta un momento del horario: el que la persona eligió para ese nombre (vale para todos los días),
+ * o si no eligió nada, el que se reconoce por las palabras del nombre.
+ */
+export function habitoDeMomento(nombre: string, habitos: Habito[], mapa?: Record<string, string>): Habito | undefined {
+  const k = claveMomento(nombre);
+  if (mapa && k in mapa) return mapa[k] ? habitos.find((h) => h.id === mapa[k]) : undefined;
+  return habitoDeNombre(nombre, habitos);
+}

@@ -127,6 +127,8 @@ export type Perfil = {
   tipos?: Record<string, string>;
   /** Con quién suele hablar sus temas (para la lista «Hablar con…» del diario) */
   hablarCon?: string;
+  /** Qué hábito cuenta cada momento del horario, por su nombre (en minúsculas y sin tildes): id del hábito, o "" si no cuenta */
+  habitosMomento?: Record<string, string>;
   /** El último resumen semanal de la IA */
   resumenSemana?: { semana: string; texto: string; fecha: string };
   [k: string]: unknown;

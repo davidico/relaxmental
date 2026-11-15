@@ -2146,3 +2146,4 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .aq-hab-nota{margin:var(--e2) 0 0;font-size:14px;line-height:1.4;color:var(--ok)}
 .aq-hab-nota .linkbtn{font-size:14px;min-height:0;padding:0;color:var(--pine)}
 .aq-hab-nota .linkbtn::after{content:"";position:absolute;inset:-12px -6px}
+.ms-hab-nota{margin-top:var(--e2)}
