@@ -50,12 +50,12 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
   return (
     <div className="pl">
       {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}
-      <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby="pl-pend-h">
-        <h2 id="pl-pend-h">
+      <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby={`pl-pend-h-${lado}`}>
+        <h2 id={`pl-pend-h-${lado}`}>
           {ancho ? (
             "Pendientes"
           ) : (
-            <button className="pl-pend-btn" aria-expanded={verPend} aria-controls="pl-pend-cuerpo" onClick={() => setVerPend(!verPend)}>
+            <button className="pl-pend-btn" aria-expanded={verPend} aria-controls={`pl-pend-cuerpo-${lado}`} onClick={() => setVerPend(!verPend)}>
               <span>Pendientes</span>
               <span className="pl-pend-n">{pendientes.length === 0 ? "ninguno" : pendientes.length}</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
@@ -63,7 +63,7 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
           )}
         </h2>
         {(ancho || verPend) && (
-          <div id="pl-pend-cuerpo">
+          <div id={`pl-pend-cuerpo-${lado}`}>
             <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
             <CuandoPendientes pendientes={pendientes} />
             <Lista titulo="" tipo="tarea" lado={lado} due="" items={pendientes} days={days} />
@@ -81,8 +81,8 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
           const vacio = pasado && !deDia.length;
           const tono = d === hoy ? "pl-hoy" : pasado ? "apagado" : i >= 5 ? "suave" : "petroleo";
           return (
-            <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${pasado ? " pasado" : ""}${vacio ? " vacio" : ""}`} aria-labelledby={`pl-${d}`}>
-              <h2 id={`pl-${d}`} className={`pl-cab ${tono}`}>
+            <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${pasado ? " pasado" : ""}${vacio ? " vacio" : ""}`} aria-labelledby={`pl-${d}-${lado}`}>
+              <h2 id={`pl-${d}-${lado}`} className={`pl-cab ${tono}`}>
                 {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : pasado ? " · Ya pasó" : ""}`}
                 {vacio && <span className="pl-cab-n"> · nada</span>}
               </h2>

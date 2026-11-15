@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "9.7";
+export const VERSION = "9.8";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "En el Planner se pasa de Personal a Trabajo deslizando con el dedo (o tocando la pestaña): los dos lados se deslizan y la rayita de la pestaña viaja con ellos",
   "El Planner toma los colores del ícono de la app: lo personal en verde oliva y el trabajo en dorado",
   "En el Planner, el lado de Trabajo pasa de índigo a un morado más fuerte, para que se distinga bien de lo personal",
   "Planificar la semana: los domingos a las 21:00 te llega un aviso para planificar la semana que viene (si aún no lo hiciste); al tocarlo se abre tu Planner en esa semana",
