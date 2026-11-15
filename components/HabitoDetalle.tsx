@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
-import { TIPOS, anotar, bestStreak, cantidad, conUnidad, streak, tipoDe, total, type TipoHabito } from "@/lib/habits";
+import { anotar, bestStreak, cantidad, conUnidad, streak, tipoDe, total, type TipoHabito } from "@/lib/habits";
 import type { Habito } from "@/lib/types";
 import { toggleHecho } from "./ui";
 import HabitoAnotar from "./HabitoAnotar";
+import TextoCrece from "./TextoCrece";
 
 const LETRAS = ["L", "M", "M", "J", "V", "S", "D"];
 
@@ -15,17 +16,25 @@ export function CamposHabito({
   v,
   onChange,
   idp,
+  sinNombre,
+  onSalir,
 }: {
   v: { name: string; tipo: TipoHabito; unidad: string; objetivo: string };
   onChange: (p: Partial<{ name: string; tipo: TipoHabito; unidad: string; objetivo: string }>) => void;
   idp: string;
+  /** Sin el campo del nombre (cuando el nombre se cambia en otro sitio) */
+  sinNombre?: boolean;
+  /** Al salir de un campo de texto (para guardar al momento) */
+  onSalir?: () => void;
 }) {
   return (
     <>
+      {!sinNombre && (
       <div className="hf-campo">
         <label htmlFor={`${idp}-n`}>Nombre</label>
         <input id={`${idp}-n`} required autoComplete="off" placeholder={v.tipo === "dejar" ? "Ej.: Redes sociales…" : v.tipo === "medible" ? "Ej.: Correr…" : "Ej.: Leer un capítulo…"} value={v.name} onChange={(e) => onChange({ name: e.target.value })} />
       </div>
+      )}
       <div className="hf-campo">
         <label htmlFor={`${idp}-t`}>Tipo</label>
         <select id={`${idp}-t`} value={v.tipo} onChange={(e) => onChange({ tipo: e.target.value as TipoHabito })}>
@@ -38,11 +47,11 @@ export function CamposHabito({
         <div className="hf-dos">
           <div className="hf-campo">
             <label htmlFor={`${idp}-u`}>Unidad</label>
-            <input id={`${idp}-u`} autoComplete="off" autoCapitalize="none" maxLength={12} placeholder="km, páginas, min…" value={v.unidad} onChange={(e) => onChange({ unidad: e.target.value })} />
+            <input id={`${idp}-u`} autoComplete="off" autoCapitalize="none" maxLength={12} placeholder="km, páginas, min…" value={v.unidad} onChange={(e) => onChange({ unidad: e.target.value })} onBlur={onSalir} />
           </div>
           <div className="hf-campo">
             <label htmlFor={`${idp}-o`}>Meta del día (opcional)</label>
-            <input id={`${idp}-o`} inputMode="decimal" autoComplete="off" placeholder="Ej.: 5" value={v.objetivo} onChange={(e) => onChange({ objetivo: e.target.value.replace(/[^\d.,]/g, "").slice(0, 7) })} />
+            <input id={`${idp}-o`} inputMode="decimal" autoComplete="off" placeholder="Ej.: 5" value={v.objetivo} onChange={(e) => onChange({ objetivo: e.target.value.replace(/[^\d.,]/g, "").slice(0, 7) })} onBlur={onSalir} />
           </div>
         </div>
       )}
@@ -61,7 +70,8 @@ export const leerCampos = (v: { name: string; tipo: TipoHabito; unidad: string; 
 
 /**
  * Un hábito a pantalla completa: su mes en un calendario (tocas un día para marcarlo, también los pasados),
- * sus rachas, y abajo cambiarlo o borrarlo.
+ * sus rachas, y abajo sus ajustes. Todo se cambia ahí mismo y se guarda solo: el nombre arriba (se toca y se escribe)
+ * y el tipo, la unidad y la meta debajo del calendario. Sin botón «Cambiar».
  */
 export default function HabitoDetalle({ id, onClose }: { id: string; onClose: () => void }) {
   const { habitos, save, remove, hoy } = useData();
@@ -71,9 +81,20 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
     return new Date(d.getFullYear(), d.getMonth(), 1, 12);
   });
   const [anotando, setAnotando] = useState<string | null>(null);
-  const [editando, setEditando] = useState(false);
   const [confirmar, setConfirmar] = useState(false);
-  const [campos, setCampos] = useState({ name: "", tipo: "marca" as TipoHabito, unidad: "", objetivo: "" });
+  const [campos, setCampos] = useState(() => ({
+    name: h?.name ?? "",
+    tipo: (h ? tipoDe(h) : "marca") as TipoHabito,
+    unidad: h?.unidad ?? "",
+    objetivo: h?.objetivo ? String(h.objetivo).replace(".", ",") : "",
+  }));
+  const [nombre, setNombre] = useState(h?.name ?? "");
+  const [guardado, setGuardado] = useState(false);
+  useEffect(() => {
+    if (!guardado) return;
+    const t = setTimeout(() => setGuardado(false), 2500);
+    return () => clearTimeout(t);
+  }, [guardado]);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -83,6 +104,22 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
   if (!h) return null;
 
   const tipo = tipoDe(h);
+  /* Guarda los ajustes al momento. Al cambiar el tipo o la meta de un medible, se recalcula qué días cuentan como hechos */
+  const guardar = (v: typeof campos) => {
+    const c = leerCampos({ ...v, name: h.name });
+    let nuevo: Habito = { ...h, ...c };
+    if (c.tipo === "medible") for (const [d, x] of Object.entries(nuevo.cantidades ?? {})) nuevo = anotar(nuevo, d, x);
+    if (JSON.stringify(nuevo) === JSON.stringify(h)) return;
+    save("habitos", nuevo);
+    setGuardado(true);
+  };
+  const guardarNombre = () => {
+    const n = nombre.trim();
+    if (!n) return setNombre(h.name);
+    if (n === h.name) return;
+    save("habitos", { ...h, name: n });
+    setGuardado(true);
+  };
   const s = streak(h, hoy);
   const mejor = bestStreak(h);
   const primero = ds(mes);
@@ -101,12 +138,25 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
   };
 
   return (
-    <div className="nv" role="dialog" aria-modal="true" aria-labelledby="hd-h">
+    <div className="nv" role="dialog" aria-modal="true" aria-label={`Hábito: ${h.name}`}>
       <div className="nv-bar ke-bar">
         <button className="nv-ib ke-ib" aria-label="Cerrar" onClick={onClose}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
-        <h2 id="hd-h" className="nv-h">{h.name}</h2>
+        {/* El nombre se cambia tocándolo: se guarda al salir o con Enter */}
+        <label htmlFor="hd-nombre" className="sr-only">Nombre del hábito</label>
+        <TextoCrece
+          id="hd-nombre"
+          className="hd-nombre"
+          autoComplete="off"
+          enterKeyHint="done"
+          maxLength={80}
+          value={nombre}
+          onTexto={setNombre}
+          onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+          onBlur={guardarNombre}
+        />
+        <svg className="hd-lapiz" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16zM13 7l4 4" /></svg>
       </div>
       <div className="nv-body">
         <div className="nv-paper hd">
@@ -161,41 +211,25 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
             </p>
           </section>
 
-          {editando ? (
-            <form
-              className="card pad hf"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const c = leerCampos(campos);
-                if (!c.name) return;
-                /* Al cambiar la meta de un medible, se recalcula qué días cuentan como hechos */
-                let nuevo: Habito = { ...h, ...c };
-                if (c.tipo === "medible") for (const [d, v] of Object.entries(nuevo.cantidades ?? {})) nuevo = anotar(nuevo, d, v);
-                save("habitos", nuevo);
-                setEditando(false);
-              }}
-            >
-              <CamposHabito v={campos} onChange={(p) => setCampos((x) => ({ ...x, ...p }))} idp="hd" />
-              <div className="row actions">
-                <button className="btn" type="submit">Guardar</button>
-                <button className="btn ghost" type="button" onClick={() => setEditando(false)}>Cancelar</button>
-              </div>
-            </form>
-          ) : (
-            <div className="hd-acciones">
-              <span className="hd-tipo">{TIPOS[tipo]}{tipo === "medible" && h.objetivo ? `, meta de ${conUnidad(h, h.objetivo)} al día` : ""}</span>
-              <button
-                className="btn ghost sm"
-                onClick={() => {
-                  setCampos({ name: h.name, tipo, unidad: h.unidad ?? "", objetivo: h.objetivo ? String(h.objetivo).replace(".", ",") : "" });
-                  setEditando(true);
-                }}
-              >
-                Cambiar
-              </button>
-              <button className="btn ghost sm pl-borrar" onClick={() => setConfirmar(true)}>Borrar</button>
+          <section className="card pad hf hd-ajustes" aria-labelledby="hd-aj">
+            <div className="hd-aj-cab">
+              <h3 id="hd-aj">Ajustes</h3>
+              <span className="vok hd-ok" role="status">{guardado ? "✓ Guardado" : ""}</span>
             </div>
-          )}
+            <CamposHabito
+              v={campos}
+              idp="hd"
+              sinNombre
+              onChange={(p) => {
+                const v = { ...campos, ...p };
+                setCampos(v);
+                /* El tipo se guarda al elegirlo; la unidad y la meta, al salir del campo */
+                if ("tipo" in p) guardar(v);
+              }}
+              onSalir={() => guardar(campos)}
+            />
+            <button className="linkbtn hd-borrar" onClick={() => setConfirmar(true)}>Borrar este hábito</button>
+          </section>
           {confirmar && (
             <div className="confirm" role="alertdialog" aria-label="Borrar hábito">
               ¿Borrar «{h.name}» y todo su historial?

@@ -2126,3 +2126,16 @@ textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8p
 .hy-vista{margin:var(--e2) 0 var(--e4)}
 .pl-dia.vacio .pl-cab{border-bottom:none}
 .pl-cab-n{font-weight:400;color:var(--muted)}
+
+/* ---------- Versión 6.6: el hábito se cambia ahí mismo (nombre arriba, ajustes abajo) y se guarda solo ---------- */
+textarea.hd-nombre{flex:1;min-width:0;margin:0;padding:6px 8px;border:1px solid transparent;border-radius:8px;background:transparent;font-size:18px;font-weight:600;line-height:1.3;color:var(--ink);box-shadow:none}
+textarea.hd-nombre:hover{border-color:var(--line)}
+textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 20%,transparent)}
+.hd-lapiz{flex:none;width:18px;height:18px;margin-right:var(--e2);fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nv-bar:has(.hd-nombre:focus) .hd-lapiz{visibility:hidden}
+.hd-ajustes{gap:var(--e3);max-width:none}
+.hd-aj-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e3)}
+.hd-aj-cab h3{margin:0;font-size:16px;font-weight:600}
+.hd-ok{margin:0;font-size:14px}
+.hd-ok:empty{display:none}
+.hd-borrar{align-self:flex-start;color:var(--warn)}
