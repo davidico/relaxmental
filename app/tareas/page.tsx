@@ -10,7 +10,8 @@ export default function Tareas() {
   const done = tareas.filter((x) => x.done);
 
   return (
-    <>
+    /* Una lista: en pantallas anchas va en una columna, para que el círculo, el nombre y la ✕ no queden a un metro */
+    <div className="pag-lista">
       <h1>Tareas</h1>
       <p className="sub">Escribe siempre el primer paso: algo que puedas hacer en 2 minutos.</p>
       <button className="btn ts-open" onClick={() => dispatchEvent(new Event("mi-semana:nueva-tarea"))}>
@@ -30,6 +31,6 @@ export default function Tareas() {
             </>
           )}
       </div>
-    </>
+    </div>
   );
 }

@@ -2409,3 +2409,17 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .mp-nodo.on text{fill:var(--ink)}
 .mp-ayuda{margin:0;padding:var(--e2) var(--e4) var(--e3);font-size:13px;color:var(--muted);text-align:center;border-top:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){.mp-l,.mp-nodo,.mp-nodo circle{transition:none}}
+
+/* ---------- Versión 9.3: revisión del escritorio ---------- */
+/* En pantallas más anchas que el contenido (1240 px), la columna entera se centra con el relleno de .wrap.
+   Antes se centraba cada hijo con margin-inline:auto, y todo lo que trae márgenes propios (franjas, pestañas,
+   subtítulos, avisos) se quedaba pegado a la izquierda, descuadrado del resto. */
+@media (min-width:900px){
+  .wrap,.wrap.wide{padding-left:max(40px,env(safe-area-inset-left,0px),calc((100% - 104px - 1240px) / 2));padding-right:max(40px,env(safe-area-inset-right,0px),calc((100% - 104px - 1240px) / 2))}
+}
+/* Pantallas para leer y ajustar (la cuenta) y listas (Tareas): una columna cómoda, alineada a la izquierda con el título */
+@media (min-width:900px){
+  .wrap>.pag-leer{max-width:760px;margin-inline:0}
+  .wrap>.pag-lista{max-width:860px;margin-inline:0}
+}
+.profile a.btn{text-decoration:none}

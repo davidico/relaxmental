@@ -59,7 +59,7 @@ export default function Compromisos() {
   return (
     <section className="card pad cmp" aria-labelledby="cmp-h">
       <h2 id="cmp-h" className="sr-only">Mis compromisos</h2>
-      <p className="hint">Lo que tiene fecha: iglesia, turnos de trabajo, citas… Sube una foto (por ejemplo tu plan del mes) y lo leo. Se añaden solos a tu día.</p>
+      <p className="hint">Sube una foto (por ejemplo, tu plan del mes) y la leo, o añádelos a mano. Se ponen solos en tu día.</p>
 
       {filas === null ? (
         <div className="row actions">

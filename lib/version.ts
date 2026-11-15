@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "9.2";
+export const VERSION = "9.3";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Revisión de la versión de escritorio: en pantallas muy anchas, las franjas grises, las pestañas y algunos textos quedaban corridos a la izquierda; ahora todo va alineado en la misma columna",
+  "En pantalla grande, las pantallas de tu cuenta y la de Tareas van en una columna más estrecha y cómoda de leer, con los botones cerca de lo que controlan",
   "Mapa de tus notas (solo en pantalla grande): en el Cerebro, el botón del mapa muestra tus notas como puntos unidos a sus etiquetas y secciones, y entre sí cuando una nombra el título de otra. Se arrastra, se acerca con la rueda y al tocar una nota se abre",
   "«Actualizar mis reglas con mi semana tipo» ya solo sale cuando cambiaste algo en tu semana tipo; al actualizarlas, desaparece",
   "Arreglado: al escribir en «Mis reglas» a pantalla completa, la pantalla ya no salta hacia arriba con cada letra",

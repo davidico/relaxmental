@@ -74,7 +74,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
   const pant = PANTALLAS.find((p) => p.ver === (ver === "reglas" ? "memoria" : ver));
 
   return (
-    <>
+    /* Las pantallas de la cuenta son para leer y ajustar: en pantallas anchas van en una columna cómoda, no a todo lo ancho */
+    <div className="pag-leer">
       <h1>{pant?.titulo ?? "Tu cuenta"}</h1>
       <p className="sub">{pant?.sub ?? "Tus datos y los ajustes de tu horario."}</p>
 
@@ -220,11 +221,11 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
             <h3>Sus límites</h3>
             <p>
-              Puede equivocarse o inventar algo: es un modelo abierto (Llama, de Meta; Whisper para la voz). Por eso nada cambia en tu horario sin que tú lo aceptes.
+              Puede equivocarse o inventar algo, sea Claude o la IA de Cloudflare (Llama, de Meta; Whisper para la voz). Por eso nada cambia en tu horario sin que tú lo aceptes.
             </p>
           </section>
         </>
       )}
-    </>
+    </div>
   );
 }
