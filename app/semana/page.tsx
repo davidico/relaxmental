@@ -49,7 +49,7 @@ export default function Semana() {
           </button>
         </div>
       </div>
-      {/* Cada lado tiene su color: lo personal, el verde petróleo de la app; el trabajo, índigo. Dentro, todo lo que lleva acento usa el de su lado */}
+      {/* Cada lado tiene su color: lo personal, el verde petróleo de la app; el trabajo, morado. Dentro, todo lo que lleva acento usa el de su lado */}
       <PlanificarSemana donde="planner" lunesVisto={mon} />
       <div className="plan" data-lado={lado}>
         <div className="sem-vista plan-tabs" role="tablist" aria-label="Qué parte de tu vida">

@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "9.5";
+export const VERSION = "9.6";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "En el Planner, el lado de Trabajo pasa de índigo a un morado más fuerte, para que se distinga bien de lo personal",
   "Planificar la semana: los domingos a las 21:00 te llega un aviso para planificar la semana que viene (si aún no lo hiciste); al tocarlo se abre tu Planner en esa semana",
   "El domingo, en Hoy y en el Planner sale «Planifica tu semana», que queda pendiente hasta que tocas «Listo, ya la planifiqué» en el Planner",
   "En Avisos puedes apagar ese recordatorio o cambiarle la hora",
