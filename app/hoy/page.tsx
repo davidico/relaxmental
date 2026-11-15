@@ -65,12 +65,13 @@ export default function Hoy() {
     } catch {}
   };
   const [entreno, setEntreno] = useState(false);
-  /* El aviso del bloque de ejercicio abre directamente el entrenamiento (/hoy#entreno) */
+  const [verDiario, setVerDiario] = useState(false);
+  /* El aviso del bloque de ejercicio abre directamente el entrenamiento (/hoy#entreno), y el recordatorio del diario, el diario (/hoy#diario) */
   useEffect(() => {
-    if (location.hash === "#entreno") {
-      setEntreno(true);
-      history.replaceState(null, "", location.pathname);
-    }
+    if (location.hash === "#entreno") setEntreno(true);
+    else if (location.hash === "#diario") setVerDiario(true);
+    else return;
+    history.replaceState(null, "", location.pathname);
   }, []);
 
   const evTxt = evs.length ? `${esHoy ? "Hoy: " : ""}${textoEventos(evs)}` : "";
@@ -143,6 +144,7 @@ export default function Hoy() {
       )}
       {editing && <DayEditor date={dia} onClose={() => setEditing(false)} />}
       {entreno && <Entreno onClose={() => setEntreno(false)} />}
+      {verDiario && <Diario hoja onClose={() => setVerDiario(false)} />}
     </div>
   );
 }

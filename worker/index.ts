@@ -10,6 +10,7 @@
 
 import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
+import { leerAvisos } from "../lib/avisos";
 import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
@@ -713,6 +714,53 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
       fuerte: "1",
     });
     if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  }
+
+  /* Recordatorios del día, cada uno a su hora (se encienden, apagan y cambian en Perfil › Avisos):
+     los hábitos que siguen sin marcar y el diario si aún no está escrito. Si no falta nada, no se avisa. */
+  const { results: av } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id = 'avisos'").bind(user_email).all<{ data: string }>();
+  let guardado: unknown = null;
+  try {
+    guardado = av[0] ? JSON.parse(av[0].data) : null;
+  } catch {
+    /* si lo guardado está raro, valen los de fábrica */
+  }
+  const cfg = leerAvisos(guardado);
+  const toca = (hora: string) => toMin(hora) <= min && min - toMin(hora) < 10;
+  const recordar = async (key: string, aviso: Parameters<typeof notifyUser>[2]) => {
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes === 0) return;
+    const { sent, failed } = await notifyUser(env, user_email, aviso);
+    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  };
+  if (cfg.habitos.on && toca(cfg.habitos.hora)) {
+    const { results: hs } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'habitos'").bind(user_email).all<{ data: string }>();
+    const faltan: { name: string; orden: number }[] = [];
+    for (const r of hs) {
+      try {
+        const h = JSON.parse(r.data) as { name?: unknown; orden?: unknown; hechos?: Record<string, boolean> } | null;
+        if (h && typeof h.name === "string" && h.name.trim() && !h.hechos?.[date]) faltan.push({ name: h.name.trim().slice(0, 60), orden: Number(h.orden) || 0 });
+      } catch {
+        /* un hábito raro no impide avisar de los demás */
+      }
+    }
+    if (faltan.length) {
+      const nombres = faltan.sort((a, b) => a.orden - b.orden).map((h) => h.name);
+      await recordar(`habitos ${date}`, {
+        title: "Tus hábitos de hoy",
+        body: `Aún sin marcar: ${nombres.slice(0, 6).join(", ")}${nombres.length > 6 ? ` y ${nombres.length - 6} más` : ""}. Toca para marcarlos.`,
+        tag: "habitos",
+        url: "/habitos",
+      });
+    }
+  }
+  if (cfg.diario.on && toca(cfg.diario.hora)) {
+    const { results: ya } = await env.DB.prepare(
+      "SELECT 1 AS x FROM items WHERE user_email = ? AND tabla = 'notas' AND json_extract(data, '$.folder') = 'diario' AND json_extract(data, '$.ref') = ? LIMIT 1",
+    )
+      .bind(user_email, date)
+      .all<{ x: number }>();
+    if (!ya.length) await recordar(`diario ${date}`, { title: "¿Cómo fue tu día?", body: "Escribe tu diario de hoy: con dos líneas basta. Toca para abrirlo.", tag: "diario", url: "/hoy#diario" });
   }
 }
 

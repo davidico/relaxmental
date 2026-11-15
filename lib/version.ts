@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.4";
+export const VERSION = "8.5";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Recordatorio de hábitos: a la hora que elijas (de fábrica, las 20:00) te avisa de los que siguen sin marcar; si ya los marcaste todos, no avisa",
+  "Recordatorio del diario: si a su hora (de fábrica, las 21:30) aún no lo has escrito, te avisa y al tocarlo se abre el diario",
+  "Nueva pantalla «Avisos» en tu cuenta: enciendes, apagas y cambias la hora de esos recordatorios, y ves qué más te avisa la app",
   "En Hoy, «Para hoy, sin hora» ya no sale cuando no queda nada por hacer",
   "Al abrir Hoy, la pantalla baja sola hasta el momento en que estás: ya no empiezas en lo que pasó por la mañana",
   "Para quien empieza: al terminar las preguntas, la IA le propone enseguida su semana tipo y le pide que la revise y la cambie a su gusto",

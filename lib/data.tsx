@@ -113,6 +113,8 @@ export type Perfil = {
   revision?: { mes?: string };
   /** Semana tipo (día de la semana -> bloques) */
   plantilla?: Plantilla;
+  /** Los recordatorios de hábitos y del diario: encendidos o no, y a qué hora (lib/avisos.ts) */
+  avisos?: unknown;
   /** La IA propuso la semana tipo (al empezar) y la persona aún no la ha revisado: se le recuerda que la cambie a su gusto */
   plantillaRevisar?: { at?: string } | null;
   /** Compromisos con fecha */

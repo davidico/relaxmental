@@ -5,17 +5,19 @@ import Link from "next/link";
 import { useData } from "@/lib/data";
 import VoiceButton from "@/components/VoiceButton";
 import Compromisos from "@/components/Compromisos";
+import Avisos from "@/components/Avisos";
 import Memoria from "@/components/Memoria";
 import SemanaTipo from "@/components/SemanaTipo";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
 import { NOVEDADES, VERSION, VERSION_FECHA } from "@/lib/version";
 
-export type Ver = "cuenta" | "reglas" | "compromisos" | "semana" | "memoria" | "acerca";
+export type Ver = "cuenta" | "reglas" | "compromisos" | "semana" | "memoria" | "avisos" | "acerca";
 /** Las pantallas de tu cuenta: cada cosa en la suya (se abren desde el menú de arriba a la derecha) */
 export const PANTALLAS: { ver: Exclude<Ver, "cuenta" | "reglas">; href: string; titulo: string; sub: string }[] = [
   { ver: "memoria", href: "/perfil/memoria", titulo: "Lo que la IA sabe de mí", sub: "Tus reglas (lo que tú le dices) y lo que ha aprendido de ti. Tú decides qué se queda." },
   { ver: "semana", href: "/perfil/semana", titulo: "Mi semana tipo", sub: "Tu semana normal, hecha por ti: qué haces cada día y a qué hora. Es la base de tu horario y de lo que la IA te propone." },
   { ver: "compromisos", href: "/perfil/compromisos", titulo: "Mis compromisos", sub: "Lo que tiene fecha: iglesia, turnos, citas." },
+  { ver: "avisos", href: "/perfil/avisos", titulo: "Avisos", sub: "Qué te avisa la app y a qué hora: tu día, tus hábitos y tu diario." },
   { ver: "acerca", href: "/perfil/acerca", titulo: "Acerca de", sub: "La versión de la app, sus novedades y cómo funciona la IA." },
 ];
 
@@ -175,6 +177,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
       )}
 
       {ver === "compromisos" && <Compromisos />}
+
+      {ver === "avisos" && <Avisos />}
 
       {ver === "semana" && <SemanaTipo />}
 
