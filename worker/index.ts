@@ -10,7 +10,7 @@
 
 import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
-import { leerAvisos } from "../lib/avisos";
+import { leerAvisos, semanaPorPlanificar } from "../lib/avisos";
 import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
@@ -780,6 +780,19 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
       .bind(user_email, date)
       .all<{ x: number }>();
     if (!ya.length) await recordar(`diario ${date}`, { title: "¿Cómo fue tu día?", body: "Escribe tu diario de hoy: con dos líneas basta. Toca para abrirlo.", tag: "diario", url: "/hoy#diario" });
+  }
+  /* Los domingos: planificar la semana que viene en el Planner, si aún no lo ha marcado como hecho */
+  const dow = new Date(date + "T12:00:00Z").getUTCDay();
+  if (dow === 0 && cfg.planificar.on && toca(cfg.planificar.hora)) {
+    const { results: sp } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id = 'semanaPlanificada'").bind(user_email).all<{ data: string }>();
+    let hecha = "";
+    try {
+      hecha = sp[0] ? String(JSON.parse(sp[0].data) ?? "") : "";
+    } catch {
+      /* si está raro, se avisa igual */
+    }
+    if (hecha !== semanaPorPlanificar(date, dow))
+      await recordar(`planificar ${date}`, { title: "Planifica tu semana", body: "Pon tus metas y tareas de la semana que viene, de lo personal y del trabajo. Toca para abrir tu Planner.", tag: "planificar", url: "/semana#planificar" });
   }
 }
 

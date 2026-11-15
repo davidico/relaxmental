@@ -2444,3 +2444,9 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 /* La cabecera de cada día, con un tinte del color de su lado (el día de hoy, un poco más) */
 .plan .pl-cab,.plan .pl-cab.petroleo,.plan .pl-cab.suave,.plan .pl-cab.apagado,.plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--primary) 7%,var(--surface))}
 .plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--primary) 14%,var(--surface))}
+
+/* ---------- Versión 9.5: «Planifica tu semana» (domingos) ---------- */
+.ps-hecha{display:flex;align-items:center;flex-wrap:wrap;gap:var(--e2);margin:0 0 var(--e3);font-size:14px;color:var(--ok)}
+.ps-hecha svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ps-hecha .linkbtn{font-size:14px;min-height:44px;color:var(--muted)}
+.ps{margin-bottom:var(--e4)}

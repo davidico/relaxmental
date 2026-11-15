@@ -16,6 +16,7 @@ import Aprendizajes from "@/components/Aprendizajes";
 import Diario from "@/components/Diario";
 import { Tira } from "@/components/DiaTira";
 import HorarioSemana from "@/components/HorarioSemana";
+import PlanificarSemana from "@/components/PlanificarSemana";
 import { bloqueDeSub } from "@/lib/momentos";
 import { useMarcarTarea } from "@/lib/usarMarcar";
 import TaskSheet from "@/components/TaskSheet";
@@ -127,6 +128,7 @@ export default function Hoy() {
           {esHoy && (
             <>
               <Diario />
+              <PlanificarSemana donde="hoy" />
               <ResumenSemana />
               <Aprendizajes />
               {/* En el móvil «Preguntar a la IA» está en el botón + que flota; en pantallas anchas no hay ese menú, así que va aquí */}

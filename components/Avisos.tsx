@@ -15,9 +15,10 @@ export default function Avisos() {
   const { st, activar } = usePush();
   const cfg = leerAvisos(perfil.avisos);
   const poner = (k: keyof Cfg, p: Partial<Cfg["habitos"]>) => savePerfil("avisos", { ...cfg, [k]: { ...cfg[k], ...p } });
-  const FILAS: { k: keyof Cfg; titulo: string; txt: string }[] = [
+  const FILAS: { k: keyof Cfg; titulo: string; txt: string; cuando?: string }[] = [
     { k: "habitos", titulo: "Hábitos", txt: "Si a esa hora te queda algún hábito sin marcar, te los recuerdo. Si ya los marcaste todos, no te aviso." },
     { k: "diario", titulo: "Diario", txt: "Si a esa hora aún no has escrito tu diario de hoy, te lo recuerdo." },
+    { k: "planificar", titulo: "Planificar la semana", txt: "Los domingos te recuerdo planificar la semana que viene en tu Planner. Si ya la marcaste como planificada, no te aviso.", cuando: "Los domingos a las" },
   ];
 
   return (
@@ -39,7 +40,7 @@ export default function Avisos() {
 
       <h2 className="banda">Recordatorios</h2>
       <section className="card av-lista" aria-label="Recordatorios">
-        {FILAS.map(({ k, titulo, txt }) => (
+        {FILAS.map(({ k, titulo, txt, cuando }) => (
           <div key={k} className="av-fila">
             <div className="av-txt">
               <label htmlFor={`av-${k}`} className="av-t">{titulo}</label>
@@ -48,7 +49,7 @@ export default function Avisos() {
             <input id={`av-${k}`} type="checkbox" role="switch" className="av-sw" checked={cfg[k].on} aria-describedby={`av-${k}-d`} onChange={(e) => poner(k, { on: e.target.checked })} />
             {cfg[k].on && (
               <div className="av-hora">
-                <span>A las</span>
+                <span>{cuando ?? "A las"}</span>
                 <HoraInput id={`av-${k}-h`} label={`Hora del recordatorio de ${titulo.toLowerCase()}`} value={cfg[k].hora} onChange={(hora) => poner(k, { hora: hora || AVISOS_DEF[k].hora })} />
               </div>
             )}

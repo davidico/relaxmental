@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Planner, { type Lado } from "@/components/Planner";
+import PlanificarSemana from "@/components/PlanificarSemana";
 import { MES, addD, mondayOf, pd, today } from "@/lib/dates";
 
 /** Planner: lo que te propones cada día de la semana, con una pestaña para tu vida personal y otra para el trabajo, cada una con su color */
@@ -20,6 +21,12 @@ export default function Semana() {
   };
   // El domingo por la tarde ya interesa la semana siguiente (revisión semanal)
   const [off, setOff] = useState(() => (new Date().getDay() === 0 && new Date().getHours() >= 14 ? 1 : 0));
+  /* El aviso de «Planifica tu semana» (y la tarjeta de Hoy) abren el Planner en la semana que toca: el domingo, la que viene */
+  useEffect(() => {
+    if (location.hash !== "#planificar") return;
+    if (new Date().getDay() === 0) setOff(1);
+    history.replaceState(null, "", location.pathname);
+  }, []);
   const t = today();
   const mon = addD(mondayOf(t), off * 7);
   const a = pd(mon);
@@ -43,6 +50,7 @@ export default function Semana() {
         </div>
       </div>
       {/* Cada lado tiene su color: lo personal, el verde petróleo de la app; el trabajo, índigo. Dentro, todo lo que lleva acento usa el de su lado */}
+      <PlanificarSemana donde="planner" lunesVisto={mon} />
       <div className="plan" data-lado={lado}>
         <div className="sem-vista plan-tabs" role="tablist" aria-label="Qué parte de tu vida">
           <button role="tab" className="plan-tab personal" aria-selected={lado === "personal"} onClick={() => cambiar("personal")}>Personal</button>

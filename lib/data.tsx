@@ -113,6 +113,8 @@ export type Perfil = {
   revision?: { mes?: string };
   /** Semana tipo (día de la semana -> bloques) */
   plantilla?: Plantilla;
+  /** La última semana que la persona marcó como planificada en el Planner (la fecha de su lunes) */
+  semanaPlanificada?: string | null;
   /** Los recordatorios de hábitos y del diario: encendidos o no, y a qué hora (lib/avisos.ts) */
   avisos?: unknown;
   /** La semana tipo cambió y las reglas aún no se han puesto al día con ella: solo entonces se ofrece «Actualizar mis reglas» */
