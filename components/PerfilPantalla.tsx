@@ -6,6 +6,7 @@ import { useData } from "@/lib/data";
 import Compromisos from "@/components/Compromisos";
 import Avisos from "@/components/Avisos";
 import ReglasEditor from "@/components/ReglasEditor";
+import { useReglasDeTipo } from "@/components/ReglasDeTipo";
 import Memoria from "@/components/Memoria";
 import SemanaTipo from "@/components/SemanaTipo";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
@@ -27,7 +28,7 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Respondes las preguntas de «Armemos tu semana»", lee: "tus reglas, tus respuestas y tus compromisos próximos.", da: "más preguntas y, al final, tus reglas redactadas." },
   { cuando: "Subes una foto de tus compromisos", lee: "la foto, la fecha de hoy y tus reglas.", da: "la lista de compromisos con fecha y hora, que revisas antes de guardar." },
   { cuando: "Le pides que te proponga una semana tipo (opcional: normalmente la haces tú en Perfil › Mi semana tipo)", lee: "tus reglas, tus últimos 30 días ajustados a mano, tus últimos 14 días y lo que recuerda de ti.", da: "un día típico para cada día de la semana, que revisas y guardas tú." },
-  { cuando: "Pides «Actualizar mis reglas con esta semana» (en Mi semana tipo)", lee: "tu semana tipo y tus reglas actuales.", da: "tus reglas puestas al día con tu semana tipo; las revisas a pantalla completa y decides si se guardan (se guarda una copia de las de antes)." },
+  { cuando: "Pides «Actualizar mis reglas con esta semana» (en Mi semana tipo) o «Actualizar con mi semana tipo» (en Lo que la IA sabe de mí)", lee: "tu semana tipo y tus reglas actuales.", da: "tus reglas puestas al día con tu semana tipo; las revisas a pantalla completa y decides si se guardan (se guarda una copia de las de antes)." },
   { cuando: "Pides «Armar mi semana con IA» (en Hoy › Semana)", lee: "tu semana tipo de cada día (es la base), tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados, tus últimos 14 días y lo que recuerda de ti.", da: "el horario de cada día de esa semana, partiendo de tu semana tipo; tú lo aplicas o no." },
   { cuando: "Guardas un día que editaste", lee: "lo que la app te propuso y cómo lo dejaste (tus últimos 12 cambios), tus reglas y lo que ya decidiste.", da: "hasta 5 conclusiones sobre cómo armas tus días." },
   { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas, tus últimos 14 días y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
@@ -42,6 +43,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
   const { email, mode, perfil, savePerfil } = useData();
   const cloud = mode === "cloud";
   const [estado, setEstado] = useState<"" | "ok">("");
+  const rt = useReglasDeTipo();
+  const hayTipo = !!perfil.plantilla && Object.values(perfil.plantilla).some((x) => x.length);
   const [editando, setEditando] = useState(false);
   const [quiz, setQuiz] = useState(false);
   const [quizModo, setQuizModo] = useState<Modo>("completar");
@@ -108,7 +111,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
               <span className="rules-view" id="reglas-texto">{guardadas}</span>
               <span className="rules-mas">Leer todo y editar</span>
             </button>
-            {estado === "ok" && <p role="status" className="vok rules-ok">✓ Reglas guardadas</p>}
+            {(estado === "ok" || rt.ok) && <p role="status" className="vok rules-ok">✓ Reglas guardadas</p>}
+            {rt.estado === "error" && <p className="verr rules-ok" role="alert">⚠ No se pudieron actualizar con tu semana tipo. Inténtalo otra vez.</p>}
             {confirmCero ? (
               <div className="confirm">
                 ¿Empezar de cero? Guardo una copia de tus reglas y te hago las preguntas desde el principio.
@@ -118,6 +122,10 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
             ) : (
               /* Dos enlaces pequeños, uno al lado del otro: completar la información con preguntas, o empezar de cero */
               <div className="rules-enlaces">
+                {/* Poner las reglas al día con la semana tipo (la misma opción que hay en «Mi semana tipo») */}
+                {cloud && hayTipo && (
+                  <button className="linkbtn" onClick={() => void rt.pedir()} disabled={rt.estado === "armando"}>{rt.estado === "armando" ? "Actualizando…" : "Actualizar con mi semana tipo"}</button>
+                )}
                 {cloud && (
                   <button className="linkbtn" onClick={() => { setQuizModo("completar"); setQuiz(true); }}>{pendiente ? "Seguir con las preguntas" : "Completar con preguntas"}</button>
                 )}
@@ -135,6 +143,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
           </>
         )}
       </section>
+      {rt.editor}
       {editando && <ReglasEditor texto={guardadas} onGuardar={guardar} onClose={() => setEditando(false)} />}
       {quiz && <RulesQuiz modo={quizModo} reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
       <h2 className="banda" id="mem-h">Lo que ha aprendido de ti</h2>

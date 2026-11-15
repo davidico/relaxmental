@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.9";
+export const VERSION = "8.10";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "En «Lo que la IA sabe de mí» también puedes poner tus reglas al día con tu semana tipo: «Actualizar con mi semana tipo»",
   "En «Mi semana tipo», «Actualizar mis reglas con esta semana»: la IA pone tus reglas al día con tu semana tipo, las revisas a pantalla completa y decides si se guardan",
   "Mis reglas: «Completar con preguntas» es ahora un enlace pequeño al lado de «Empezar de cero»",
   "Mis reglas: quité el lápiz de arriba; se abren tocando el resumen o «Leer todo y editar»",
