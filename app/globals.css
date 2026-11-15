@@ -2375,3 +2375,9 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .rules-enlaces .linkbtn{min-height:44px;font-size:14px;padding:0}
 .rules-enlaces .rules-cero{color:var(--muted)}
 .rules-ok{margin:var(--e2) 0 0}
+
+/* ---------- Versión 8.9: actualizar las reglas con la semana tipo ---------- */
+.st-reglas{display:flex;flex-direction:column;gap:var(--e2);padding-top:var(--e3);border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.st-reglas p{margin:0;line-height:1.45}
+.st-reglas .btn{min-height:44px}
+.re-aviso{margin:0 0 var(--e4);padding:var(--e3);border-radius:10px;background:var(--band);font-size:14px;line-height:1.45;color:var(--ink)}

@@ -9,8 +9,19 @@ import VoiceButton from "./VoiceButton";
  * Como en las notas: al volver (← o Escape) se guarda lo que cambiaste; «Descartar» lo deja como estaba.
  * No pone el cursor al abrir, para poder leer sin que salte el teclado.
  */
-export default function ReglasEditor({ texto, onGuardar, onClose }: { texto: string; onGuardar: (t: string) => void; onClose: () => void }) {
-  const [t, setT] = useState(texto);
+export default function ReglasEditor({
+  texto,
+  propuesta,
+  onGuardar,
+  onClose,
+}: {
+  texto: string;
+  /** Un texto nuevo que propone la IA (p. ej. las reglas puestas al día con la semana tipo): se abre con él para revisarlo; «Descartar» deja el de antes */
+  propuesta?: string;
+  onGuardar: (t: string) => void;
+  onClose: () => void;
+}) {
+  const [t, setT] = useState(propuesta ?? texto);
   const caja = useRef<HTMLTextAreaElement>(null);
   const cambiado = t !== texto;
   const volver = () => {
@@ -47,7 +58,13 @@ export default function ReglasEditor({ texto, onGuardar, onClose }: { texto: str
       </div>
       <div className="nv-body">
         <div className="nv-paper ke-paper re-papel">
-          <p className="hint re-ayuda">Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las lee cuando te propone horarios. Al volver se guardan solas.</p>
+          {propuesta !== undefined ? (
+            <p className="re-aviso" role="note">
+              La IA puso tus reglas al día con tu semana tipo. Léelas y corrige lo que quieras: al volver (←) se guardan; con «Descartar» se quedan como estaban.
+            </p>
+          ) : (
+            <p className="hint re-ayuda">Escríbelas como se las dirías a alguien: horas, días y excepciones. La IA las lee cuando te propone horarios. Al volver se guardan solas.</p>
+          )}
           <label htmlFor="re-texto" className="sr-only">Mis reglas</label>
           <textarea id="re-texto" ref={caja} className="re-texto" value={t} placeholder="Por ejemplo: Me levanto a las 7. Trabajo de 9 a 13. Los domingos descanso…" spellCheck onChange={(e) => setT(e.target.value)} />
         </div>

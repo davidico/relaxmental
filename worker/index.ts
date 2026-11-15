@@ -15,7 +15,7 @@ import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, reglasDeTipo, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -581,6 +581,25 @@ async function api(req: Request, envBase: Env, url: URL): Promise<Response> {
     const texto = await leerHorario(env.AI, imagen);
     if (!texto) return json({ error: "ai_empty" }, 502);
     return json({ texto });
+  }
+  /* Poner las reglas al día con la semana tipo (la persona revisa el texto antes de guardarlo) */
+  if (url.pathname === "/api/ai/reglas-tipo" && req.method === "POST") {
+    const perfil = await perfilDe(env, email);
+    /* La semana tipo viene en la petición (recién guardada); si no, la del perfil */
+    const b = (await req.json().catch(() => ({}))) as { plantilla?: unknown };
+    const dada = b.plantilla && typeof b.plantilla === "object" ? (b.plantilla as Record<string, unknown>) : null;
+    const semana: Plantilla = dada ? Object.fromEntries(Object.entries(dada).map(([k, v]) => [k, Array.isArray(v) ? v.filter(isBloque).slice(0, 40) : []])) : perfil.plantilla;
+    const NOMBRES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const tipo = [1, 2, 3, 4, 5, 6, 0]
+      .map((d) => {
+        const bs = (semana[String(d)] ?? []).filter(isBloque);
+        return bs.length ? `${NOMBRES[d]}:\n${bs.map((x) => `- ${x.s} a ${x.e}: ${x.t}${x.sub ? ` (${x.sub})` : ""}`).join("\n")}` : `${NOMBRES[d]}: (nada puesto)`;
+      })
+      .join("\n\n");
+    if (!Object.values(semana).some((x) => Array.isArray(x) && x.length)) return json({ error: "sin_tipo" }, 400);
+    const texto = await reglasDeTipo(env.AI, { reglas: perfil.reglas, tipo });
+    if (!texto) return json({ error: "ai_empty" }, 502);
+    return json({ reglas: texto });
   }
   if (url.pathname === "/api/ai/reglas" && req.method === "POST") {
     const b = (await req.json()) as { reglas?: string; respuestas?: { p?: string; r?: string }[]; mensaje?: string; horario?: string; modo?: string };

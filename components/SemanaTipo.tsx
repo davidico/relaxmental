@@ -7,6 +7,7 @@ import type { Bloque, Plantilla } from "@/lib/plan";
 import { armarPlantilla } from "@/lib/imagen";
 import HoraInput from "./HoraInput";
 import TextoCrece from "./TextoCrece";
+import ReglasEditor from "./ReglasEditor";
 
 /* De lunes a domingo; la clave de cada día en la plantilla es su número (domingo = 0) */
 const DIAS = [
@@ -72,13 +73,14 @@ export default function SemanaTipo() {
   const malas = (rows: Bloque[]) => rows.some((b) => !b.t.trim() || toMin(b.e) <= toMin(b.s));
   const valido = DIAS.every((d) => !malas(p[d.k] ?? []));
   const guardar = () => {
-    if (!valido) return;
+    if (!valido) return null;
     const lista = Object.fromEntries(DIAS.map((d) => [d.k, (p[d.k] ?? []).map((b) => ({ ...b, t: b.t.trim() })).sort((x, y) => toMin(x.s) - toMin(y.s))]));
     savePerfil("plantilla", lista);
     /* Ya la revisó: se quita el aviso de «revísala» */
     if (perfil.plantillaRevisar) savePerfil("plantillaRevisar", null);
     setP(lista);
     setEstado("ok");
+    return lista as Plantilla;
   };
   const copiarA = (ks: string[]) => {
     setP((x) => ({ ...x, ...Object.fromEntries(ks.map((k) => [k, filas.map((b) => ({ ...b }))])) }));
@@ -96,6 +98,37 @@ export default function SemanaTipo() {
     }
   };
   const puedeIA = mode === "cloud" && !offline && !!perfil.reglas?.text?.trim();
+  /* Poner las reglas al día con esta semana tipo: la IA las reescribe y la persona las revisa a pantalla completa antes de guardarlas */
+  const [reglas, setReglas] = useState<"" | "armando" | "error">("");
+  const [propuesta, setPropuesta] = useState<string | null>(null);
+  const [reglasOk, setReglasOk] = useState(false);
+  const hayAlgo = DIAS.some((d) => (p[d.k] ?? []).length);
+  const actualizarReglas = async () => {
+    if (!valido) return;
+    /* Si hay cambios sin guardar, primero se guardan; la semana va en la petición para que la IA lea justo esta */
+    const semana = cambiado ? guardar() : limpia(guardada);
+    if (!semana) return;
+    setReglas("armando");
+    setReglasOk(false);
+    try {
+      const r = await fetch("/api/ai/reglas-tipo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plantilla: semana }) });
+      if (!r.ok) throw new Error();
+      const { reglas: texto } = (await r.json()) as { reglas?: string };
+      if (!texto?.trim()) throw new Error();
+      setPropuesta(texto.trim());
+      setReglas("");
+    } catch {
+      setReglas("error");
+    }
+  };
+  const guardarReglas = (texto: string) => {
+    /* Se guarda una copia de las reglas de antes, por si acaso */
+    const antes = perfil.reglas?.text ?? "";
+    if (antes.trim()) savePerfil("reglasRespaldo", { text: antes, updated: new Date().toISOString() });
+    savePerfil("reglas", { text: texto, updated: new Date().toISOString() });
+    savePerfil("revision", { mes: new Date().toISOString().slice(0, 7) });
+    setReglasOk(true);
+  };
 
   return (
     <section className="card pad st" aria-label="Mi semana tipo">
@@ -154,12 +187,26 @@ export default function SemanaTipo() {
       <button type="button" className="linkbtn st-mas" onClick={anadir}>+ Añadir momento</button>
 
       <div className="st-pie">
-        <button className="btn" onClick={guardar} disabled={!cambiado || !valido}>Guardar mi semana tipo</button>
+        <button className="btn" onClick={() => void guardar()} disabled={!cambiado || !valido}>Guardar mi semana tipo</button>
         {cambiado && <button className="btn ghost" onClick={() => { setP(limpia(guardada)); setEstado(""); }}>Deshacer cambios</button>}
         <span role="status" className={!valido ? "verr" : estado === "ok" ? "vok" : "hint"}>
           {!valido ? "⚠ Revisa: cada momento necesita nombre y terminar después de empezar." : estado === "ok" ? "✓ Guardada" : cambiado ? "Tienes cambios sin guardar" : ""}
         </span>
       </div>
+
+      {mode === "cloud" && !offline && hayAlgo && (
+        <div className="st-reglas">
+          <p>Si cambiaste tu semana, tus reglas pueden haberse quedado viejas. La IA las pone al día con esta semana tipo y tú las revisas antes de guardarlas.</p>
+          <div className="row actions">
+            <button type="button" className="btn ghost" onClick={actualizarReglas} disabled={reglas === "armando" || !valido}>
+              {reglas === "armando" ? "Actualizando tus reglas…" : cambiado ? "Guardar y actualizar mis reglas" : "Actualizar mis reglas con esta semana"}
+            </button>
+            {reglasOk && <span className="vok" role="status">✓ Reglas actualizadas</span>}
+          </div>
+          {reglas === "error" && <p className="verr" role="alert">⚠ No se pudieron actualizar. Inténtalo otra vez.</p>}
+        </div>
+      )}
+      {propuesta !== null && <ReglasEditor texto={perfil.reglas?.text ?? ""} propuesta={propuesta} onGuardar={guardarReglas} onClose={() => setPropuesta(null)} />}
 
       {puedeIA && (
         <div className="st-ia">

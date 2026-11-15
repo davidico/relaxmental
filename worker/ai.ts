@@ -313,6 +313,33 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
   return String(r.response ?? "").trim();
 }
 
+/**
+ * Pone las reglas al día con la semana tipo que la persona hizo a mano: las horas y actividades salen de la semana tipo
+ * (que manda) y de las reglas se conserva lo que no la contradice (medicinas, excepciones, preferencias…).
+ */
+export async function reglasDeTipo(ai: AI, o: { reglas: string; tipo: string }): Promise<string> {
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Pones al día las reglas del horario semanal de una persona para que coincidan con SU SEMANA TIPO, que ella hizo a mano y es la que manda. Escribe en español y en primera persona, como ella misma las escribiría. " +
+          "Las horas y las actividades de cada día salen de la semana tipo: si sus reglas actuales dicen otra hora u otra actividad, gana la semana tipo. " +
+          "De sus reglas actuales conserva TODO lo que no contradiga la semana tipo: medicinas o pastillas con su hora, excepciones, qué hacer antes o después de sus compromisos, horarios variables o turnos, preferencias y cualquier cosa que no sea el horario de un día normal. " +
+          "No inventes nada que no esté en la semana tipo ni en sus reglas: ni actividades, ni horas, ni ejemplos. " +
+          "Junta los días que son iguales (por ejemplo «De lunes a viernes») y describe aparte los que cambian. Dentro de cada grupo ordena por: al despertar, mañanas, tardes y noches. Los ratos que ella dejó libres, déjalos libres. " +
+          "Si toma medicinas o pastillas, mantenlas con su hora exacta en una sección «MEDICINAS». " +
+          "No escribas qué fechas concretas tiene compromisos: la app ya las sabe. " +
+          "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
+      },
+      { role: "user", content: `MI SEMANA TIPO (la hice yo; manda):\n${o.tipo.slice(0, 9000)}\n\nMIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}` },
+    ],
+    max_tokens: 2500,
+    temperature: 0.2,
+  });
+  return String(r.response ?? "").trim();
+}
+
 /** Convierte el texto de una foto (turnos, labores, calendario) en compromisos con fecha */
 export async function aCompromisos(ai: AI, o: { texto: string; hoy: string; reglas: string }): Promise<{ fecha: string; t: string; s?: string; e?: string; nota?: string }[]> {
   const r = await ai.run(LLM, {
