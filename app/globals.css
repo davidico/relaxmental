@@ -2160,3 +2160,25 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
   .pq{height:min(900px,calc(100% - 48px));border-radius:14px;box-shadow:var(--pop)}
   .pq-turno.ia{max-width:85%;align-self:flex-start}
 }
+
+/* ---------- Versión 7.0: hábitos con más delicadeza (círculo pequeño, número y barra más finos) ---------- */
+.hb-num{min-width:44px}
+.hb-num b{font-size:28px;font-weight:500}
+.hb-num span{font-size:13px}
+.hb-txt h2{font-weight:500}
+/* El círculo se ve de 28 px, pero se puede tocar en 44 px */
+.hb-check{position:relative;width:44px;height:44px;border:0;background:transparent;color:transparent}
+.hb-check::before{content:"";position:absolute;inset:8px;border-radius:50%;border:1.5px solid var(--field);background:transparent;transition:background .15s,border-color .15s}
+.hb-check svg{position:relative;width:14px;height:14px;stroke-width:2.5}
+.hb-check:hover{border-color:transparent}
+.hb-check:hover::before{border-color:var(--primary)}
+.hb-check[aria-pressed="true"]{background:transparent;color:var(--on-primary)}
+.hb-check[aria-pressed="true"]::before{background:var(--primary);border-color:var(--primary)}
+.hb-check:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+.hb-mes{gap:3px}
+.hb-mes i{height:8px;border-radius:4px}
+.hb-mes i.tdy{box-shadow:inset 0 0 0 1.5px var(--primary)}
+.hb-medir{padding:0 8px;border-color:transparent;background:transparent;color:var(--primary)}
+.hb-medir:hover{background:var(--band)}
+.hb-medir.on{border-color:transparent}
+.hb-medir svg{width:16px;height:16px}

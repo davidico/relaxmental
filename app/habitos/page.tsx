@@ -6,7 +6,6 @@ import { addD, fdate, today } from "@/lib/dates";
 import { bestStreak, cantidad, conUnidad, sortHabits, streak, tipoDe, type TipoHabito } from "@/lib/habits";
 import type { Habito } from "@/lib/types";
 import { toggleHecho } from "@/components/ui";
-import Entreno from "@/components/Entreno";
 import HabitoAnotar from "@/components/HabitoAnotar";
 import HabitoDetalle, { CamposHabito, leerCampos } from "@/components/HabitoDetalle";
 import HabitosSemana from "@/components/HabitosSemana";
@@ -44,7 +43,6 @@ export default function Habitos() {
   const { habitos, save } = useData();
   const t = today();
   const [vista, setVista] = useState<"lista" | "semana">("lista");
-  const [entreno, setEntreno] = useState(false);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [anotando, setAnotando] = useState<Habito | null>(null);
   const [nuevo, setNuevo] = useState(VACIO);
@@ -52,13 +50,7 @@ export default function Habitos() {
 
   return (
     <>
-      <div className="hb-head">
-        <h1>Hábitos</h1>
-        <button className="btn hb-entrenar" onClick={() => setEntreno(true)}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg> Entrenar
-        </button>
-      </div>
-      {entreno && <Entreno onClose={() => setEntreno(false)} />}
+      <h1>Hábitos</h1>
       <div className="sem-vista" role="tablist" aria-label="Cómo ver tus hábitos">
         <button role="tab" aria-selected={vista === "lista"} onClick={() => setVista("lista")}>Mis hábitos</button>
         <button role="tab" aria-selected={vista === "semana"} onClick={() => setVista("semana")}>Semana</button>
