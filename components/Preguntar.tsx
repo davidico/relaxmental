@@ -1,24 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useData } from "@/lib/data";
+import { newId, useData } from "@/lib/data";
+import { aplicarCambio, type Cambio } from "@/lib/cambios";
 import VoiceButton from "./VoiceButton";
 import NoteView from "./NoteView";
 
-type Turno = { de: "yo" | "ia"; texto: string; fuentes?: { id: string; titulo: string }[] };
+type Turno = { de: "yo" | "ia"; texto: string; fuentes?: { id: string; titulo: string }[]; cambios?: Cambio[] };
 /** Antes había dos modos (tu día / tus notas); ahora es la misma IA para todo. Se deja el tipo para quien aún lo pase */
 export type ModoPregunta = "dia" | "notas";
 const T = {
   titulo: "Pregúntale a la IA",
   sub: "Conoce tu día, tus últimos días y todas tus notas. Pregúntale lo que quieras.",
-  ideas: ["¿Qué me recomiendas para mañana?", "¿Qué he escrito últimamente?", "¿Cómo fue mi semana?", "¿En qué nota hablo de…? (escribe el tema)"],
-  nota: "Puede equivocarse: si cita una nota, ábrela para comprobarlo. No cambia nada en tu app.",
+  ideas: ["Mete mis metas de esta semana dentro de mi día", "¿Qué me recomiendas para mañana?", "¿Qué he escrito últimamente?", "¿En qué nota hablo de…? (escribe el tema)"],
+  nota: "Puede equivocarse: si cita una nota, ábrela para comprobarlo. Solo cambia tu semana si tú aplicas lo que propone.",
 };
 
 /**
- * «Pregúntale a la IA»: una conversación corta, la misma desde Hoy, el botón + y el Cerebro. No cambia nada en la app.
- * El Worker le da todas tus notas, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.
- * Si la respuesta cita notas, salen debajo para abrirlas.
+ * «Pregúntale a la IA»: una conversación corta, la misma desde Hoy, el botón + y el Cerebro.
+ * El Worker le da todas tus notas, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti, tus reglas y lo que puede organizar.
+ * Si la respuesta cita notas, salen debajo para abrirlas. Si propone cambios en tus metas y tareas (con Claude), salen debajo con su casilla
+ * y un botón «Aplicar»: nada cambia hasta que lo tocas.
  */
 export default function Preguntar({ onClose }: { onClose: () => void; modo?: ModoPregunta }) {
   const { mode, offline, planFor, hoy, notas } = useData();
@@ -55,9 +57,9 @@ export default function Preguntar({ onClose }: { onClose: () => void; modo?: Mod
         body: JSON.stringify({ pregunta: q, charla: charlaTxt, itinerario: planFor(hoy).map((b) => `${b.s}-${b.e} ${b.t}`) }),
       });
       if (!r.ok) throw new Error();
-      const { respuesta, fuentes, ia: quien } = (await r.json()) as { respuesta: string; fuentes?: { id: string; titulo: string }[]; ia?: "claude" | "cloudflare" };
+      const { respuesta, fuentes, ia: quien, cambios } = (await r.json()) as { respuesta: string; fuentes?: { id: string; titulo: string }[]; ia?: "claude" | "cloudflare"; cambios?: Cambio[] };
       if (quien) setIa(quien);
-      setCharla((c) => [...c, { de: "ia", texto: respuesta, fuentes: (fuentes ?? []).filter((f) => notas.some((n) => n.id === f.id)) }]);
+      setCharla((c) => [...c, { de: "ia", texto: respuesta, fuentes: (fuentes ?? []).filter((f) => notas.some((n) => n.id === f.id)), cambios: Array.isArray(cambios) && cambios.length ? cambios : undefined }]);
       setEstado("");
     } catch {
       setEstado("error");
@@ -112,6 +114,7 @@ export default function Preguntar({ onClose }: { onClose: () => void; modo?: Mod
                   ))}
                 </ul>
               )}
+              {!!t.cambios?.length && <Cambios cambios={t.cambios} />}
             </div>
           ))}
           {estado === "pensando" && <p className="pq-turno ia pq-pensando">Pensando…</p>}
@@ -141,5 +144,56 @@ export default function Preguntar({ onClose }: { onClose: () => void; modo?: Mod
     {/* La nota se abre fuera de la hoja, a pantalla completa, y al cerrarla sigues en la conversación */}
     {abierta && notas.some((n) => n.id === abierta) && <NoteView list={notas.filter((n) => n.id === abierta)} index={0} onIndex={() => {}} onClose={() => setAbierta(null)} />}
     </>
+  );
+}
+
+/**
+ * Los cambios que propone la IA, cada uno con su casilla (todos marcados al principio). «Aplicar» guarda los marcados; la tarea se lee
+ * de nuevo en ese momento, así que si ya la cambiaste o la marcaste hecha mientras tanto, ese cambio no se aplica.
+ */
+function Cambios({ cambios }: { cambios: Cambio[] }) {
+  const { tareas, save } = useData();
+  const [si, setSi] = useState<boolean[]>(() => cambios.map(() => true));
+  const [hecho, setHecho] = useState<null | { n: number; fuera: number }>(null);
+  const marcados = si.filter(Boolean).length;
+  const aplicar = () => {
+    let n = 0;
+    let fuera = 0;
+    cambios.forEach((c, i) => {
+      if (!si[i]) return;
+      const t = aplicarCambio(c, c.id ? tareas.find((x) => x.id === c.id) : undefined, () => ({ id: newId(), created: new Date().toISOString() }));
+      if (!t) {
+        fuera++;
+        return;
+      }
+      save("tareas", t);
+      n++;
+    });
+    setHecho({ n, fuera });
+  };
+  return (
+    <div className="pq-cambios" role="group" aria-label="Cambios que propone">
+      <p className="pq-cambios-h">{hecho ? "Cambios en tu semana" : cambios.length === 1 ? "Este cambio para tu semana" : `${cambios.length} cambios para tu semana`}</p>
+      <ul>
+        {cambios.map((c, i) => (
+          <li key={i}>
+            <label className={hecho && !si[i] ? "fuera" : ""}>
+              <input type="checkbox" checked={si[i]} disabled={!!hecho} onChange={(e) => setSi((x) => x.map((v, j) => (j === i ? e.target.checked : v)))} />
+              <span>{c.texto}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {hecho ? (
+        <p className="vok" role="status">
+          ✓ {hecho.n === 1 ? "Listo, 1 cambio aplicado" : `Listo, ${hecho.n} cambios aplicados`}.{hecho.fuera ? ` ${hecho.fuera === 1 ? "Uno no se aplicó" : `${hecho.fuera} no se aplicaron`} porque esa tarea ya no estaba o ya estaba hecha.` : ""}
+        </p>
+      ) : (
+        <div className="pq-cambios-pie">
+          <button type="button" className="btn" disabled={!marcados} onClick={aplicar}>{marcados === cambios.length ? "Aplicar a mi semana" : `Aplicar ${marcados} de ${cambios.length}`}</button>
+          <span className="pq-cambios-nota">Nada cambia hasta que lo apliques.</span>
+        </div>
+      )}
+    </div>
   );
 }

@@ -2474,3 +2474,16 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
   transition:transform .32s cubic-bezier(.22,.8,.3,1);will-change:transform}
 .plan-vent.desliza .plan-panel{flex:0 0 100%;min-width:0}
 @media (prefers-reduced-motion:reduce){.plan-raya,.plan-vent.desliza .plan-pista,.plan-tabs .plan-tab{transition:none}}
+
+/* ---------- Versión 10.3: «Pregúntale a la IA» propone cambios en tu semana ---------- */
+.pq-cambios{white-space:normal;margin-top:var(--e3);padding:var(--e3) var(--e4) var(--e4);border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.pq-cambios-h{margin:0 0 var(--e2);font-size:16px;font-weight:600;color:var(--ink)}
+.pq-cambios ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pq-cambios li+li{border-top:1px solid var(--line)}
+.pq-cambios label{display:flex;align-items:flex-start;gap:var(--e3);min-height:44px;padding:10px 0;cursor:pointer;font-size:15px;line-height:1.4;color:var(--ink)}
+.pq-cambios label.fuera{color:var(--muted);text-decoration:line-through}
+.pq-cambios input[type="checkbox"]{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:var(--primary)}
+.pq-cambios-pie{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e3);margin-top:var(--e3)}
+.pq-cambios-nota{font-size:14px;color:var(--muted)}
+.pq-cambios .vok{margin:var(--e3) 0 0}
+

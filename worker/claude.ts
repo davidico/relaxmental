@@ -1,6 +1,7 @@
 /**
- * Claude (Anthropic) para «Pregúntale a la IA»: lee todas las notas de la persona y su contexto de hoy (itinerario, últimos 14 días, memoria y reglas)
- * y responde a lo que sea: sus notas, su tiempo o cualquier otra cosa.
+ * Claude (Anthropic) para «Pregúntale a la IA»: lee todas las notas de la persona y su contexto de hoy (itinerario, últimos 14 días, memoria, reglas
+ * y lo que puede organizar) y responde a lo que sea: sus notas, su tiempo o cualquier otra cosa. Puede proponer cambios en sus metas y tareas
+ * (lib/cambios.ts), que la persona aplica o no.
  * Solo se usa si el Worker tiene el secreto ANTHROPIC_API_KEY (Cloudflare › Workers › relaxmental › Settings › Variables and Secrets).
  * Si no lo tiene, o Claude falla, la app sigue con la IA de Cloudflare (Llama 3.3).
  */
@@ -19,7 +20,18 @@ const INSTRUCCIONES =
   "una línea por nota que empieza con «• », la fecha tal como sale en su título, dos puntos y lo que decía, con sus palabras. Si es una sola, una o dos frases con su fecha. Si no hay nada, dilo claramente. " +
   "2) Si pregunta por su tiempo, su día, su semana, sus tareas o sus hábitos: usa el contexto y también sus notas si vienen al caso. Da recomendaciones concretas (qué, qué día y a qué hora) y respeta sus reglas. No inventes compromisos ni datos que no estén. " +
   "3) Si pregunta otra cosa (algo general, una idea, un consejo, una explicación): responde con lo que sabes, breve y útil; si sus notas o su contexto ayudan, úsalos. " +
-  "No des consejos médicos, legales ni financieros profesionales: sugiere consultar a un profesional. No puedes cambiar nada en la app: si recomiendas apuntar algo, dile dónde añadirlo. " +
+  "No des consejos médicos, legales ni financieros profesionales: sugiere consultar a un profesional. " +
+  "SÍ puedes poner cosas en su semana: proponer cambios en sus metas y tareas (moverlas de día, meterlas dentro de un momento de su día, darles una hora propia, pasarlas a Pendientes o crear una nueva). " +
+  "La app le enseña tus cambios debajo de la respuesta, cada uno con su casilla, y un botón para aplicarlos: nada cambia hasta que ella lo toque. " +
+  "Propón cambios cuando te pida ponerlo, agregarlo, meterlo, moverlo u organizarlo (también si solo dice «ok», «ponle» o «hazlo» después de una recomendación tuya) o cuando lo que recomiendas sea reorganizar tareas concretas. " +
+  "Usa solo las tareas (por su código) y los momentos (por su clave) de «LOS MOMENTOS DE MIS PRÓXIMOS DÍAS» y «MIS METAS Y TAREAS SIN HACER». " +
+  "Si una meta encaja en un momento de su día (por ejemplo una meta de trabajo en el momento de trabajo), métela dentro de ese momento en vez de dejarla suelta en el día o darle otra hora. " +
+  "Con cambios, en la respuesta no repitas la lista entera: di en una o dos frases qué propones y que abajo tiene los cambios para aplicarlos. Nunca digas que no puedes ponerlo en su semana. " +
+  "Lo que no puedes cambiar son sus momentos del día, sus hábitos, sus reglas ni sus notas: para eso dile dónde hacerlo en la app. " +
+  "Si propones cambios, antes de la línea NOTAS escribe una línea aparte que empiece por «CAMBIOS:» seguida de una lista JSON en esa misma línea, un objeto por tarea. " +
+  "Mover una tarea dentro de un momento: {\"tarea\":\"T4\",\"fecha\":\"AAAA-MM-DD\",\"momento\":\"clave del momento ese día\"}. Con hora propia: {\"tarea\":\"T4\",\"fecha\":\"AAAA-MM-DD\",\"hora\":\"HH:MM\",\"fin\":\"HH:MM\"}. " +
+  "Ese día sin hora: {\"tarea\":\"T4\",\"fecha\":\"AAAA-MM-DD\"}. A Pendientes: {\"tarea\":\"T4\",\"fecha\":\"\"}. Una nueva: {\"nueva\":\"título corto\",\"fecha\":\"AAAA-MM-DD\",\"momento\":\"…\",\"meta\":true,\"lado\":\"trabajo\"} (momento u hora si hace falta; lado \"trabajo\" o \"personal\"). " +
+  "Las fechas, de hoy a dos semanas como mucho. " +
   "Sé breve salvo que pida un repaso completo. Escribe sin asteriscos, títulos ni otro formato aparte de los «• ». " +
   "Termina SIEMPRE con una última línea aparte que diga exactamente «NOTAS:» seguido de los números de las notas que citaste o usaste, separados por comas (por ejemplo «NOTAS: 3, 7, 12»), o «NOTAS: ninguna».";
 
@@ -30,7 +42,7 @@ type NotaIA = { titulo: string; carpeta: string; fecha: string; texto: string };
  * Pregunta a Claude. Devuelve la respuesta y las posiciones de las notas citadas, o null si Claude no respondió
  * (sin clave, error de red, límite de uso o una negativa): entonces se usa el camino de siempre.
  */
-export async function responderClaude(apiKey: string, o: { pregunta: string; charla: Turno[]; notas: NotaIA[]; contexto: string }): Promise<{ respuesta: string; usadas: number[] } | null> {
+export async function responderClaude(apiKey: string, o: { pregunta: string; charla: Turno[]; notas: NotaIA[]; contexto: string }): Promise<{ respuesta: string; usadas: number[]; cambios: unknown } | null> {
   const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 120_000 });
   /* La conversación anterior (empieza siempre con la persona) y la pregunta nueva */
   const previa = o.charla.slice(-6);
@@ -63,12 +75,24 @@ export async function responderClaude(apiKey: string, o: { pregunta: string; cha
       .trim();
     if (!texto) return null;
     const linea = texto.match(/\n?\s*NOTAS\s*:\s*([^\n]*)\s*$/i);
-    const respuesta = (linea ? texto.slice(0, linea.index) : texto).replace(/\*\*/g, "").trim();
+    let cuerpo = linea ? texto.slice(0, linea.index) : texto;
+    /* Los cambios que propone (una lista JSON tras «CAMBIOS:»): se quitan del texto y los comprueba el Worker */
+    let cambios: unknown = null;
+    const c = cuerpo.match(/\n?[ \t]*CAMBIOS\s*:\s*(\[[\s\S]*\])\s*$/i);
+    if (c) {
+      try {
+        cambios = JSON.parse(c[1]);
+      } catch {
+        cambios = null;
+      }
+      cuerpo = cuerpo.slice(0, c.index);
+    }
+    const respuesta = cuerpo.replace(/\*\*/g, "").trim();
     if (!respuesta) return null;
     const usadas = linea
       ? [...new Set((linea[1].match(/\d+/g) ?? []).map((n) => Number(n) - 1).filter((n) => n >= 0 && n < o.notas.length))].sort((a, b) => a - b).slice(0, 15)
       : [];
-    return { respuesta: respuesta.slice(0, 8000), usadas };
+    return { respuesta: respuesta.slice(0, 8000), usadas, cambios };
   } catch (e) {
     /* Solo el tipo de error, nunca el contenido de las notas */
     if (e instanceof Anthropic.AuthenticationError) console.error("Claude: la clave ANTHROPIC_API_KEY no es válida");

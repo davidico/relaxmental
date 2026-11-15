@@ -11,6 +11,8 @@
 import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
 import { leerAvisos, semanaPorPlanificar } from "../lib/avisos";
+import { DIAS_ORGANIZAR, leerCambios, masDias, paraOrganizar } from "../lib/cambios";
+import type { Tarea } from "../lib/types";
 import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
@@ -317,6 +319,27 @@ async function preguntarIA(req: Request, env: Env, email: string): Promise<Respo
 
   /* Con la clave de Anthropic, Claude lee el Cerebro entero (o lo que quepa, eligiendo por palabras si fuera enorme) y el contexto de hoy */
   if (env.ANTHROPIC_API_KEY) {
+    /* Lo que puede organizar: los momentos de sus próximos días y sus metas y tareas sin hacer, cada una con su código */
+    const [tq, dq] = await Promise.all([
+      env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(email).all<{ data: string }>(),
+      env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'dias' AND id >= ? AND id <= ?").bind(email, now.date, masDias(now.date, DIAS_ORGANIZAR)).all<{ id: string; data: string }>(),
+    ]);
+    const tareas: Tarea[] = [];
+    for (const r of tq.results) {
+      try {
+        const t = JSON.parse(r.data) as Tarea;
+        if (t && typeof t.id === "string" && typeof t.title === "string") tareas.push(t);
+      } catch {}
+    }
+    const dias: Record<string, Bloque[]> = {};
+    for (const r of dq.results) {
+      try {
+        const v = JSON.parse(r.data);
+        if (Array.isArray(v) && v.length) dias[r.id] = v.filter(isBloque);
+      } catch {}
+    }
+    const datos = { dias, plantilla: perfil.plantilla, eventos: perfil.eventos };
+    const org = paraOrganizar(tareas, datos, now.date);
     const total = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0);
     const elegidas = total <= PRESUPUESTO_CLAUDE ? elegirNotas(notas, "", PRESUPUESTO_CLAUDE) : elegirNotas(notas, `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`, PRESUPUESTO_CLAUDE);
     const dia = DIAS_ES[new Date(now.date + "T12:00:00Z").getUTCDay()];
@@ -326,11 +349,12 @@ async function preguntarIA(req: Request, env: Env, email: string): Promise<Respo
       `MIS ÚLTIMOS 14 DÍAS:\n${reciente.slice(0, 20000) || "(sin datos)"}`,
       memoria.length ? `LO QUE RECUERDAS DE MÍ:\n${memoria.map((x) => "- " + x).join("\n")}` : "",
       `MIS REGLAS:\n${perfil.reglas.slice(0, 6000) || "(ninguna)"}`,
+      org.texto,
     ]
       .filter(Boolean)
       .join("\n\n");
     const r = await responderClaude(env.ANTHROPIC_API_KEY, { pregunta, charla, notas: elegidas.notas, contexto });
-    if (r) return json({ respuesta: r.respuesta, ia: "claude", fuentes: fuentesDe(elegidas.notas, r.usadas) });
+    if (r) return json({ respuesta: r.respuesta, ia: "claude", fuentes: fuentesDe(elegidas.notas, r.usadas), cambios: leerCambios(r.cambios, { codigos: org.codigos, datos, hoy: now.date }) });
   }
 
   /* Sin Claude (o si falló), la IA de Cloudflare. Si la pregunta es sobre lo escrito, busca en las notas como siempre */
