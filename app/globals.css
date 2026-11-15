@@ -2428,11 +2428,11 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 /* Lo personal en verde oliva y el trabajo en dorado, en colores planos (sin tintes lavados), como un planner de papel. Dentro del planner,
    todo lo que lleva acento (checks, «+ Añadir», botones de sus hojas) toma el color de su lado. Cada lado tiene un tono para el texto
    (contraste AA sobre el fondo) y el color lleno de las cabeceras de los días (`--cab-bg`, con su texto `--cab-tx`), que es el mismo en claro y oscuro. */
-.plan{--lado-personal:#5f6e26;--lado-trabajo:#8a6a12;--vivo-personal:#6a7a2e;--vivo-trabajo:#c8a240;
-  --primary:#5f6e26;--primary-hover:#515e1f;--primary-edge:#5f6e26;--pine:#5f6e26;--pine-soft:#eff2e3;--sage:#d8dfbf;--focus:#5f6e26;
-  --cab-bg:#6a7a2e;--cab-tx:#ffffff}
+.plan{--lado-personal:#56622b;--lado-trabajo:#8a6a12;--vivo-personal:#56622b;--vivo-trabajo:#d9b44a;
+  --primary:#56622b;--primary-hover:#4a5524;--primary-edge:#56622b;--pine:#56622b;--pine-soft:#eff2e3;--sage:#d8dfbf;--focus:#56622b;
+  --cab-bg:#56622b;--cab-tx:#f5f4ee}
 .plan-panel[data-lado="trabajo"]{--primary:#8a6a12;--primary-hover:#74580c;--primary-edge:#8a6a12;--pine:#8a6a12;--pine-soft:#fbf3dc;--sage:#efdca0;--focus:#8a6a12;
-  --cab-bg:#c8a240;--cab-tx:#2b2408}
+  --cab-bg:#e3c46f;--cab-tx:#2b2408}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .plan{--lado-personal:#c0cc8a;--lado-trabajo:#e3c46f;--vivo-personal:#a9b76c;--vivo-trabajo:#d9b44a;
     --primary:#c0cc8a;--primary-hover:#d0daa3;--primary-edge:#c0cc8a;--pine:#c8d397;--pine-soft:#2b301d;--sage:#3d4526;--focus:#c0cc8a}
