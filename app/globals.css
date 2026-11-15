@@ -2116,3 +2116,8 @@ textarea.ms-sub{padding:10px 12px;border:1px solid var(--field);border-radius:8p
 .lt-f.ahora .lt-dot{border-color:var(--oro-bg);box-shadow:0 0 0 1px var(--oro-b)}
 .lt-f.ahora+.lt-entre{margin-top:0}
 .lt-entre:has(+.lt-f.ahora){margin-bottom:0}
+
+/* ---------- Versión 6.3: si la hora de una tarea cae dentro de un momento, se pregunta si va dentro ---------- */
+.ts-dentro legend{line-height:1.4;overflow-wrap:anywhere}
+.ts-dentro .ts-modos label{max-width:100%}
+.ts-dentro .ts-modos span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

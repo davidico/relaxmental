@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate, toMin } from "@/lib/dates";
 import { bloqueDeSub, claveDe } from "@/lib/momentos";
+import { baseDe } from "@/lib/plan";
 import { borrarTarea } from "@/lib/deshacer";
 import type { Tarea } from "@/lib/types";
 import WhenDialog from "./WhenDialog";
@@ -22,7 +23,7 @@ const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${S
  * si es una subtarea, además deja elegir dentro de qué momento va.
  */
 export default function TaskSheet({ onClose, inicial, editar }: { onClose: () => void; inicial?: { due?: string; hora?: string }; editar?: Tarea }) {
-  const { save, remove, hoy, planFor } = useData();
+  const { save, remove, hoy, planFor, dias, perfil } = useData();
   const [title, setTitle] = useState(editar?.title ?? "");
   const [step, setStep] = useState(editar?.step ?? "");
   const [due, setDue] = useState(editar ? editar.due : inicial?.due ?? "");
@@ -53,6 +54,11 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
   const esSub = !!editar?.momento && !!due && !hora;
   const momentos = esSub ? planFor(due).filter((b) => !b.tarea) : [];
   const suyo = esSub && momento ? bloqueDeSub(momento, momentos) : undefined;
+  /* Si la hora elegida cae dentro de un momento del día (por ejemplo, en medio de «Iglesia»), se pregunta si la tarea va dentro de él */
+  const contenedor = due && hora ? baseDe(due, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos }).find((b) => toMin(b.s) <= toMin(hora) && toMin(hora) < toMin(b.e)) : undefined;
+  /* Una tarea que ya tenía su propia hora sigue aparte salvo que se elija «Dentro» */
+  const [aparte, setAparte] = useState(!!editar?.hora);
+  const dentro = !!contenedor && !aparte;
 
   const puede = !!title.trim();
   const guardar = () => {
@@ -60,6 +66,8 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
     /* Lo que dice el reloj: sin fecha, un día, o un día con hora (y entonces su duración) */
     const cuando = !due
       ? { due: "", hora: "", fin: undefined, min: undefined, momento: undefined }
+      : dentro
+        ? { due, hora: "", fin: undefined, min, momento: claveDe(contenedor!) }
       : hora
         ? { due, hora, fin: aHora(Math.min(1439, toMin(hora) + min)), min, momento: undefined }
         : { due, hora: "", fin: undefined, min: suyo ? min : undefined, momento: suyo ? claveDe(suyo) : undefined };
@@ -72,13 +80,14 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
     setTitle("");
     setStep("");
     setHora("");
+    setAparte(false);
     setVerPaso(false);
     setVerCuando(false);
     setGuardadas((n) => n + 1);
     titleRef.current?.focus();
   };
 
-  const nota = !due ? "Sin fecha: queda en Pendientes, para cuando puedas." : hora ? `${diaTxt} a las ${hora}: entra en tu día a esa hora.` : suyo ? `${diaTxt}, dentro de «${suyo.t}».` : `${diaTxt}, sin hora: sale en Hoy ese día.`;
+  const nota = !due ? "Sin fecha: queda en Pendientes, para cuando puedas." : dentro ? `${diaTxt}, dentro de «${contenedor!.t}»: sale debajo de ese momento, en la línea de tu día.` : hora ? `${diaTxt} a las ${hora}: entra en tu día a esa hora.` : suyo ? `${diaTxt}, dentro de «${suyo.t}».` : `${diaTxt}, sin hora: sale en Hoy ese día.`;
 
   return (
     <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -113,6 +122,21 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
             </select>
           </div>
         )}
+        {contenedor && (
+          <fieldset className="ts-modo ts-dentro">
+            <legend>A las {hora} estás en «{contenedor.t}» ({contenedor.s} a {contenedor.e}). ¿Dónde la pongo?</legend>
+            <div className="ts-modos">
+              <label>
+                <input type="radio" name="ts-dentro" checked={!aparte} onChange={() => setAparte(false)} />
+                <span>Dentro de «{contenedor.t}»</span>
+              </label>
+              <label>
+                <input type="radio" name="ts-dentro" checked={aparte} onChange={() => setAparte(true)} />
+                <span>Aparte, a las {hora}</span>
+              </label>
+            </div>
+          </fieldset>
+        )}
         {(!!hora || !!suyo) && !!due && (
           <div className="ts-campo" role="group" aria-labelledby="ts-min">
             <p id="ts-min">Tiempo aproximado</p>
@@ -124,7 +148,7 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
           </div>
         )}
         <p className="ts-nota" aria-live="polite">{nota}</p>
-        {!!due && !!hora && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
+        {!!due && !!hora && !dentro && permiso !== "granted" && <p className="hint ts-hint">Para que te avise a las {hora}, activa los avisos en la pantalla Hoy.</p>}
 
         <div className="ts-bar">
           <button
