@@ -25,6 +25,11 @@ export async function transcribe(ai: AI, audio: ArrayBuffer) {
 }
 
 /** La memoria de la persona, como texto para el modelo (vacío si no hay) */
+/** Sus últimos 14 días (lo arma recienteDe en el Worker): qué cumplió, qué cambió a mano, hábitos, tareas y diarios */
+export function textoReciente(r?: string, max = 9000) {
+  return r?.trim() ? `\n\nMIS ÚLTIMOS 14 DÍAS (lo que de verdad hice):\n${r.trim().slice(0, max)}` : "";
+}
+
 export function textoMemoria(m?: string[]) {
   const xs = (m ?? []).map((x) => x.trim()).filter(Boolean).slice(-40);
   return xs.length ? `\n\nLO QUE RECUERDAS DE MÍ (memoria que he aprobado):\n${xs.map((x) => "- " + x).join("\n")}` : "";
@@ -131,7 +136,7 @@ export function cleanBlocks(raw: unknown): Bloque[] {
 
 export async function planDay(
   ai: AI,
-  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean; ejemplos?: string; memoria?: string[] },
+  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean; ejemplos?: string; memoria?: string[]; reciente?: string },
 ): Promise<Bloque[]> {
   const d = new Date(o.fecha + "T12:00:00Z");
   const dow = d.getUTCDay();
@@ -184,13 +189,14 @@ export async function planDay(
           "Eres el planificador del día de una persona. Sigue SUS REGLAS al pie de la letra; si dos reglas chocan, gana la más específica (la que nombra el día o la labor). " +
           "Si te paso LO QUE RECUERDAS DE ELLA, tenlo en cuenta (cuándo rinde mejor, qué le cuesta, qué prefiere), pero sus reglas mandan. " +
           "Si te paso DÍAS REALES que ella ajustó a mano, son lo más fiable: imita sus horas, los nombres que usa, el orden y la duración de los bloques (sobre todo los del mismo día de la semana). " +
+          "Si te paso SUS ÚLTIMOS 14 DÍAS, úsalos para que el plan le sirva de verdad: un momento que casi nunca cumple a esa hora pruébalo a otra hora o más corto; lo que siempre cambia a mano, déjalo ya como lo deja ella; si sus diarios hablan de cansancio o de días muy llenos, deja más aire. No conviertas sus tareas ni su diario en bloques nuevos salvo que encajen con sus reglas. " +
           "No inventes actividades que no estén en sus reglas ni en sus días reales; nada genérico como «preparación para la noche» o «momento espiritual» si ella no lo dijo. " +
           "Si sus reglas dicen que toma medicinas o pastillas, pon un bloque corto (5-15 min, área salud) a la hora exacta, con el nombre en el detalle. " +
           "Cubre el día de la hora de levantarse a la de dormir sin huecos ni solapes, en bloques de 15 minutos o más, en orden. " +
           "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=trabajo o estudio, tukuna=proyecto propio o negocio, aleman=idiomas y aprendizaje, iglesia=fe, iglesia, Biblia y oración, familia=familia e hijos, salud=salud, ejercicio y descanso, casa=casa, cocina, papeleo y tareas, rutina=comidas y traslados. " +
           'Responde SOLO con JSON: {"bloques":[{"s":"07:00","e":"07:15","t":"…","a":"salud","sub":"…"}]}',
       },
-      { role: "user", content: `MIS REGLAS:\n${o.reglas.slice(0, 6000)}${textoMemoria(o.memoria)}\n\nDATOS DEL DÍA:\n${contexto}` },
+      { role: "user", content: `MIS REGLAS:\n${o.reglas.slice(0, 6000)}${textoMemoria(o.memoria)}${textoReciente(o.reciente, 7000)}\n\nDATOS DEL DÍA:\n${contexto}` },
     ],
     response_format: { type: "json_schema", json_schema: schema },
     max_tokens: 2048,
@@ -428,7 +434,7 @@ export async function propuestasDiario(
         role: "user",
         content:
           `HOY ES ${dia} ${o.fecha}.\n\nMI DIARIO DE HOY:\n${o.texto.slice(0, 4000)}\n\nLO QUE HICE HOY:\n${o.hechas.join("\n") || "(nada marcado)"}\n\nLO QUE NO HICE:\n${o.pendientes.join("\n") || "(nada)"}` +
-          `\n\nYA APUNTADO PARA LOS PRÓXIMOS DÍAS:\n${o.semana.join("\n") || "(nada)"}${textoMemoria(o.memoria)}${o.reciente ? "\n\nMIS ÚLTIMOS DÍAS:\n" + o.reciente.slice(0, 5000) : ""}` +
+          `\n\nYA APUNTADO PARA LOS PRÓXIMOS DÍAS:\n${o.semana.join("\n") || "(nada)"}${textoMemoria(o.memoria)}${o.reciente ? "\n\nMIS ÚLTIMOS DÍAS:\n" + o.reciente.slice(0, 9000) : ""}` +
           `\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}\n\nYA DECIDIDO (no repetir):\n${o.decididas.join("\n") || "(nada)"}`,
       },
     ],
@@ -469,7 +475,7 @@ export async function resumenSemana(
       },
       {
         role: "user",
-        content: `HOY ES ${dia} ${o.hoy}.\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 7000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}\n\nYA DECIDIDO (no repetir):\n${o.decididas.join("\n") || "(nada)"}`,
+        content: `HOY ES ${dia} ${o.hoy}.\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 10000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}\n\nYA DECIDIDO (no repetir):\n${o.decididas.join("\n") || "(nada)"}`,
       },
     ],
     response_format: {
@@ -505,7 +511,7 @@ export async function responder(
       },
       {
         role: "user",
-        content: `CONTEXTO (no es una pregunta):\nHoy es ${dia} ${o.hoy}, son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.itinerario.join("\n") || "(vacío)"}\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 6000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+        content: `CONTEXTO (no es una pregunta):\nHoy es ${dia} ${o.hoy}, son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.itinerario.join("\n") || "(vacío)"}\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 9000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
       },
       { role: "assistant", content: "Entendido. ¿Qué quieres saber?" },
       ...o.charla.slice(-6).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1200) })),
@@ -521,7 +527,7 @@ export async function responder(
 /** Para las tareas sin fecha: qué día de los próximos 7 conviene hacer cada una (solo cuando la persona lo pide) */
 export async function diasPendientes(
   ai: AI,
-  o: { hoy: string; pendientes: { id: string; t: string; paso?: string }[]; dias: string[]; reglas: string; memoria?: string[] },
+  o: { hoy: string; pendientes: { id: string; t: string; paso?: string }[]; dias: string[]; reglas: string; memoria?: string[]; reciente?: string },
 ): Promise<{ id: string; due: string; motivo: string }[]> {
   const dia = DIAS[new Date(o.hoy + "T12:00:00Z").getUTCDay()];
   const hasta = new Date(Date.parse(o.hoy + "T12:00:00Z") + 6 * 86400000).toISOString().slice(0, 10);
@@ -533,14 +539,14 @@ export async function diasPendientes(
           "Una persona tiene tareas pendientes sin fecha y te pide ayuda para decidir cuándo hacerlas. Tienes cómo viene cada uno de sus próximos 7 días (lo que ya tiene apuntado y sus compromisos), sus reglas y lo que recuerdas de ella. " +
           `Para cada tarea propón UN día entre ${o.hoy} y ${hasta} (formato AAAA-MM-DD) y un motivo de una frase corta, concreto (por ejemplo «El jueves tienes pocas cosas»). ` +
           "Reparte: no pongas más de 2 tareas nuevas en el mismo día ni cargues los días que ya están llenos o con compromisos largos. Respeta sus reglas (días de descanso, horarios). " +
-          "Lo que parezca urgente o rápido va antes. Si una tarea puede esperar a otra semana o esta semana no cabe bien, no la incluyas: es mejor proponer pocas que agobiar. " +
+          "Si te paso sus últimos 14 días, mira qué días suele cumplir y cuáles se le llenan, y no pongas nada en los días en que suele quedarse sin hacer. " + "Lo que parezca urgente o rápido va antes. Si una tarea puede esperar a otra semana o esta semana no cabe bien, no la incluyas: es mejor proponer pocas que agobiar. " +
           'Responde SOLO con JSON: {"propuestas":[{"id":"…","due":"AAAA-MM-DD","motivo":"…"}]}',
       },
       {
         role: "user",
         content:
           `HOY ES ${dia} ${o.hoy}.\n\nMIS PRÓXIMOS 7 DÍAS:\n${o.dias.join("\n") || "(sin datos)"}\n\nMIS PENDIENTES SIN FECHA:\n${o.pendientes.map((p) => `${p.id} · ${p.t}${p.paso ? ` (primer paso: ${p.paso})` : ""}`).join("\n")}` +
-          `${textoMemoria(o.memoria ?? [])}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+          `${textoMemoria(o.memoria ?? [])}${textoReciente(o.reciente, 6000)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
       },
     ],
     response_format: {
@@ -736,7 +742,7 @@ export async function tiposDe(ai: AI, nombres: { t: string; sub?: string }[], ti
 
 export async function horasMetas(
   ai: AI,
-  o: { fecha: string; ahora: string; metas: { id: string; t: string; lado: string }[]; bloques: string[]; reglas: string; memoria?: string[] },
+  o: { fecha: string; ahora: string; metas: { id: string; t: string; lado: string }[]; bloques: string[]; reglas: string; memoria?: string[]; reciente?: string },
 ): Promise<{ id: string; s: string; e: string }[]> {
   const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
   const r = await ai.run(LLM, {
@@ -748,12 +754,12 @@ export async function horasMetas(
           "Para cada meta propone UN bloque realista (s y e en HH:MM, normalmente de 45 a 120 minutos) que empiece después de la hora actual. " +
           "Las metas de trabajo van en bloques de trabajo o huecos libres de horario laboral; las personales en huecos personales. " +
           "Nunca encima de compromisos fijos (iglesia, turnos, citas), comidas, pastillas ni de otras tareas o metas ya puestas; puede ir dentro de bloques genéricos como «trabajo», «bloque de mañana» o «libre». " +
-          "Respeta sus reglas y ten en cuenta lo que recuerdas de ella (por ejemplo, a qué hora rinde mejor). Si una meta no cabe hoy, no la incluyas. No solapes las propuestas entre sí. " +
+          "Respeta sus reglas y ten en cuenta lo que recuerdas de ella y sus últimos 14 días (a qué hora rinde mejor, qué momentos suele cumplir y cuáles no). Si una meta no cabe hoy, no la incluyas. No solapes las propuestas entre sí. " +
           'Responde SOLO con JSON: {"propuestas":[{"id":"…","s":"HH:MM","e":"HH:MM"}]}',
       },
       {
         role: "user",
-        content: `HOY: ${dia} ${o.fecha}, ahora son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.bloques.join("\n") || "(vacío)"}\n\nMETAS SIN HORA:\n${o.metas.map((m) => `${m.id} · [${m.lado}] ${m.t}`).join("\n")}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+        content: `HOY: ${dia} ${o.fecha}, ahora son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.bloques.join("\n") || "(vacío)"}\n\nMETAS SIN HORA:\n${o.metas.map((m) => `${m.id} · [${m.lado}] ${m.t}`).join("\n")}${textoMemoria(o.memoria)}${textoReciente(o.reciente, 6000)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
       },
     ],
     response_format: {

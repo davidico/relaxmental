@@ -8,7 +8,7 @@
  * hacerse pasar por otra persona, y cada usuario solo ve sus propias filas.
  */
 
-import { planDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
+import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
 import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, elegirNotas, type NotaTexto } from "./notas";
@@ -128,6 +128,11 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
       .all<{ data: string }>(),
     env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'habitos'").bind(email).all<{ data: string }>(),
   ]);
+  const [extra, dq, perfil] = await Promise.all([
+    env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id IN ('hechos', 'historial')").bind(email).all<{ id: string; data: string }>(),
+    env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'dias' AND id >= ? AND id < ?").bind(email, desde, hoy).all<{ id: string; data: string }>(),
+    perfilDe(env, email),
+  ]);
   const leer = <T,>(rows: { data: string }[]) =>
     rows.flatMap((r) => {
       try {
@@ -136,13 +141,70 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
         return [];
       }
     });
-  type T = { title?: string; due?: string; hora?: string; done?: boolean; lado?: string; meta?: boolean };
+  type T = { title?: string; due?: string; hora?: string; done?: boolean; lado?: string; meta?: boolean; momento?: string };
   const tareas = leer<T>(tq.results).filter((t) => t.title);
-  const et = (t: T) => `[${(t.meta ?? !!t.lado) ? "meta · " + (t.lado === "trabajo" ? "trabajo" : "personal") : "tarea"}] ${String(t.title).slice(0, 80)}`;
+  const et = (t: T) => `[${(t.meta ?? !!t.lado) ? "meta · " + (t.lado === "trabajo" ? "trabajo" : "personal") : "tarea"}] ${String(t.title).slice(0, 80)}${t.momento ? ` (dentro de «${t.momento.split("|").slice(1).join("|").slice(0, 40)}»)` : ""}`;
   const partes: string[] = [];
 
-  const diarios = leer<{ ref?: string; text?: string }>(nq.results).filter((n) => n.ref && n.text);
-  if (diarios.length) partes.push("DIARIOS (del más reciente al más antiguo):\n" + diarios.map((n) => `- ${dia(n.ref!)}: ${String(n.text).replace(/\s+/g, " ").slice(0, 500)}`).join("\n"));
+  const json1 = (id: string) => {
+    try {
+      const r = extra.results.find((x) => x.id === id);
+      return r ? JSON.parse(r.data) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  /* Los momentos de su día: cuáles cumplió y cuáles no. Solo cuentan los días en que marcó algo (si no usa los checks, no se sabe) */
+  const hechos = (json1("hechos") ?? {}) as Record<string, string[]>;
+  const dias: Record<string, Bloque[]> = {};
+  for (const r of dq.results) {
+    try {
+      const v = JSON.parse(r.data);
+      if (Array.isArray(v)) dias[r.id] = v.filter(isBloque);
+    } catch {}
+  }
+  const conChecks = Object.keys(hechos).filter((f) => f >= desde && f < hoy && Array.isArray(hechos[f]) && hechos[f].length).sort();
+  if (conChecks.length) {
+    const por = new Map<string, { t: string; horas: string[]; de: number; si: number }>();
+    for (const f of conChecks) {
+      const marcados = new Set(hechos[f]);
+      for (const b of baseDe(f, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos })) {
+        const k = b.t.trim().toLowerCase();
+        const x = por.get(k) ?? { t: b.t.trim(), horas: [], de: 0, si: 0 };
+        x.de++;
+        x.horas.push(b.s);
+        if (marcados.has(`${b.s}|${b.t}`)) x.si++;
+        por.set(k, x);
+      }
+    }
+    const moda = (xs: string[]) => [...xs].sort((a, b) => xs.filter((y) => y === b).length - xs.filter((y) => y === a).length)[0];
+    partes.push(
+      `MOMENTOS DE SU DÍA: CUÁLES CUMPLIÓ (en los ${conChecks.length} días de las últimas dos semanas en que marcó lo que hizo):\n` +
+        [...por.values()]
+          .sort((a, b) => b.de - a.de || a.t.localeCompare(b.t))
+          .slice(0, 30)
+          .map((x) => `- ${x.t.slice(0, 60)} (normalmente a las ${moda(x.horas)}): hecho ${x.si} de ${x.de} días`)
+          .join("\n"),
+    );
+  }
+
+  /* Lo que cambió a mano en su día: lo que la app le proponía y cómo lo dejó */
+  const historial = ((json1("historial") ?? []) as { fecha?: string; antes?: string[]; despues?: string[] }[]).filter((c) => c?.fecha && c.fecha >= desde && Array.isArray(c.antes) && Array.isArray(c.despues));
+  if (historial.length) {
+    partes.push(
+      "CAMBIOS QUE HIZO A MANO EN SU DÍA (lo que la app le proponía → cómo lo dejó):\n" +
+        historial
+          .slice(-10)
+          .reverse()
+          .map((c) => {
+            const quito = c.antes!.filter((x) => !c.despues!.includes(x)).slice(0, 6);
+            const puso = c.despues!.filter((x) => !c.antes!.includes(x)).slice(0, 6);
+            return `- ${dia(c.fecha!)}: quitó o movió ${quito.map((x) => `«${String(x).slice(0, 70)}»`).join(", ") || "nada"}; puso ${puso.map((x) => `«${String(x).slice(0, 70)}»`).join(", ") || "nada"}`;
+          })
+          .join("\n"),
+    );
+  }
 
   const pasadas = tareas.filter((t) => t.due && t.due >= desde && t.due <= hoy);
   if (pasadas.length) {
@@ -186,6 +248,9 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
           .join("\n"),
     );
   }
+  /* Los diarios al final: son lo más largo y, si hay que recortar, se recorta por aquí */
+  const diarios = leer<{ ref?: string; text?: string }>(nq.results).filter((n) => n.ref && n.text);
+  if (diarios.length) partes.push("DIARIOS (del más reciente al más antiguo):\n" + diarios.slice(0, 10).map((n) => `- ${dia(n.ref!)}: ${String(n.text).replace(/\s+/g, " ").slice(0, 400)}`).join("\n"));
   return partes.join("\n\n");
 }
 const DIAS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -284,7 +349,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const { eventos } = await perfilDe(env, email);
     const reales = await diasReales(env, email);
     const ejemplos = resumenDias(reales.filter((d) => d.fecha !== fecha), new Date(fecha + "T12:00:00Z").getUTCDay());
-    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos, memoria: await memoriaDe(env, email) });
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, berlinNow().date)]);
+    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos, memoria, reciente });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
   }
@@ -309,12 +375,12 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       return fechaMas(h, ((8 - dow) % 7) || 7);
     })();
     const reales = await diasReales(env, email);
-    const memoria = await memoriaDe(env, email);
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, berlinNow().date)]);
     const dias = await Promise.all(
       Array.from({ length: 7 }, (_, i) => fechaMas(lunes, i)).map(async (f) => {
         const dow = new Date(f + "T12:00:00Z").getUTCDay();
         try {
-          return [String(dow), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true, ejemplos: resumenDias(reales, dow), memoria })] as const;
+          return [String(dow), await planDay(env.AI, { reglas, fecha: f, eventos: {}, tareas: [], tipo: true, ejemplos: resumenDias(reales, dow), memoria, reciente })] as const;
         } catch {
           return [String(new Date(f + "T12:00:00Z").getUTCDay()), []] as const;
         }
@@ -430,7 +496,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
       .filter((p) => p.id && p.t.trim());
     if (!pendientes.length) return json({ propuestas: [] });
     const dias = Array.isArray(b.dias) ? b.dias.map((x) => String(x).slice(0, 400)).slice(0, 7) : [];
-    return json({ propuestas: await diasPendientes(env.AI, { hoy: b.hoy, pendientes, dias, reglas: String(b.reglas ?? ""), memoria: await memoriaDe(env, email) }) });
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, b.hoy)]);
+    return json({ propuestas: await diasPendientes(env.AI, { hoy: b.hoy, pendientes, dias, reglas: String(b.reglas ?? ""), memoria, reciente }) });
   }
   /* Metas de hoy sin hora: cuándo trabajar en cada una */
   if (url.pathname === "/api/ai/metas" && req.method === "POST") {
@@ -439,7 +506,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     const metas = (Array.isArray(b.metas) ? b.metas : []).slice(0, 12).map((m) => ({ id: String(m?.id ?? "").slice(0, 60), t: String(m?.t ?? "").slice(0, 120), lado: m?.lado === "trabajo" ? "trabajo" : "personal" })).filter((m) => m.id && m.t);
     if (!metas.length) return json({ propuestas: [] });
     const bloques = Array.isArray(b.bloques) ? b.bloques.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
-    return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? ""), memoria: await memoriaDe(env, email) }) });
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, b.fecha)]);
+    return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? ""), memoria, reciente }) });
   }
   /* El diario de la noche: propuestas para seguir organizándose */
   if (url.pathname === "/api/ai/diario" && req.method === "POST") {

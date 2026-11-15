@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "6.9";
-export const VERSION_FECHA = "14 de noviembre de 2026";
+export const VERSION = "6.10";
+export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "La IA te conoce en tus días: cuando arma tu semana, te propone horario, te dice cuándo hacer tus pendientes o te propone horas para tus metas, mira tus últimos 14 días (qué momentos cumpliste y cuáles no, lo que cambiaste a mano, tus hábitos, tareas y diarios) y se ajusta a lo que haces de verdad",
   "«Pregúntale a tus notas» y «Pregúntale a la IA» ocupan toda la pantalla, y las respuestas usan todo el ancho",
   "Los momentos de tu día también son hábitos: toca el nombre de un momento (como «Ejercicio») y elige a qué hábito cuenta, o crea el hábito ahí mismo; vale para todos los días que tengan ese momento",
   "Hábitos en tu día: en el «+» entre momentos puedes elegir uno de tus hábitos, y al marcarlo hecho se marca también en Hábitos",

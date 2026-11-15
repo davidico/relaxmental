@@ -29,11 +29,11 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Dictas con el micrófono", lee: "el audio.", da: "el texto escrito y, en las notas, un título corto." },
   { cuando: "Respondes las preguntas de «Armemos tu semana»", lee: "tus reglas, tus respuestas y tus compromisos próximos.", da: "más preguntas y, al final, tus reglas redactadas." },
   { cuando: "Subes una foto de tus compromisos", lee: "la foto, la fecha de hoy y tus reglas.", da: "la lista de compromisos con fecha y hora, que revisas antes de guardar." },
-  { cuando: "Armas tu semana tipo", lee: "tus reglas, tus últimos 30 días ajustados a mano y lo que recuerda de ti.", da: "un día típico para cada día de la semana." },
-  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados y lo que recuerda de ti.", da: "el horario de cada día; tú lo aplicas o no." },
+  { cuando: "Armas tu semana tipo", lee: "tus reglas, tus últimos 30 días ajustados a mano, tus últimos 14 días y lo que recuerda de ti.", da: "un día típico para cada día de la semana." },
+  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados, tus últimos 14 días y lo que recuerda de ti.", da: "el horario de cada día; tú lo aplicas o no." },
   { cuando: "Guardas un día que editaste", lee: "lo que la app te propuso y cómo lo dejaste (tus últimos 12 cambios), tus reglas y lo que ya decidiste.", da: "hasta 5 conclusiones sobre cómo armas tus días." },
-  { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
-  { cuando: "Pides «¿Cuándo las hago?» en Pendientes", lee: "los títulos de tus tareas sin fecha, lo que ya tienes apuntado y tus compromisos de los próximos 7 días, tus reglas y lo que recuerda de ti.", da: "un día para cada pendiente, con un motivo corto; tú dices sí o no a cada uno." },
+  { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas, tus últimos 14 días y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
+  { cuando: "Pides «¿Cuándo las hago?» en Pendientes", lee: "los títulos de tus tareas sin fecha, lo que ya tienes apuntado y tus compromisos de los próximos 7 días, tus reglas, tus últimos 14 días y lo que recuerda de ti.", da: "un día para cada pendiente, con un motivo corto; tú dices sí o no a cada uno." },
   { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "hasta 3 propuestas; si aprendió algo nuevo de ti, lo apunta en su memoria; y los temas personales que podrías hablar con alguien, que solo se guardan si tú los apuntas en una lista." },
   { cuando: "Pides el resumen de tu semana", lee: "tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "un repaso de la semana, hasta 3 recomendaciones y, si aprendió algo nuevo, lo apunta en su memoria." },
   { cuando: "En tu horario hay una actividad que la app no reconoce por su nombre", lee: "el nombre y la descripción de esa actividad (no tus tareas ni tus notas).", da: "qué tipo de actividad es (despertar, ejercicio, diario…), para ponerle su ícono y su botón. Lo guarda y no vuelve a preguntar por ella." },
@@ -385,6 +385,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
               <li>Tus reglas mandan: es el texto que lee siempre.</li>
               <li>Tus compromisos con fecha son fijos: no los mueve ni pone nada encima.</li>
               <li>Aprende de lo que corriges: compara lo que te propuso con cómo lo dejaste y busca lo que se repite.</li>
+              <li>«Tus últimos 14 días» es un resumen que arma la app: qué momentos de tu día marcaste como hechos y cuáles no, lo que cambiaste a mano, tus hábitos, tus metas y tareas (hechas, sin hacer y lo que viene) y tus diarios. Nunca tus notas del Cerebro. Con eso ajusta lo que te propone: si algo casi nunca lo cumples a esa hora, te lo pone a otra o más corto.</li>
               <li>No vuelve a proponer lo que ya aceptaste o rechazaste.</li>
               <li>Antes de mostrarte algo, la app descarta horas imposibles, fechas pasadas y bloques que se pisan.</li>
             </ul>
