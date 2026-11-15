@@ -113,6 +113,8 @@ export type Perfil = {
   revision?: { mes?: string };
   /** Semana tipo (día de la semana -> bloques) */
   plantilla?: Plantilla;
+  /** La IA propuso la semana tipo (al empezar) y la persona aún no la ha revisado: se le recuerda que la cambie a su gusto */
+  plantillaRevisar?: { at?: string } | null;
   /** Compromisos con fecha */
   eventos?: Eventos;
   /** Días ajustados a mano (lo propuesto y lo que quedó) */

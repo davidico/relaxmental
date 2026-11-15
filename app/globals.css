@@ -2336,3 +2336,5 @@ textarea.st-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .as-pie>.as-nota:empty{display:none}
 .as-pie>.vok.as-nota{color:var(--ok)}
 @media (min-width:900px){.as-modal{align-items:center}.sheet.as{height:auto;max-height:86vh;border-radius:14px}.as-dias{grid-template-columns:1fr}}
+.st-aviso{margin:0;padding:var(--e3);border-radius:10px;background:var(--band);font-size:14px;line-height:1.45;color:var(--ink)}
+.hy-aviso a.btn.ghost{color:var(--ink)}

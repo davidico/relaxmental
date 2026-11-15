@@ -156,39 +156,60 @@ function ReglasAviso() {
   if (mode === "loading" || offline) return null;
   const reglas = perfil.reglas?.text?.trim() ?? "";
   const mes = hoy.slice(0, 7);
-  const armarTipo = async () => {
+  /* La IA propone la semana tipo con las reglas; queda marcada «por revisar» para decirle a la persona que la cambie a su gusto */
+  const armarTipo = async (texto: string = reglas) => {
     setTipo("armando");
     try {
-      savePerfil("plantilla", await armarPlantilla(reglas));
+      savePerfil("plantilla", await armarPlantilla(texto));
+      savePerfil("plantillaRevisar", { at: new Date().toISOString() });
       setListo(false);
       setTipo("");
     } catch {
       setTipo("error");
     }
   };
+  const hayTipo = !!perfil.plantilla && Object.values(perfil.plantilla).some((x) => x.length);
   const revisado = perfil.revision?.mes === mes || (perfil.reglas?.updated ?? "").slice(0, 7) === mes;
   const guardar = (t: string) => {
     savePerfil("reglas", { text: t, updated: new Date().toISOString() });
     savePerfil("revision", { mes });
-    if (quiz === "inicio") setListo(true);
+    /* La primera vez: con las respuestas, la IA propone enseguida una semana tipo */
+    if (quiz === "inicio") {
+      setListo(true);
+      void armarTipo(t);
+    }
     return true;
   };
   return (
     <>
-      {reglas && !(perfil.plantilla && Object.values(perfil.plantilla).some((x) => x.length)) ? (
+      {reglas && !hayTipo && tipo === "armando" ? (
+        <section className="card pad hy-aviso" role="status">
+          <h2 className="hy-h">Armando tu semana tipo…</h2>
+          <p className="vwork"><span className="spin" aria-hidden="true" /> Con lo que me contaste estoy armando tu semana normal, de lunes a domingo. Tarda un poco.</p>
+        </section>
+      ) : reglas && !hayTipo ? (
         <section className="card pad hy-aviso" aria-live="polite">
           <h2 className="hy-h">{listo ? "¡Tus reglas están listas!" : "Falta tu semana tipo"}</h2>
-          <p>Tu semana tipo es tu semana normal: qué haces cada día y a qué hora. Es la base de tu horario. Puedes hacerla tú o pedirle a la IA que te proponga una con tus reglas.</p>
+          <p>Tu semana tipo es tu semana normal: qué haces cada día y a qué hora. Es la base de tu horario. La IA te propone una con lo que le contaste y después la cambias a tu gusto; o la haces tú desde cero.</p>
           {tipo === "error" && <p className="verr" role="alert">⚠ No se pudo armar. Inténtalo otra vez.</p>}
           <div className="row actions">
-            <Link className="btn" href="/perfil/semana">Hacerla yo</Link>
-            <button className="btn ghost" onClick={armarTipo} disabled={tipo === "armando"}>{tipo === "armando" ? "Armando tu semana…" : "Que la IA me la proponga"}</button>
+            <button className="btn" onClick={() => void armarTipo()}>Que la IA me la proponga</button>
+            <Link className="btn ghost" href="/perfil/semana">Hacerla yo</Link>
+          </div>
+        </section>
+      ) : hayTipo && perfil.plantillaRevisar ? (
+        <section className="card pad hy-aviso" aria-labelledby="hy-tipo-lista">
+          <h2 id="hy-tipo-lista" className="hy-h">Te propuse una semana tipo</h2>
+          <p>La armé con lo que me contaste, y ya la ves en tu día. Es solo una propuesta: revísala y cámbiala para que sea como tu semana de verdad.</p>
+          <div className="row actions">
+            <Link className="btn" href="/perfil/semana">Revisar y cambiar</Link>
+            <button className="btn ghost" onClick={() => savePerfil("plantillaRevisar", null)}>Está bien así</button>
           </div>
         </section>
       ) : !reglas ? (
         <section className="card pad hy-aviso" aria-labelledby="hy-bienv">
           <h2 id="hy-bienv" className="hy-h">Armemos tu semana</h2>
-          <p>Te hago unas preguntas sobre tu día (puedes dictar) y con eso armo tu horario. Unos 10 minutos.</p>
+          <p>Te hago unas preguntas sobre tu día (puedes dictar) y con eso te propongo tu semana tipo: tu semana normal, de lunes a domingo. Después la cambias a tu gusto. Unos 10 minutos.</p>
           <button className="btn" onClick={() => setQuiz("inicio")}>Empezar</button>
         </section>
       ) : !revisado ? (

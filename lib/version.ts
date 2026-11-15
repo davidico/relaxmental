@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.1";
+export const VERSION = "8.2";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Para quien empieza: al terminar las preguntas, la IA le propone enseguida su semana tipo y le pide que la revise y la cambie a su gusto",
   "Mi semana tipo, hecha por ti: en tu cuenta eliges el día (de lunes a domingo) y pones tus momentos con sus horas; puedes copiar un día a otros. Es la base de tu horario",
   "«Armar mi semana con IA» ahora está en Hoy › Semana: la IA parte de tu semana tipo y la ajusta a esa semana (compromisos, tareas, cómo te fue); ves la propuesta y decides si la aplicas",
   "Menú de tu cuenta más simple: «Lo que la IA sabe de mí» junta tus reglas y lo que ella ha aprendido de ti",

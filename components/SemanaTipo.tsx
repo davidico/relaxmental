@@ -75,6 +75,8 @@ export default function SemanaTipo() {
     if (!valido) return;
     const lista = Object.fromEntries(DIAS.map((d) => [d.k, (p[d.k] ?? []).map((b) => ({ ...b, t: b.t.trim() })).sort((x, y) => toMin(x.s) - toMin(y.s))]));
     savePerfil("plantilla", lista);
+    /* Ya la revisó: se quita el aviso de «revísala» */
+    if (perfil.plantillaRevisar) savePerfil("plantillaRevisar", null);
     setP(lista);
     setEstado("ok");
   };
@@ -97,6 +99,11 @@ export default function SemanaTipo() {
 
   return (
     <section className="card pad st" aria-label="Mi semana tipo">
+      {perfil.plantillaRevisar && (
+        <p className="st-aviso" role="note">
+          Esta semana te la propuso la IA con lo que le contaste. Cámbiala para que sea como tu semana de verdad (horas, nombres, lo que sobre o falte) y guárdala.
+        </p>
+      )}
       <div className="st-dias" role="tablist" aria-label="Día de la semana">
         {DIAS.map((d) => (
           <button key={d.k} role="tab" aria-selected={d.k === dia} aria-label={`${d.nombre}: ${(p[d.k] ?? []).length} momentos`} className={(p[d.k] ?? []).length ? "" : "vacio"} onClick={() => { setDia(d.k); setCopiar(false); }}>
