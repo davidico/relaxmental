@@ -38,7 +38,8 @@ export default function AnadirAqui({
   const lista = sortHabits(habitos);
   const enlazado = habSel === null ? undefined : habSel ? habitos.find((h) => h.id === habSel) : habitoDeNombre(titulo, habitos);
   const elegirHabito = (id: string) => {
-    if (enlazado?.id === id) return setHabSel(null);
+    /* «Ninguno»: la persona no quiere que cuente para un hábito (aunque el nombre se parezca) */
+    if (!id) return setHabSel(null);
     const h = habitos.find((x) => x.id === id);
     if (!h) return;
     setHabSel(id);
@@ -93,20 +94,17 @@ export default function AnadirAqui({
         <label htmlFor="aq-t" className="sr-only">¿Qué vas a hacer?</label>
         <TextoCrece ref={campo} id="aq-t" className="ts-title" autoFocus autoComplete="off" enterKeyHint="done" placeholder="¿Qué vas a hacer?" value={titulo} onTexto={setTitulo} onEnter={() => form.current?.requestSubmit()} />
 
+        {/* El hábito al que cuenta, en un desplegable (si el nombre se parece a uno, sale ya elegido) */}
         {lista.length > 0 && (
-          <div role="group" aria-labelledby="aq-hab">
-            <p id="aq-hab" className="aq-lbl">O uno de tus hábitos</p>
-            <div className="rd-chips aq-habs">
+          <div className="ts-campo">
+            <label htmlFor="aq-hab">¿Es uno de tus hábitos?</label>
+            <select id="aq-hab" value={enlazado?.id ?? ""} onChange={(e) => elegirHabito(e.target.value)}>
+              <option value="">Ninguno</option>
               {lista.map((h) => (
-                <button key={h.id} type="button" aria-pressed={enlazado?.id === h.id} onClick={() => elegirHabito(h.id)}>{h.name}</button>
+                <option key={h.id} value={h.id}>{h.name}</option>
               ))}
-            </div>
-            {enlazado && (
-              <p className="aq-hab-nota" role="status">
-                ✓ Al marcarla hecha, cuenta para tu hábito «{enlazado.name}».{" "}
-                <button type="button" className="linkbtn" onClick={() => setHabSel(null)}>No cuenta</button>
-              </p>
-            )}
+            </select>
+            {enlazado && <p className="aq-hab-nota" role="status">✓ Al marcarla hecha, cuenta para «{enlazado.name}».</p>}
           </div>
         )}
 

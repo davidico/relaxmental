@@ -70,8 +70,8 @@ export const leerCampos = (v: { name: string; tipo: TipoHabito; unidad: string; 
 
 /**
  * Un hábito a pantalla completa: su mes en un calendario (tocas un día para marcarlo, también los pasados),
- * sus rachas, y abajo sus ajustes. Todo se cambia ahí mismo y se guarda solo: el nombre arriba (se toca y se escribe)
- * y el tipo, la unidad y la meta debajo del calendario. Sin botón «Cambiar».
+ * y sus rachas. El nombre se cambia arriba (se toca y se escribe; se guarda solo). Los tres puntitos abren el menú:
+ * cambiar nombre, «Tipo y meta» y borrar; estas dos últimas en una ventanita.
  */
 export default function HabitoDetalle({ id, onClose }: { id: string; onClose: () => void }) {
   const { habitos, save, remove, hoy } = useData();
@@ -81,7 +81,9 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
     return new Date(d.getFullYear(), d.getMonth(), 1, 12);
   });
   const [anotando, setAnotando] = useState<string | null>(null);
-  const [confirmar, setConfirmar] = useState(false);
+  const [menu, setMenu] = useState(false);
+  /* Las opciones de los tres puntitos se abren en una ventanita: el tipo y la meta, o borrar */
+  const [ventana, setVentana] = useState<"" | "ajustes" | "borrar">("");
   const [campos, setCampos] = useState(() => ({
     name: h?.name ?? "",
     tipo: (h ? tipoDe(h) : "marca") as TipoHabito,
@@ -97,10 +99,16 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
   }, [guardado]);
 
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    /* Escape cierra primero lo que esté abierto encima (el menú o la ventanita) y luego el hábito */
+    const k = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector(".ha-back")) return;
+      if (menu) setMenu(false);
+      else if (ventana) setVentana("");
+      else onClose();
+    };
     addEventListener("keydown", k);
     return () => removeEventListener("keydown", k);
-  }, [onClose]);
+  }, [onClose, menu, ventana]);
   if (!h) return null;
 
   const tipo = tipoDe(h);
@@ -156,7 +164,31 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
           onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
           onBlur={guardarNombre}
         />
-        <svg className="hd-lapiz" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16zM13 7l4 4" /></svg>
+        <span className="vok sr-only" role="status">{guardado ? "Guardado" : ""}</span>
+        <div className="nv-more">
+          <button className="nv-ib ke-ib" aria-label="Opciones del hábito" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+          </button>
+          {menu && (
+            <>
+              <div className="dial-backdrop clear" onClick={() => setMenu(false)} />
+              <div className="menu" role="menu">
+                <button role="menuitem" autoFocus onClick={() => { setMenu(false); const c = document.getElementById("hd-nombre") as HTMLTextAreaElement | null; c?.focus(); c?.setSelectionRange(c.value.length, c.value.length); }}>Cambiar nombre</button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenu(false);
+                    setCampos({ name: h.name, tipo: tipoDe(h), unidad: h.unidad ?? "", objetivo: h.objetivo ? String(h.objetivo).replace(".", ",") : "" });
+                    setVentana("ajustes");
+                  }}
+                >
+                  Tipo y meta
+                </button>
+                <button role="menuitem" className="danger" onClick={() => { setMenu(false); setVentana("borrar"); }}>Borrar hábito</button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <div className="nv-body">
         <div className="nv-paper hd">
@@ -211,35 +243,43 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
             </p>
           </section>
 
-          <section className="card pad hf hd-ajustes" aria-labelledby="hd-aj">
-            <div className="hd-aj-cab">
-              <h3 id="hd-aj">Ajustes</h3>
-              <span className="vok hd-ok" role="status">{guardado ? "✓ Guardado" : ""}</span>
-            </div>
-            <CamposHabito
-              v={campos}
-              idp="hd"
-              sinNombre
-              onChange={(p) => {
-                const v = { ...campos, ...p };
-                setCampos(v);
-                /* El tipo se guarda al elegirlo; la unidad y la meta, al salir del campo */
-                if ("tipo" in p) guardar(v);
-              }}
-              onSalir={() => guardar(campos)}
-            />
-            <button className="linkbtn hd-borrar" onClick={() => setConfirmar(true)}>Borrar este hábito</button>
-          </section>
-          {confirmar && (
-            <div className="confirm" role="alertdialog" aria-label="Borrar hábito">
-              ¿Borrar «{h.name}» y todo su historial?
-              <button className="btn sm warn" onClick={() => { remove("habitos", h.id); onClose(); }}>Borrar</button>
-              <button className="btn sm ghost" onClick={() => setConfirmar(false)}>No</button>
-            </div>
-          )}
         </div>
       </div>
       {anotando && <HabitoAnotar h={h} dia={anotando} onClose={() => setAnotando(null)} />}
+      {ventana === "ajustes" && (
+        <div className="modal hd-modal" onClick={(e) => e.target === e.currentTarget && setVentana("")}>
+          <form
+            className="sheet hf hd-hoja"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="hd-aj"
+            onSubmit={(e) => {
+              e.preventDefault();
+              guardar(campos);
+              setVentana("");
+            }}
+          >
+            <h2 id="hd-aj" className="hd-hoja-h">Tipo y meta</h2>
+            <CamposHabito v={campos} idp="hd" sinNombre onChange={(p) => setCampos((v) => ({ ...v, ...p }))} />
+            <div className="hd-hoja-pie">
+              <button type="button" className="btn ghost" onClick={() => setVentana("")}>Cancelar</button>
+              <button type="submit" className="btn">Guardar</button>
+            </div>
+          </form>
+        </div>
+      )}
+      {ventana === "borrar" && (
+        <div className="modal hd-modal" onClick={(e) => e.target === e.currentTarget && setVentana("")}>
+          <div className="sheet hd-hoja" role="alertdialog" aria-modal="true" aria-labelledby="hd-bo" aria-describedby="hd-bo-d">
+            <h2 id="hd-bo" className="hd-hoja-h">¿Borrar «{h.name}»?</h2>
+            <p id="hd-bo-d" className="hd-hoja-txt">Se borra el hábito con todo su historial. No se puede deshacer.</p>
+            <div className="hd-hoja-pie">
+              <button type="button" className="btn ghost" autoFocus onClick={() => setVentana("")}>No, dejarlo</button>
+              <button type="button" className="btn warn" onClick={() => { remove("habitos", h.id); onClose(); }}>Borrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

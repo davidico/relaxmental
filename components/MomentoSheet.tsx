@@ -110,17 +110,15 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
         {horasMal && <p className="verr" role="alert">⚠ Tiene que terminar después de empezar.</p>}
         <p className="ms-nota">Cambia solo este día. Si se cruza con otro momento, ese se recorta.</p>
 
-        <div role="group" aria-labelledby="ms-hab">
-          <p id="ms-hab" className="aq-lbl">¿Cuenta como hábito?</p>
-          <div className="rd-chips aq-habs">
-            <button type="button" aria-pressed={hab === ""} onClick={() => setHab("")}>No</button>
+        <div className="ts-campo">
+          <label htmlFor="ms-hab">¿Cuenta como hábito?</label>
+          <select id="ms-hab" value={hab === "nuevo" && (yaExiste || !t.trim()) ? "" : hab} onChange={(e) => setHab(e.target.value)}>
+            <option value="">No</option>
             {listaHab.map((h) => (
-              <button key={h.id} type="button" aria-pressed={hab === h.id} onClick={() => setHab(h.id)}>{h.name}</button>
+              <option key={h.id} value={h.id}>{h.name}</option>
             ))}
-            {!yaExiste && t.trim() && (
-              <button type="button" aria-pressed={hab === "nuevo"} onClick={() => setHab("nuevo")}>+ Nuevo hábito «{t.trim()}»</button>
-            )}
-          </div>
+            {!yaExiste && t.trim() && <option value="nuevo">+ Nuevo hábito «{t.trim()}»</option>}
+          </select>
           <p className="ms-nota ms-hab-nota">
             {hab ? `Al marcar «${t.trim() || orig.t}» como hecho, se marca también el hábito. Vale para todos los días que tengan este momento.` : "Vale para todos los días que tengan este momento."}
           </p>

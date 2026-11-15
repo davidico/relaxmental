@@ -2258,3 +2258,21 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .nv-ck{display:grid;place-items:center;width:44px;height:44px;margin-left:-10px;flex:none;cursor:pointer}
 .nv-item span{padding:10px 0}
 .k-ia{color:var(--primary)}
+
+/* ---------- Versión 7.8: la tarjeta del hábito abre el mes; ajustes en los tres puntitos, con ventanita ---------- */
+.hb{position:relative;cursor:pointer;transition:border-color .15s}
+.hb:hover{border-color:var(--stone)}
+.hb-abrir{padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.hb-abrir::after{content:"";position:absolute;inset:0;border-radius:10px}
+.hb-abrir:focus-visible{outline:none}
+.hb-abrir:focus-visible::after{outline:2px solid var(--focus);outline-offset:2px}
+.hb-check,.hb-medir{z-index:1}
+.hb-medir{position:relative}
+.hd-modal{z-index:40}
+.hd-hoja{max-width:520px;gap:var(--e3);padding:var(--e5) var(--e4) calc(var(--e4) + env(safe-area-inset-bottom,0px))}
+.hd-hoja-h{margin:0;font-size:18px;font-weight:600;overflow-wrap:anywhere}
+.hd-hoja-txt{margin:0;color:var(--muted)}
+.hd-hoja-pie{display:flex;justify-content:flex-end;gap:var(--e2);margin-top:var(--e2)}
+@media (min-width:900px){.hd-modal{align-items:center}.hd-hoja{border-radius:14px}}
+.hd-hoja-h{color:var(--ink)}
+.ts-campo>.aq-hab-nota{margin:0;color:var(--ok)}

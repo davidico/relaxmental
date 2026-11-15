@@ -76,7 +76,10 @@ export default function Habitos() {
                         <span>{s === 1 ? "día" : "días"}</span>
                       </div>
                       <div className="hb-txt">
-                        <h2 id={`hb-${h.id}`}>{h.name}</h2>
+                        <h2 id={`hb-${h.id}`}>
+                          {/* Toda la tarjeta abre el mes (el botón se estira sobre ella); el check de la derecha queda por encima */}
+                          <button className="hb-abrir" aria-label={`${h.name}: ver el mes y marcar días anteriores`} onClick={() => setAbierto(h.id)}>{h.name}</button>
+                        </h2>
                         {tipo === "dejar" && <span className="hb-tipo">Para dejar</span>}
                         <span>{frase(h, t)}</span>
                         {best > s && <span>Tu mejor racha: {best} días</span>}
@@ -98,12 +101,6 @@ export default function Habitos() {
                       )}
                     </div>
                     <Mes h={h} t={t} />
-                    <div className="hb-foot">
-                      <span>Últimos 30 días</span>
-                      <button className="linkbtn hb-del" onClick={() => setAbierto(h.id)} aria-label={`Ver el mes de ${h.name} y marcar días anteriores`}>
-                        Ver mes
-                      </button>
-                    </div>
                   </article>
                 );
               })
