@@ -76,6 +76,8 @@ export default function SemanaTipo() {
     if (!valido) return null;
     const lista = Object.fromEntries(DIAS.map((d) => [d.k, (p[d.k] ?? []).map((b) => ({ ...b, t: b.t.trim() })).sort((x, y) => toMin(x.s) - toMin(y.s))]));
     savePerfil("plantilla", lista);
+    /* La semana cambió: las reglas pueden haberse quedado viejas (se ofrece ponerlas al día hasta que se haga) */
+    savePerfil("tipoCambiada", { at: new Date().toISOString() });
     /* Ya la revisó: se quita el aviso de «revísala» */
     if (perfil.plantillaRevisar) savePerfil("plantillaRevisar", null);
     setP(lista);
@@ -172,15 +174,20 @@ export default function SemanaTipo() {
         </span>
       </div>
 
-      {mode === "cloud" && !offline && hayAlgo && (
+      {/* Solo si la semana cambió (hay cambios sin guardar, o se guardaron y las reglas aún no se han puesto al día) */}
+      {mode === "cloud" && !offline && hayAlgo && (cambiado || !!perfil.tipoCambiada || rt.estado !== "" || rt.ok) && (
         <div className="st-reglas">
-          <p>Si cambiaste tu semana, tus reglas pueden haberse quedado viejas. La IA las pone al día con esta semana tipo y tú las revisas antes de guardarlas.</p>
-          <div className="row actions">
-            <button type="button" className="btn ghost" onClick={actualizarReglas} disabled={rt.estado === "armando" || !valido}>
-              {rt.estado === "armando" ? "Actualizando tus reglas…" : cambiado ? "Guardar y actualizar mis reglas" : "Actualizar mis reglas con esta semana"}
-            </button>
-            {rt.ok && <span className="vok" role="status">✓ Reglas actualizadas</span>}
-          </div>
+          {(cambiado || !!perfil.tipoCambiada || rt.estado !== "") && (
+            <>
+              <p>Cambiaste tu semana: tus reglas pueden haberse quedado viejas. La IA las pone al día con esta semana tipo y tú las revisas antes de guardarlas.</p>
+              <div className="row actions">
+                <button type="button" className="btn ghost" onClick={actualizarReglas} disabled={rt.estado === "armando" || !valido}>
+                  {rt.estado === "armando" ? "Actualizando tus reglas…" : cambiado ? "Guardar y actualizar mis reglas" : "Actualizar mis reglas con esta semana"}
+                </button>
+              </div>
+            </>
+          )}
+          {rt.ok && <p className="vok" role="status">✓ Tus reglas ya están al día con esta semana.</p>}
           {rt.estado === "error" && <p className="verr" role="alert">⚠ No se pudieron actualizar. Inténtalo otra vez.</p>}
         </div>
       )}

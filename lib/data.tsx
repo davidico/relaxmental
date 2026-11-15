@@ -115,6 +115,8 @@ export type Perfil = {
   plantilla?: Plantilla;
   /** Los recordatorios de hábitos y del diario: encendidos o no, y a qué hora (lib/avisos.ts) */
   avisos?: unknown;
+  /** La semana tipo cambió y las reglas aún no se han puesto al día con ella: solo entonces se ofrece «Actualizar mis reglas» */
+  tipoCambiada?: { at?: string } | null;
   /** La IA propuso la semana tipo (al empezar) y la persona aún no la ha revisado: se le recuerda que la cambie a su gusto */
   plantillaRevisar?: { at?: string } | null;
   /** Compromisos con fecha */

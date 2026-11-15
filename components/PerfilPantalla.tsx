@@ -122,8 +122,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
             ) : (
               /* Dos enlaces pequeños, uno al lado del otro: completar la información con preguntas, o empezar de cero */
               <div className="rules-enlaces">
-                {/* Poner las reglas al día con la semana tipo (la misma opción que hay en «Mi semana tipo») */}
-                {cloud && hayTipo && (
+                {/* Poner las reglas al día con la semana tipo (la misma opción que hay en «Mi semana tipo»): solo si la semana cambió y aún no se ha hecho */}
+                {cloud && hayTipo && (!!perfil.tipoCambiada || rt.estado !== "") && (
                   <button className="linkbtn" onClick={() => void rt.pedir()} disabled={rt.estado === "armando"}>{rt.estado === "armando" ? "Actualizando…" : "Actualizar con mi semana tipo"}</button>
                 )}
                 {cloud && (

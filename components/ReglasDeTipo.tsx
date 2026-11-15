@@ -35,6 +35,8 @@ export function useReglasDeTipo() {
     if (antes.trim()) savePerfil("reglasRespaldo", { text: antes, updated: new Date().toISOString() });
     savePerfil("reglas", { text: texto, updated: new Date().toISOString() });
     savePerfil("revision", { mes: new Date().toISOString().slice(0, 7) });
+    /* Ya están al día con la semana tipo: se deja de ofrecer hasta que la semana vuelva a cambiar */
+    savePerfil("tipoCambiada", null);
     setOk(true);
   };
   const editor = propuesta !== null ? <ReglasEditor texto={perfil.reglas?.text ?? ""} propuesta={propuesta} onGuardar={guardar} onClose={() => setPropuesta(null)} /> : null;
