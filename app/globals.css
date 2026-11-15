@@ -2369,3 +2369,9 @@ textarea.st-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .re-ayuda{margin:0 0 var(--e3)}
 textarea.re-texto{display:block;width:100%;min-height:50vh;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;resize:none;overflow:hidden;font-size:17px;line-height:1.65;color:var(--ink)}
 textarea.re-texto:focus{outline:none;box-shadow:none}
+
+/* ---------- Versión 8.8: en Mis reglas, «Completar con preguntas» y «Empezar de cero» como enlaces pequeños ---------- */
+.rules-enlaces{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--e4);margin-top:var(--e2)}
+.rules-enlaces .linkbtn{min-height:44px;font-size:14px;padding:0}
+.rules-enlaces .rules-cero{color:var(--muted)}
+.rules-ok{margin:var(--e2) 0 0}

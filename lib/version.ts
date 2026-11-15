@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.7";
+export const VERSION = "8.8";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Mis reglas: «Completar con preguntas» es ahora un enlace pequeño al lado de «Empezar de cero»",
   "Mis reglas: quité el lápiz de arriba; se abren tocando el resumen o «Leer todo y editar»",
   "Mis reglas: en «Lo que la IA sabe de mí» sale un resumen corto, y al tocarlo se abren a pantalla completa para leerlas y cambiarlas con tranquilidad; al volver se guardan solas",
   "Recordatorio de hábitos: a la hora que elijas (de fábrica, las 20:00) te avisa de los que siguen sin marcar; si ya los marcaste todos, no avisa",

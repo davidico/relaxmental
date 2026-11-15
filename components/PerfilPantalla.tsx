@@ -107,12 +107,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
               <span className="rules-view" id="reglas-texto">{guardadas}</span>
               <span className="rules-mas">Leer todo y editar</span>
             </button>
-            <div className="row actions">
-              {cloud && (
-                <button className="btn ghost" onClick={() => { setQuizModo("completar"); setQuiz(true); }}>{pendiente ? "Seguir con las preguntas" : "Completar con preguntas"}</button>
-              )}
-              {estado === "ok" && <span role="status" className="vok">✓ Reglas guardadas</span>}
-            </div>
+            {estado === "ok" && <p role="status" className="vok rules-ok">✓ Reglas guardadas</p>}
             {confirmCero ? (
               <div className="confirm">
                 ¿Empezar de cero? Guardo una copia de tus reglas y te hago las preguntas desde el principio.
@@ -120,7 +115,13 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
                 <button className="btn sm ghost" onClick={() => setConfirmCero(false)}>No</button>
               </div>
             ) : (
-              <button className="linkbtn rq-reset" onClick={() => setConfirmCero(true)}>Empezar de cero</button>
+              /* Dos enlaces pequeños, uno al lado del otro: completar la información con preguntas, o empezar de cero */
+              <div className="rules-enlaces">
+                {cloud && (
+                  <button className="linkbtn" onClick={() => { setQuizModo("completar"); setQuiz(true); }}>{pendiente ? "Seguir con las preguntas" : "Completar con preguntas"}</button>
+                )}
+                <button className="linkbtn rules-cero" onClick={() => setConfirmCero(true)}>Empezar de cero</button>
+              </div>
             )}
           </>
         ) : (
