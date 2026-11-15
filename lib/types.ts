@@ -59,6 +59,8 @@ export interface Nota {
   updated?: string;
   /** Lista «Hablar con…» que se alimenta desde el diario: con quién (en minúsculas y sin tildes), para volver a encontrarla */
   hablar?: string;
+  /** Fijada: sale arriba del todo en su sección, antes que las demás (como el pin de Google Keep) */
+  fijada?: boolean;
 }
 
 export interface ItemLista {

@@ -106,6 +106,9 @@ export default function NoteView({
         </button>
         {list.length > 1 && <span className="nv-count">{index + 1} de {list.length}</span>}
         <span style={{ flex: 1 }} />
+        <button className="nv-ib nv-pin" aria-pressed={!!note.fijada} aria-label={note.fijada ? "Quitar de fijadas" : "Fijar arriba"} title={note.fijada ? "Quitar de fijadas" : "Fijar arriba"} onClick={() => save("notas", { ...note, fijada: !note.fijada })}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3zM12 15v5" /></svg>
+        </button>
         <button className="nv-ib nv-borrar" aria-label="Borrar nota" title="Borrar nota" onClick={() => setConfirm(true)}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6" /></svg>
         </button>
@@ -140,7 +143,14 @@ export default function NoteView({
           {confirm && (
             <div className="confirm">
               ¿Borrar esta nota?
-              <button className="btn sm warn" onClick={() => { remove("notas", note.id); setConfirm(false); if (list.length > 1 && onIndex) onIndex(Math.min(index, list.length - 2)); else onClose(); }}>Borrar</button>
+              <button className="btn sm warn" onClick={() => {
+                /* Antes de borrar, se pasa a la nota vecina (la siguiente o, si era la última, la anterior) */
+                const vecina = index + 1 < list.length ? index + 1 : index - 1;
+                if (vecina >= 0 && onIndex) onIndex(vecina);
+                else onClose();
+                setConfirm(false);
+                remove("notas", note.id);
+              }}>Borrar</button>
               <button className="btn sm ghost" onClick={() => setConfirm(false)}>No</button>
             </div>
           )}
@@ -216,6 +226,7 @@ function NoteEdit({ note, nueva, foco = {}, onDone }: { note: Nota | null; nueva
       html: note?.html ?? (note?.text ? `<p>${esc(note.text).replace(/\n/g, "<br>")}</p>` : ""),
       text: note?.text ?? "",
       items: note?.items?.length ? note.items : [{ id: newId(), t: "", ok: false }],
+      fijada: !!note?.fijada,
     };
     inicial.current = JSON.stringify(v);
     return v;
@@ -257,6 +268,7 @@ function NoteEdit({ note, nueva, foco = {}, onDone }: { note: Nota | null; nueva
         ...base,
         title: d.title.trim(),
         folder: d.folder,
+        fijada: d.fijada || undefined,
         tipo: d.tipo,
         items: lista ? items : undefined,
         html: lista ? undefined : d.html,
@@ -305,6 +317,9 @@ function NoteEdit({ note, nueva, foco = {}, onDone }: { note: Nota | null; nueva
             if (title) setD((x) => (x.title.trim() ? x : { ...x, title }));
           }}
         />
+        <button className="nv-ib ke-ib nv-pin" aria-pressed={d.fijada} aria-label={d.fijada ? "Quitar de fijadas" : "Fijar arriba"} title={d.fijada ? "Quitar de fijadas" : "Fijar arriba"} onClick={() => setD((x) => ({ ...x, fijada: !x.fijada }))}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3zM12 15v5" /></svg>
+        </button>
         {/* El basurero: una nota nueva se descarta; una que ya existía se borra (después de preguntar) */}
         <button className="nv-ib ke-ib nv-borrar" aria-label={note ? "Borrar nota" : "Descartar nota"} title={note ? "Borrar nota" : "Descartar nota"} onClick={() => (note ? setConfirm(true) : onDone())}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6" /></svg>

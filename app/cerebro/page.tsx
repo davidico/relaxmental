@@ -55,6 +55,9 @@ function usePref<T extends string>(key: string, def: T) {
   return [v, set] as const;
 }
 
+const Pin = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" aria-label="Fijada" role="img"><path d="M9 4h6l-1 6 3 3v2H7v-2l3-3zM12 15v5" /></svg>
+);
 const Lock = () => (
   <svg className="k-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
 );
@@ -66,7 +69,8 @@ export default function Cerebro() {
   const [orden, setOrden] = usePref<"nuevas" | "viejas" | "az">("cerebro-orden", "nuevas");
   const [vista, setVista] = usePref<"grid" | "una">("cerebro-vista2", "grid");
   const [ordMenu, setOrdMenu] = useState(false);
-  const [abierta, setAbierta] = useState<number | null>(null);
+  /* La nota abierta, por su id: si la lista cambia de orden (al fijarla), sigue siendo la misma nota */
+  const [abiertaId, setAbiertaId] = useState<string | null>(null);
   const [nueva, setNueva] = useState<"texto" | "lista" | null>(null);
   const [secMenu, setSecMenu] = useState(false);
   const [newMenu, setNewMenu] = useState(false);
@@ -88,8 +92,11 @@ export default function Cerebro() {
   const ql = q.toLowerCase();
   const list = notas
     .filter((n) => n.folder && ids.has(n.folder) && (!ql || [n.title, n.text, n.ref].join(" ").toLowerCase().includes(ql)))
+    /* Las fijadas, siempre arriba; dentro de cada grupo, el orden elegido */
     .sort((a, b) =>
-      orden === "az"
+      !!a.fijada !== !!b.fijada
+        ? Number(!!b.fijada) - Number(!!a.fijada)
+        : orden === "az"
         ? (a.title || a.text).localeCompare(b.title || b.text, "es")
         : orden === "viejas"
           ? (a.created < b.created ? -1 : 1)
@@ -97,18 +104,18 @@ export default function Cerebro() {
     );
   /* El nombre de la carpeta en la tarjeta solo hace falta si la lista mezcla carpetas */
   const mezcla = new Set(list.map((n) => n.folder)).size > 1;
+  const hayFijadas = list.some((n) => n.fijada);
   const groups: { label: string; items: { n: Nota; i: number }[] }[] = [];
   list.forEach((n, i) => {
-    const label = vista === "grid" || orden === "az" || !n.created ? "" : monthLabel(n.created); // en cuadros, todo seguido
+    /* Con notas fijadas hay dos grupos (como en Keep): «Fijadas» y las demás */
+    const label = n.fijada ? "Fijadas" : vista === "grid" || orden === "az" || !n.created ? (hayFijadas ? "Otras" : "") : monthLabel(n.created); // en cuadros, todo seguido
     const g = groups[groups.length - 1];
     if (g && g.label === label) g.items.push({ n, i });
     else groups.push({ label, items: [{ n, i }] });
   });
 
-  /* Si cambia la lista mientras lees (p. ej. borraste), no salirse del rango */
-  useEffect(() => {
-    if (abierta !== null && abierta >= list.length) setAbierta(list.length ? list.length - 1 : null);
-  }, [abierta, list.length]);
+  const abierta = abiertaId ? list.findIndex((n) => n.id === abiertaId) : -1;
+  const setAbierta = (i: number | null) => setAbiertaId(i === null ? null : (list[i]?.id ?? null));
 
   const guardarForm = () => {
     if (!form || !form.name.trim() || !sec) return;
@@ -291,6 +298,7 @@ export default function Cerebro() {
             <div className={vista === "grid" ? "k-grid" : "k-grid una"}>
               {g.items.map(({ n, i }) => (
                 <button key={n.id} className="k-card" onClick={() => setAbierta(i)}>
+                  {n.fijada && <Pin className="k-pin" />}
                   {n.title && <span className="k-title">{n.title}</span>}
                   {n.created && <span className="k-date">{fdate(n.created)}</span>}
                   {n.tipo === "lista" ? (
@@ -315,7 +323,7 @@ export default function Cerebro() {
         </div>
       )}
 
-      {abierta !== null && list[abierta] && <NoteView list={list} index={abierta} onIndex={setAbierta} onClose={() => setAbierta(null)} />}
+      {abierta >= 0 && <NoteView list={list} index={abierta} onIndex={setAbierta} onClose={() => setAbierta(null)} />}
       {nueva && <NoteView list={[]} index={0} nueva={{ folder: sub?.id ?? sec.id, tipo: nueva }} onClose={() => setNueva(null)} />}
     </>
   );

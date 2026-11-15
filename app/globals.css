@@ -2281,3 +2281,11 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .hb-head{align-items:center}
 .btn.sm.hb-nuevo{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px}
 .hb-nuevo svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
+/* ---------- Versión 7.10: notas fijadas (pin) ---------- */
+.k-card{position:relative}
+.k-pin{position:absolute;top:12px;right:12px;width:16px;height:16px;fill:var(--primary);stroke:var(--primary);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.k-card:has(.k-pin) .k-title,.k-card:has(.k-pin) .k-date{padding-right:22px}
+.nv-pin svg{fill:none}
+.nv-pin[aria-pressed="true"]{color:var(--primary)}
+.nv-pin[aria-pressed="true"] svg{fill:currentColor}
