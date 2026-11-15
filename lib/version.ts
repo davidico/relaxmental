@@ -1,8 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.6";
+export const VERSION = "8.7";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
-  "Mis reglas: en «Lo que la IA sabe de mí» sale un resumen corto, y el lápiz de arriba las abre a pantalla completa para leerlas y cambiarlas con tranquilidad; al volver se guardan solas",
+  "Mis reglas: quité el lápiz de arriba; se abren tocando el resumen o «Leer todo y editar»",
+  "Mis reglas: en «Lo que la IA sabe de mí» sale un resumen corto, y al tocarlo se abren a pantalla completa para leerlas y cambiarlas con tranquilidad; al volver se guardan solas",
   "Recordatorio de hábitos: a la hora que elijas (de fábrica, las 20:00) te avisa de los que siguen sin marcar; si ya los marcaste todos, no avisa",
   "Recordatorio del diario: si a su hora (de fábrica, las 21:30) aún no lo has escrito, te avisa y al tocarlo se abre el diario",
   "Nueva pantalla «Avisos» en tu cuenta: enciendes, apagas y cambias la hora de esos recordatorios, y ves qué más te avisa la app",

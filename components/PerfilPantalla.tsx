@@ -98,17 +98,11 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
       {ver === "memoria" && (
         <>
-      <div className="banda banda-fila">
-        <h2 id="reglas-h">Mis reglas: lo que tú le dices</h2>
-        {/* El lápiz: las abre a pantalla completa para leerlas y cambiarlas con tranquilidad */}
-        <button className="banda-btn" aria-label="Leer y editar mis reglas" title="Leer y editar" onClick={() => setEditando(true)}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" /></svg>
-        </button>
-      </div>
+      <h2 className="banda" id="reglas-h">Mis reglas: lo que tú le dices</h2>
       <section className="card pad rules-card" aria-labelledby="reglas-h">
         {guardadas.trim() ? (
           <>
-            {/* Un resumen: tocarlo (o el lápiz) abre las reglas enteras */}
+            {/* Un resumen: tocarlo abre las reglas enteras, a pantalla completa */}
             <button type="button" className="rules-previa" onClick={() => setEditando(true)} aria-label="Leer y editar mis reglas">
               <span className="rules-view" id="reglas-texto">{guardadas}</span>
               <span className="rules-mas">Leer todo y editar</span>
