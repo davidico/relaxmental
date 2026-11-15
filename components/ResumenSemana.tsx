@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useData } from "@/lib/data";
 import { addD, mondayOf, pd } from "@/lib/dates";
 import { pedirResumenSemana } from "@/lib/aprender";
@@ -39,7 +38,7 @@ export default function ResumenSemana() {
           <p className="rs-txt">{hecho.texto}</p>
           {nuevas !== null && nuevas > 0 && <p role="status">Te dejé {nuevas === 1 ? "1 recomendación" : `${nuevas} recomendaciones`} en «Mis propuestas para ti».</p>}
           <div className="row actions">
-            <Link className="btn sm" href="/perfil/semana">Armar la semana que viene</Link>
+            <button className="btn sm" onClick={() => { try { localStorage.setItem("mi-semana-hoy-vista", "semana"); } catch {} dispatchEvent(new Event("mi-semana:ver-semana")); }}>Armar la semana que viene</button>
             <button className="btn ghost sm" onClick={() => { savePerfil("semanaVista", semana); setNuevas(null); }}>Ocultar</button>
           </div>
         </>

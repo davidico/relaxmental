@@ -2292,3 +2292,47 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .nv-pin svg{fill:none}
 .nv-pin[aria-pressed="true"]{color:var(--primary)}
 .nv-pin[aria-pressed="true"] svg{fill:currentColor}
+
+/* ---------- Versión 8.1: mi semana tipo hecha a mano; «Armar mi semana con IA» en Hoy › Semana ---------- */
+.st{display:flex;flex-direction:column;gap:var(--e3)}
+.st-dias{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--e1)}
+.st-dias button{min-height:44px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-weight:500;cursor:pointer}
+.st-dias button.vacio{color:var(--muted);border-style:dashed}
+.st-dias button[aria-selected="true"]{background:var(--primary);border-color:var(--primary);border-style:solid;color:var(--on-primary)}
+.st-dias button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.st-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e3);margin-top:var(--e1)}
+.st-h{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
+.st-copiar{display:flex;flex-wrap:wrap;gap:var(--e2);padding:var(--e3);border-radius:10px;background:var(--band)}
+.st-copiar .btn{min-height:44px}
+.st-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.st-fila{display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-areas:"horas x" "nombre nombre";gap:0 var(--e2);align-items:center;padding:var(--e2) 0;border-top:1px solid var(--line)}
+.st-fila:first-child{border-top:0}
+.st-horas{grid-area:horas;display:flex;align-items:center;gap:6px;color:var(--muted)}
+textarea.st-nombre{grid-area:nombre;width:100%;margin:var(--e1) 0 0;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:transparent;font-size:16px;font-weight:500;line-height:1.35;color:var(--ink);box-shadow:none}
+textarea.st-nombre:hover{border-color:var(--line)}
+textarea.st-nombre:focus{border-color:var(--primary);background:var(--surface);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 20%,transparent)}
+.st-x{grid-area:x;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0}
+.st-x:hover{background:var(--band);color:var(--ink)}
+.st-x:focus-visible{outline:2px solid var(--focus)}
+.st-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.st-vacio{margin:0;color:var(--muted)}
+.st-mas{align-self:flex-start;min-height:44px}
+.st-pie{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e2) var(--e3);padding-top:var(--e3);border-top:1px solid var(--line)}
+.st-ia{font-size:14px}
+.st-ia .linkbtn{font-size:14px;text-align:left;min-height:44px}
+@media (min-width:700px){.st-fila{grid-template-columns:auto minmax(0,1fr) 44px;grid-template-areas:"horas nombre x";gap:var(--e3)}textarea.st-nombre{margin:0}}
+.ia-sabe-sub{margin:var(--e3) 0}
+.sem-ia{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--e2) var(--e3);margin-bottom:var(--e3)}
+.sem-ia .sub{margin:0}
+.btn.sm.sem-ia-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--primary)}
+.sem-ia-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.as-modal{z-index:40}
+.sheet.as{max-width:720px;height:100%}
+.as-cuerpo{flex:1;min-height:0;overflow-y:auto;padding:var(--e3) max(16px,env(safe-area-inset-right,0px)) var(--e4) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:var(--e3)}
+.as-cuerpo p{margin:0}
+.as-dias{margin-top:0}
+.as-pie{flex-wrap:wrap;justify-content:flex-end}
+.as-pie>.as-nota{flex:1 0 100%;font-size:14px;color:var(--muted)}
+.as-pie>.as-nota:empty{display:none}
+.as-pie>.vok.as-nota{color:var(--ok)}
+@media (min-width:900px){.as-modal{align-items:center}.sheet.as{height:auto;max-height:86vh;border-radius:14px}.as-dias{grid-template-columns:1fr}}

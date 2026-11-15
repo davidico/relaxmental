@@ -1,7 +1,10 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.0";
+export const VERSION = "8.1";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Mi semana tipo, hecha por ti: en tu cuenta eliges el día (de lunes a domingo) y pones tus momentos con sus horas; puedes copiar un día a otros. Es la base de tu horario",
+  "«Armar mi semana con IA» ahora está en Hoy › Semana: la IA parte de tu semana tipo y la ajusta a esa semana (compromisos, tareas, cómo te fue); ves la propuesta y decides si la aplicas",
+  "Menú de tu cuenta más simple: «Lo que la IA sabe de mí» junta tus reglas y lo que ella ha aprendido de ti",
   "Hábitos: el botón de nuevo hábito es ahora un «+» pequeño arriba a la derecha",
   "Fijar notas: abre una nota y toca el pin de arriba. Las fijadas se quedan al principio de la lista, en «Fijadas», aunque crees notas nuevas",
   "Hábitos: «Nuevo» está arriba a la derecha y se abre en una ventanita; ya no hay un formulario al final de la lista",

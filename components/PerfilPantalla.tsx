@@ -3,24 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/lib/data";
-import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
-import type { Bloque } from "@/lib/plan";
 import VoiceButton from "@/components/VoiceButton";
 import Compromisos from "@/components/Compromisos";
 import Memoria from "@/components/Memoria";
-import { armarPlantilla } from "@/lib/imagen";
+import SemanaTipo from "@/components/SemanaTipo";
 import RulesQuiz, { hayPreguntasPendientes, type Modo } from "@/components/RulesQuiz";
 import { NOVEDADES, VERSION, VERSION_FECHA } from "@/lib/version";
 
-type Prop = { fecha: string; bloques?: Bloque[]; error?: boolean };
-
 export type Ver = "cuenta" | "reglas" | "compromisos" | "semana" | "memoria" | "acerca";
 /** Las pantallas de tu cuenta: cada cosa en la suya (se abren desde el menú de arriba a la derecha) */
-export const PANTALLAS: { ver: Exclude<Ver, "cuenta">; href: string; titulo: string; sub: string }[] = [
-  { ver: "reglas", href: "/perfil/reglas", titulo: "Mis reglas del horario", sub: "Cómo es tu día: horas, días y excepciones. La IA las usa para armar tu semana." },
+export const PANTALLAS: { ver: Exclude<Ver, "cuenta" | "reglas">; href: string; titulo: string; sub: string }[] = [
+  { ver: "memoria", href: "/perfil/memoria", titulo: "Lo que la IA sabe de mí", sub: "Tus reglas (lo que tú le dices) y lo que ha aprendido de ti. Tú decides qué se queda." },
+  { ver: "semana", href: "/perfil/semana", titulo: "Mi semana tipo", sub: "Tu semana normal, hecha por ti: qué haces cada día y a qué hora. Es la base de tu horario y de lo que la IA te propone." },
   { ver: "compromisos", href: "/perfil/compromisos", titulo: "Mis compromisos", sub: "Lo que tiene fecha: iglesia, turnos, citas." },
-  { ver: "semana", href: "/perfil/semana", titulo: "Mi semana con IA", sub: "Tu semana tipo y el horario de una semana concreta." },
-  { ver: "memoria", href: "/perfil/memoria", titulo: "Lo que la IA recuerda de mí", sub: "Lo usa para armar tu día y recomendarte. Tú decides qué se queda." },
   { ver: "acerca", href: "/perfil/acerca", titulo: "Acerca de", sub: "La versión de la app, sus novedades y cómo funciona la IA." },
 ];
 
@@ -29,8 +24,8 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Dictas con el micrófono", lee: "el audio.", da: "el texto escrito y, en las notas, un título corto." },
   { cuando: "Respondes las preguntas de «Armemos tu semana»", lee: "tus reglas, tus respuestas y tus compromisos próximos.", da: "más preguntas y, al final, tus reglas redactadas." },
   { cuando: "Subes una foto de tus compromisos", lee: "la foto, la fecha de hoy y tus reglas.", da: "la lista de compromisos con fecha y hora, que revisas antes de guardar." },
-  { cuando: "Armas tu semana tipo", lee: "tus reglas, tus últimos 30 días ajustados a mano, tus últimos 14 días y lo que recuerda de ti.", da: "un día típico para cada día de la semana." },
-  { cuando: "Pides «Proponer horario»", lee: "tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados, tus últimos 14 días y lo que recuerda de ti.", da: "el horario de cada día; tú lo aplicas o no." },
+  { cuando: "Le pides que te proponga una semana tipo (opcional: normalmente la haces tú en Perfil › Mi semana tipo)", lee: "tus reglas, tus últimos 30 días ajustados a mano, tus últimos 14 días y lo que recuerda de ti.", da: "un día típico para cada día de la semana, que revisas y guardas tú." },
+  { cuando: "Pides «Armar mi semana con IA» (en Hoy › Semana)", lee: "tu semana tipo de cada día (es la base), tus reglas, los compromisos de ese día y de los 3 siguientes, los títulos de tus tareas pendientes, tus días ajustados, tus últimos 14 días y lo que recuerda de ti.", da: "el horario de cada día de esa semana, partiendo de tu semana tipo; tú lo aplicas o no." },
   { cuando: "Guardas un día que editaste", lee: "lo que la app te propuso y cómo lo dejaste (tus últimos 12 cambios), tus reglas y lo que ya decidiste.", da: "hasta 5 conclusiones sobre cómo armas tus días." },
   { cuando: "Pides «Proponme horas» para tus metas", lee: "tu itinerario de hoy, las metas sin hora, la hora que es, tus reglas, tus últimos 14 días y lo que recuerda de ti.", da: "un bloque de tiempo para cada meta." },
   { cuando: "Pides «¿Cuándo las hago?» en Pendientes", lee: "los títulos de tus tareas sin fecha, lo que ya tienes apuntado y tus compromisos de los próximos 7 días, tus reglas, tus últimos 14 días y lo que recuerda de ti.", da: "un día para cada pendiente, con un motivo corto; tú dices sí o no a cada uno." },
@@ -41,32 +36,18 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
 ];
 
 export default function PerfilPantalla({ ver }: { ver: Ver }) {
-  const { email, mode, saveDia, dias, perfil, savePerfil } = useData();
+  const { email, mode, perfil, savePerfil } = useData();
   const cloud = mode === "cloud";
   const [reglas, setReglas] = useState("");
   const [guardadas, setGuardadas] = useState("");
   const [estado, setEstado] = useState<"" | "guardando" | "ok" | "error">("");
   const [editando, setEditando] = useState(false);
   const [quiz, setQuiz] = useState(false);
-  const [tipo, setTipo] = useState<"" | "armando" | "ok" | "error">("");
-  const armarTipo = async () => {
-    setTipo("armando");
-    try {
-      savePerfil("plantilla", await armarPlantilla(guardadas));
-      setTipo("ok");
-    } catch {
-      setTipo("error");
-    }
-  };
   const [quizModo, setQuizModo] = useState<Modo>("completar");
   const [confirmCero, setConfirmCero] = useState(false);
   const [pendiente, setPendiente] = useState(false);
   useEffect(() => setPendiente(hayPreguntasPendientes()), [quiz]);
   const [todas, setTodas] = useState(true);
-  const [semana, setSemana] = useState<"esta" | "proxima">(new Date().getDay() === 0 ? "proxima" : "esta");
-  const [props, setProps] = useState<Prop[] | null>(null);
-  const [trabajando, setTrabajando] = useState("");
-  const [aplicado, setAplicado] = useState(false);
 
   /* Las reglas vienen del perfil (se guardan en la nube, o en el teléfono sin conexión) */
   const txtPerfil = perfil.reglas?.text ?? "";
@@ -101,58 +82,8 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
 
 
-  const lunes = addD(mondayOf(today()), semana === "proxima" ? 7 : 0);
-  const fechas = Array.from({ length: 7 }, (_, i) => addD(lunes, i)).filter((f) => f >= today());
-  const ultimo = addD(lunes, 6); // domingo (fechas puede tener menos de 7 días si la semana ya empezó)
-  const rango = `${pd(fechas[0] ?? lunes).getDate()} al ${pd(ultimo).getDate()} de ${MES[pd(ultimo).getMonth()]}`;
-  const editados = fechas.filter((f) => dias[f]).length;
-
-  const proponer = async () => {
-    if (cambiado) await guardar();
-    setAplicado(false);
-    const out: Prop[] = fechas.map((fecha) => ({ fecha }));
-    setProps([...out]);
-    let hechos = 0;
-    // de 2 en 2 para no saturar la IA
-    for (let i = 0; i < fechas.length; i += 2) {
-      setTrabajando(`Armando ${fechas.slice(i, i + 2).map((f) => DOW[pd(f).getDay()].toLowerCase()).join(" y ")}… (${hechos} de ${fechas.length} listos)`);
-      await Promise.all(
-        fechas.slice(i, i + 2).map(async (fecha, k) => {
-          try {
-            const r = await fetch("/api/ai/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fecha, reglas }) });
-            if (!r.ok) throw new Error();
-            out[i + k] = { fecha, bloques: ((await r.json()) as { bloques: Bloque[] }).bloques };
-          } catch {
-            out[i + k] = { fecha, error: true };
-          }
-          hechos++;
-          setProps([...out]);
-        }),
-      );
-    }
-    setTrabajando("");
-  };
-
-  const reintentar = async (fecha: string) => {
-    setProps((p) => p && p.map((x) => (x.fecha === fecha ? { fecha } : x)));
-    try {
-      const r = await fetch("/api/ai/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fecha, reglas }) });
-      if (!r.ok) throw new Error();
-      const { bloques } = (await r.json()) as { bloques: Bloque[] };
-      setProps((p) => p && p.map((x) => (x.fecha === fecha ? { fecha, bloques } : x)));
-    } catch {
-      setProps((p) => p && p.map((x) => (x.fecha === fecha ? { fecha, error: true } : x)));
-    }
-  };
-
-  const listos = props?.filter((p) => p.bloques?.length) ?? [];
-  const aplicar = () => {
-    for (const p of listos) saveDia(p.fecha, p.bloques!);
-    setAplicado(true);
-  };
-
   const inicial = (email ?? "D")[0].toUpperCase();
-  const pant = PANTALLAS.find((p) => p.ver === ver);
+  const pant = PANTALLAS.find((p) => p.ver === (ver === "reglas" ? "memoria" : ver));
 
   return (
     <>
@@ -181,10 +112,10 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
         </>
       )}
 
-      {ver === "reglas" && (
+      {ver === "memoria" && (
         <>
+      <h2 className="banda" id="reglas-h">Mis reglas: lo que tú le dices</h2>
       <section className="card pad rules-card" aria-labelledby="reglas-h">
-        <h2 id="reglas-h" className="sr-only">Mis reglas del horario</h2>
         {estado === "ok" && !todas && <p role="status" className="vok">✓ Reglas guardadas</p>}
         <div id="reglas-zona">
         {(todas || editando) && <p className="hint">
@@ -237,109 +168,15 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
         </div>
       </section>
       {quiz && <RulesQuiz modo={quizModo} reglas={guardadas} onClose={() => setQuiz(false)} onGuardar={(t) => guardar(t)} />}
+      <h2 className="banda" id="mem-h">Lo que ha aprendido de ti</h2>
+      <p className="sub ia-sabe-sub">Lo apunta sola cuando guardas tu diario o pides el resumen de la semana. Puedes corregirlo, borrarlo o añadirle cosas.</p>
+      <Memoria />
         </>
       )}
 
       {ver === "compromisos" && <Compromisos />}
 
-      {ver === "memoria" && <Memoria />}
-
-      {ver === "semana" && (
-        <>
-      <section className="card pad" aria-label="Mi semana con IA">
-        {!cloud ? (
-          <p className="hint">Para usar la IA tienes que haber iniciado sesión.</p>
-        ) : (
-          <>
-            <div className="st-box">
-              <h3 className="rules-h">Mi semana tipo</h3>
-              <p className="hint">
-                {perfil.plantilla && Object.keys(perfil.plantilla).length
-                  ? "Ya tienes tu semana tipo: un día típico de lunes a domingo. Tus compromisos se añaden encima."
-                  : "Un día típico de lunes a domingo, armado con tus reglas. Es la base de tu horario."}
-              </p>
-              <div className="row actions">
-                <button className="btn" onClick={armarTipo} disabled={tipo === "armando" || !guardadas.trim()}>
-                  {tipo === "armando" ? "Armando tu semana…" : perfil.plantilla ? "Volver a armarla" : "Armar mi semana tipo"}
-                </button>
-                {!guardadas.trim() && <span className="hint">Primero escribe tus reglas.</span>}
-                {tipo === "ok" && <span className="vok" role="status">✓ Semana tipo lista</span>}
-                {tipo === "error" && <span className="verr" role="alert">⚠ No se pudo armar. Inténtalo otra vez.</span>}
-              </div>
-            </div>
-            <h3 className="rules-h st-h2">Ajustar una semana concreta</h3>
-            <div className="row actions">
-              <label htmlFor="semana" className="sr-only">Semana</label>
-              <select id="semana" value={semana} onChange={(e) => { setSemana(e.target.value as typeof semana); setProps(null); }} style={{ width: "auto" }}>
-                <option value="esta">Esta semana</option>
-                <option value="proxima">La próxima semana</option>
-              </select>
-              <button className="btn" onClick={proponer} disabled={!!trabajando}>
-                {trabajando ? "Armando…" : "Proponer horario"}
-              </button>
-            </div>
-            <p className="hint">
-              Del {rango}. Primero ves la propuesta y después decides si la aplicas.
-              {editados > 0 && ` Ojo: ${editados === 1 ? "1 día de esa semana lo editaste" : `${editados} días de esa semana los editaste`} a mano; al aplicar se reemplazan.`}
-            </p>
-            {trabajando && (
-              <p className="vwork" role="status"><span className="spin" aria-hidden="true" /> {trabajando}</p>
-            )}
-          </>
-        )}
-      </section>
-
-      {props && (
-        <>
-          <div className="plan-days">
-            {props.map((p) => (
-              <details key={p.fecha} className="card plan-day" open={p.fecha === today()}>
-                <summary>
-                  <span>{DOW[pd(p.fecha).getDay()]} {pd(p.fecha).getDate()}</span>
-                  <small>{p.error ? "No salió" : p.bloques ? `${p.bloques.length} bloques` : "Armando…"}</small>
-                </summary>
-                {p.error ? (
-                  <div className="row actions">
-                    <span className="verr">⚠ La IA no pudo armar este día.</span>
-                    <button className="btn sm" onClick={() => reintentar(p.fecha)}>Reintentar</button>
-                  </div>
-                ) : p.bloques ? (
-                  <ol className="plan-list">
-                    {p.bloques.map((b, i) => (
-                      <li key={i}>
-                        <span className="pt">{b.s}–{b.e}</span>
-                        <span className="pn">{b.t}{b.sub && <small>{b.sub}</small>}</span>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="vwork"><span className="spin" aria-hidden="true" /> Armando…</p>
-                )}
-              </details>
-            ))}
-          </div>
-          {!trabajando && (
-            <div className="card pad apply">
-              {aplicado ? (
-                <>
-                  <span className="vok">✓ Listo, tu semana ya tiene este horario.</span>
-                  <Link className="btn" href="/semana">Ver mi semana</Link>
-                </>
-              ) : (
-                <>
-                  <span>{listos.length === fechas.length ? "¿Te gusta? Puedes cambiar cualquier día después con «Editar»." : `${listos.length} de ${fechas.length} días listos.`}</span>
-                  <div className="row" style={{ flex: "none", gap: 8 }}>
-                    <button className="btn ghost" onClick={() => setProps(null)}>Descartar</button>
-                    <button className="btn" onClick={aplicar} disabled={!listos.length}>Aplicar a mi semana</button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </>
-      )}
-        </>
-      )}
+      {ver === "semana" && <SemanaTipo />}
 
       {ver === "acerca" && (
         <>
@@ -381,6 +218,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
 
             <h3>Cómo decide</h3>
             <ul>
+              <li>Tu semana tipo es la base: la haces tú y la IA parte de ella; solo cambia lo necesario para tus compromisos y tareas de esa semana.</li>
               <li>Tus reglas mandan: es el texto que lee siempre.</li>
               <li>Tus compromisos con fecha son fijos: no los mueve ni pone nada encima.</li>
               <li>Aprende de lo que corriges: compara lo que te propuso con cómo lo dejaste y busca lo que se repite.</li>
@@ -393,7 +231,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
             <ul>
               <li>Si conectaste tu clave de Claude (de Anthropic), toda la IA de la app la hace Claude (menos el dictado por voz, que sigue en Cloudflare): lo que lee en cada caso (arriba) va a Anthropic, que no usa lo que recibe por su API para entrenar sus modelos. Si Claude falla, o sin clave, la hace la IA de Cloudflare, el mismo servicio donde se guardan tus datos, que no conserva lo que se le envía ni lo usa para entrenar modelos.</li>
               <li>
-                Su memoria es una lista de frases que puedes ver, corregir y borrar en <Link href="/perfil/memoria">Lo que la IA recuerda de mí</Link>. No recuerda nada más.
+                Su memoria es una lista de frases que puedes ver, corregir y borrar en <Link href="/perfil/memoria">Lo que la IA sabe de mí</Link>. No recuerda nada más.
               </li>
               <li>«Tus últimos 14 días» son tus diarios, tus metas y tareas (hechas y sin hacer) y tus hábitos. Solo los lee cuando guardas el diario, pides el resumen o le preguntas algo.</li>
               <li>Tus notas del Cerebro solo las lee cuando tú le preguntas algo en «Pregúntale a la IA». Lo que te propone por su cuenta (tu horario, el diario, el resumen de la semana) no las lee.</li>

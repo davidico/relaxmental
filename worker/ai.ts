@@ -136,7 +136,7 @@ export function cleanBlocks(raw: unknown): Bloque[] {
 
 export async function planDay(
   ai: AI,
-  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean; ejemplos?: string; memoria?: string[]; reciente?: string },
+  o: { reglas: string; fecha: string; eventos: Eventos; tareas: string[]; tipo?: boolean; ejemplos?: string; memoria?: string[]; reciente?: string; base?: string },
 ): Promise<Bloque[]> {
   const d = new Date(o.fecha + "T12:00:00Z");
   const dow = d.getUTCDay();
@@ -152,6 +152,7 @@ export async function planDay(
     ? [`Arma un ${DIAS[dow]} TÍPICO de su semana (sin compromisos especiales): lo que hace normalmente ese día según sus reglas y sus días reales.`, o.ejemplos ?? ""].filter(Boolean).join("\n\n")
     : [
         `Fecha: ${DIAS[dow]} ${o.fecha}.`,
+        o.base ? `MI SEMANA TIPO PARA LOS ${DIAS[dow].toUpperCase()} (la hice yo; es la base de este día):\n${o.base}` : "",
         hoy.length ? `Compromisos FIJOS de hoy (respeta sus horas, no los muevas): ${hoy.map((e) => `${e.t}${e.s ? ` de ${e.s} a ${e.e ?? "?"}` : ""}${e.nota ? ` (${e.nota})` : ""}`).join("; ")}.` : "Hoy no tiene compromisos con fecha.",
         prox.length ? `Compromisos de los próximos 3 días (por si hay que prepararse):\n${prox.join("\n")}` : "",
         o.tareas.length ? `Tareas pendientes (elige 1 o 2 si encajan):\n${o.tareas.slice(0, 12).map((t) => "- " + t).join("\n")}` : "",
@@ -188,15 +189,16 @@ export async function planDay(
         content:
           "Eres el planificador del día de una persona. Sigue SUS REGLAS al pie de la letra; si dos reglas chocan, gana la más específica (la que nombra el día o la labor). " +
           "Si te paso LO QUE RECUERDAS DE ELLA, tenlo en cuenta (cuándo rinde mejor, qué le cuesta, qué prefiere), pero sus reglas mandan. " +
+          "Si te paso SU SEMANA TIPO para ese día, la hizo ella y es la BASE: mantén sus momentos, con sus nombres, su orden y sus horas, y cambia solo lo necesario para que quepan los compromisos fijos de esa fecha y una o dos tareas pendientes (y lo que pidan sus reglas para esa fecha). No quites ni renombres momentos sin motivo, y no rellenes huecos que ella dejó libres. " +
           "Si te paso DÍAS REALES que ella ajustó a mano, son lo más fiable: imita sus horas, los nombres que usa, el orden y la duración de los bloques (sobre todo los del mismo día de la semana). " +
           "Si te paso SUS ÚLTIMOS 14 DÍAS, úsalos para que el plan le sirva de verdad: un momento que casi nunca cumple a esa hora pruébalo a otra hora o más corto; lo que siempre cambia a mano, déjalo ya como lo deja ella; si sus diarios hablan de cansancio o de días muy llenos, deja más aire. No conviertas sus tareas ni su diario en bloques nuevos salvo que encajen con sus reglas. " +
-          "No inventes actividades que no estén en sus reglas ni en sus días reales; nada genérico como «preparación para la noche» o «momento espiritual» si ella no lo dijo. " +
+          "No inventes actividades que no estén en su semana tipo, en sus reglas ni en sus días reales; nada genérico como «preparación para la noche» o «momento espiritual» si ella no lo dijo. " +
           "Si sus reglas dicen que toma medicinas o pastillas, pon un bloque corto (5-15 min, área salud) a la hora exacta, con el nombre en el detalle. " +
-          "Cubre el día de la hora de levantarse a la de dormir sin huecos ni solapes, en bloques de 15 minutos o más, en orden. " +
+          "Si NO hay semana tipo, cubre el día de la hora de levantarse a la de dormir sin huecos; si la hay, respeta sus huecos. Nunca solapes; bloques de 15 minutos o más, en orden. " +
           "Títulos cortos en español (máx. 5 palabras). Áreas: trabajo=trabajo o estudio, tukuna=proyecto propio o negocio, aleman=idiomas y aprendizaje, iglesia=fe, iglesia, Biblia y oración, familia=familia e hijos, salud=salud, ejercicio y descanso, casa=casa, cocina, papeleo y tareas, rutina=comidas y traslados. " +
           'Responde SOLO con JSON: {"bloques":[{"s":"07:00","e":"07:15","t":"…","a":"salud","sub":"…"}]}',
       },
-      { role: "user", content: `MIS REGLAS:\n${o.reglas.slice(0, 6000)}${textoMemoria(o.memoria)}${textoReciente(o.reciente, 7000)}\n\nDATOS DEL DÍA:\n${contexto}` },
+      { role: "user", content: `MIS REGLAS:\n${o.reglas.slice(0, 6000) || "(ninguna)"}${textoMemoria(o.memoria)}${textoReciente(o.reciente, 7000)}\n\nDATOS DEL DÍA:\n${contexto}` },
     ],
     response_format: { type: "json_schema", json_schema: schema },
     max_tokens: 2048,

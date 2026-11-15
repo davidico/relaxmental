@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, mondayOf, pd, today } from "@/lib/dates";
 import DayEditor from "./DayEditor";
+import ArmarSemana from "./ArmarSemana";
 import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
 
 /** La semana hora por hora: cada día con sus bloques. Está en Hoy, en la pestaña «Semana» */
 export default function HorarioSemana() {
-  const { eventos, planFor, dias } = useData();
+  const { eventos, planFor, dias, mode, offline } = useData();
+  const [armando, setArmando] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   /* El domingo por la tarde ya interesa la semana siguiente (revisión semanal) */
   const [off, setOff] = useState(() => (new Date().getDay() === 0 && new Date().getHours() >= 14 ? 1 : 0));
@@ -35,7 +37,16 @@ export default function HorarioSemana() {
           </button>
         </div>
       </div>
-      <p className="sub">{nLab ? `${nLab} día${nLab === 1 ? "" : "s"} con compromisos` : "Sin compromisos esta semana"}</p>
+      <div className="sem-ia">
+        <p className="sub">{nLab ? `${nLab} día${nLab === 1 ? "" : "s"} con compromisos` : "Sin compromisos esta semana"}</p>
+        {/* La IA organiza esta semana partiendo de tu semana tipo (solo las semanas que no han pasado) */}
+        {mode === "cloud" && !offline && addD(mon, 6) >= t && (
+          <button className="btn ghost sm sem-ia-btn" onClick={() => setArmando(true)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4l1.7 4.6a2 2 0 0 0 1.2 1.2L18.5 11.5l-4.6 1.7a2 2 0 0 0-1.2 1.2L11 19l-1.7-4.6a2 2 0 0 0-1.2-1.2L3.5 11.5l4.6-1.7a2 2 0 0 0 1.2-1.2zM18.5 3.5v3M17 5h3" /></svg>
+            Armar mi semana con IA
+          </button>
+        )}
+      </div>
       <div className="weekgrid">
         {days.map((x) => {
           const d = pd(x);
@@ -77,6 +88,7 @@ export default function HorarioSemana() {
         })}
       </div>
       {editing && <DayEditor date={editing} onClose={() => setEditing(null)} />}
+      {armando && <ArmarSemana lunes={mon} onClose={() => setArmando(false)} />}
     </>
   );
 }

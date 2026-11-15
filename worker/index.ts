@@ -427,18 +427,25 @@ async function api(req: Request, envBase: Env, url: URL): Promise<Response> {
     return json({ title: text?.trim() ? await title(env.AI, text) : "" });
   }
   if (url.pathname === "/api/ai/plan" && req.method === "POST") {
-    const { fecha, reglas } = (await req.json()) as { fecha?: string; reglas?: string };
-    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !reglas?.trim()) return json({ error: "bad_input" }, 400);
+    const b = (await req.json()) as { fecha?: string; reglas?: string };
+    const fecha = b.fecha;
+    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return json({ error: "bad_input" }, 400);
+    const perfil = await perfilDe(env, email);
+    const reglas = String(b.reglas ?? "").trim() || perfil.reglas;
+    /* La semana tipo de ese día de la semana (la hace la persona): es la base de la propuesta */
+    const tipoDia = (perfil.plantilla[String(new Date(fecha + "T12:00:00Z").getUTCDay())] ?? []).filter(isBloque);
+    if (!reglas.trim() && !tipoDia.length) return json({ error: "bad_input" }, 400);
     const { results } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(email).all<{ data: string }>();
     const tareas = results
       .map((r) => JSON.parse(r.data) as { title: string; done?: boolean; due?: string })
       .filter((t) => !t.done && (!t.due || t.due <= fecha))
       .map((t) => t.title);
-    const { eventos } = await perfilDe(env, email);
+    const { eventos } = perfil;
     const reales = await diasReales(env, email);
     const ejemplos = resumenDias(reales.filter((d) => d.fecha !== fecha), new Date(fecha + "T12:00:00Z").getUTCDay());
+    const base = tipoDia.map((x) => `${x.s}-${x.e} ${x.t}${x.sub ? ` (${x.sub})` : ""}`).join("\n");
     const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, berlinNow().date)]);
-    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos, memoria, reciente });
+    const bloques = await planDay(env.AI, { reglas, fecha, eventos, tareas, ejemplos, memoria, reciente, base });
     if (!bloques.length) return json({ error: "ai_empty" }, 502);
     return json({ bloques });
   }

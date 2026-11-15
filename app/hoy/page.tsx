@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useData, newId } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
@@ -47,6 +48,15 @@ export default function Hoy() {
     try {
       if (localStorage.getItem("mi-semana-hoy-vista") === "semana") setVista("semana");
     } catch {}
+  }, []);
+  /* Desde el resumen del domingo: «Armar la semana que viene» abre la pestaña Semana */
+  useEffect(() => {
+    const ver = () => {
+      setVista("semana");
+      scrollTo({ top: 0 });
+    };
+    addEventListener("mi-semana:ver-semana", ver);
+    return () => removeEventListener("mi-semana:ver-semana", ver);
   }, []);
   const cambiarVista = (v: "dia" | "semana") => {
     setVista(v);
@@ -165,12 +175,15 @@ function ReglasAviso() {
   };
   return (
     <>
-      {reglas && (listo || !perfil.plantilla) ? (
+      {reglas && !(perfil.plantilla && Object.values(perfil.plantilla).some((x) => x.length)) ? (
         <section className="card pad hy-aviso" aria-live="polite">
           <h2 className="hy-h">{listo ? "¡Tus reglas están listas!" : "Falta tu semana tipo"}</h2>
-          <p>Ahora armo tu semana tipo con ellas: un día típico de lunes a domingo. Tarda un poco.</p>
+          <p>Tu semana tipo es tu semana normal: qué haces cada día y a qué hora. Es la base de tu horario. Puedes hacerla tú o pedirle a la IA que te proponga una con tus reglas.</p>
           {tipo === "error" && <p className="verr" role="alert">⚠ No se pudo armar. Inténtalo otra vez.</p>}
-          <button className="btn" onClick={armarTipo} disabled={tipo === "armando"}>{tipo === "armando" ? "Armando tu semana…" : "Armar mi semana"}</button>
+          <div className="row actions">
+            <Link className="btn" href="/perfil/semana">Hacerla yo</Link>
+            <button className="btn ghost" onClick={armarTipo} disabled={tipo === "armando"}>{tipo === "armando" ? "Armando tu semana…" : "Que la IA me la proponga"}</button>
+          </div>
         </section>
       ) : !reglas ? (
         <section className="card pad hy-aviso" aria-labelledby="hy-bienv">
