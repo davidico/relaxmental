@@ -2279,8 +2279,11 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 
 /* ---------- Versión 7.9: «Nuevo hábito» arriba a la derecha, en una ventanita ---------- */
 .hb-head{align-items:center}
-.btn.sm.hb-nuevo{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px}
-.hb-nuevo svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.hb-nuevo{flex:none;position:relative;width:44px;height:44px;margin-right:-6px;padding:0;border:0;background:transparent;color:var(--primary);display:grid;place-items:center;cursor:pointer}
+.hb-nuevo::before{content:"";position:absolute;inset:7px;border-radius:50%;border:1.5px solid var(--line);transition:border-color .15s,background .15s}
+.hb-nuevo:hover::before{border-color:var(--primary);background:var(--band)}
+.hb-nuevo:focus-visible{outline:2px solid var(--focus);outline-offset:0;border-radius:50%}
+.hb-nuevo svg{position:relative;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 
 /* ---------- Versión 7.10: notas fijadas (pin) ---------- */
 .k-card{position:relative}

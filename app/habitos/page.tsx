@@ -54,8 +54,9 @@ export default function Habitos() {
     <>
       <div className="hb-head">
         <h1>Hábitos</h1>
-        <button className="btn ghost sm hb-nuevo" onClick={() => { setNuevo(VACIO); setCreando(true); }}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg> Nuevo
+        {/* Pequeño: solo el «+» en un círculo fino (se toca en 44 px) */}
+        <button className="hb-nuevo" aria-label="Nuevo hábito" title="Nuevo hábito" onClick={() => { setNuevo(VACIO); setCreando(true); }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
       </div>
       <div className="sem-vista" role="tablist" aria-label="Cómo ver tus hábitos">
@@ -112,7 +113,7 @@ export default function Habitos() {
                 );
               })
             ) : (
-              <div className="card empty">Todavía no tienes hábitos. Toca «Nuevo», arriba, para añadir el primero.</div>
+              <div className="card empty">Todavía no tienes hábitos. Toca el «+» de arriba para añadir el primero.</div>
             )}
           </div>
         </>
