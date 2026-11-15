@@ -286,6 +286,9 @@ export async function leerHorario(ai: AI, imagen: string): Promise<string> {
 }
 
 /** Reescribe las reglas con las respuestas y el mensaje final */
+/** Quita el formato que a veces añade la IA (negritas con asteriscos, títulos con almohadillas): las reglas son texto llano */
+const sinFormato = (t: string) => t.replace(/\*\*/g, "").replace(/^#{1,6}\s+/gm, "").trim();
+
 export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: { p: string; r: string }[]; mensaje: string; horario?: string; modo?: string; ejemplos?: string }): Promise<string> {
   const qa = o.respuestas.filter((x) => x.r.trim()).map((x) => `P: ${x.p}\nR: ${x.r.trim()}`).join("\n\n");
   const r = await ai.run(LLM, {
@@ -303,14 +306,14 @@ export async function reescribirReglas(ai: AI, o: { reglas: string; respuestas: 
           "Ordena por: al despertar, mañanas, tardes, noches, días especiales y excepciones. " +
           "Si hay un horario variable (turnos), añade una sección «MI HORARIO VARIABLE» con esos días y horas tal cual, y explica qué hacer antes y después de cada turno según sus respuestas. " +
           "No escribas qué fechas concretas tiene compromisos (iglesia, turnos): la app ya las sabe. Sí puedes escribir qué hace antes o después de ellos. " +
-          "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
+          "Usa horas en formato 7:00, frases cortas y listas con guiones. Texto sin formato: nada de asteriscos, almohadillas ni negritas. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
       },
       { role: "user", content: `MIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}\n\nMIS RESPUESTAS:\n${qa.slice(0, 8000) || "(ninguna)"}\n\nMI MENSAJE FINAL:\n${o.mensaje.slice(0, 3000) || "(nada)"}${o.horario ? `\n\nMI HORARIO VARIABLE (de una foto):\n${o.horario.slice(0, 3000)}` : ""}${o.ejemplos ? `\n\n${o.ejemplos}` : ""}` },
     ],
     max_tokens: 2500,
     temperature: 0.2,
   });
-  return String(r.response ?? "").trim();
+  return sinFormato(String(r.response ?? ""));
 }
 
 /**
@@ -330,14 +333,14 @@ export async function reglasDeTipo(ai: AI, o: { reglas: string; tipo: string }):
           "Junta los días que son iguales (por ejemplo «De lunes a viernes») y describe aparte los que cambian. Dentro de cada grupo ordena por: al despertar, mañanas, tardes y noches. Los ratos que ella dejó libres, déjalos libres. " +
           "Si toma medicinas o pastillas, mantenlas con su hora exacta en una sección «MEDICINAS». " +
           "No escribas qué fechas concretas tiene compromisos: la app ya las sabe. " +
-          "Usa horas en formato 7:00, frases cortas y listas con guiones. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
+          "Usa horas en formato 7:00, frases cortas y listas con guiones. Texto sin formato: nada de asteriscos, almohadillas ni negritas. Devuelve SOLO el texto de las reglas, sin introducción ni comentarios.",
       },
       { role: "user", content: `MI SEMANA TIPO (la hice yo; manda):\n${o.tipo.slice(0, 9000)}\n\nMIS REGLAS ACTUALES:\n${o.reglas.slice(0, 6000) || "(ninguna)"}` },
     ],
     max_tokens: 2500,
     temperature: 0.2,
   });
-  return String(r.response ?? "").trim();
+  return sinFormato(String(r.response ?? ""));
 }
 
 /** Convierte el texto de una foto (turnos, labores, calendario) en compromisos con fecha */

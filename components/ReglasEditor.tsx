@@ -32,8 +32,13 @@ export default function ReglasEditor({
   useLayoutEffect(() => {
     const el = caja.current;
     if (!el) return;
+    /* Para medir hay que encoger el cuadro un instante: se guarda dónde estaba la pantalla y se deja igual,
+       porque si no salta hacia arriba con cada letra */
+    const pantalla = el.closest<HTMLElement>(".nv-body");
+    const y = pantalla?.scrollTop ?? 0;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight + 2}px`;
+    if (pantalla) pantalla.scrollTop = y;
   }, [t]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === "Escape" && volver();
