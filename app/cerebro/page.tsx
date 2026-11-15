@@ -8,6 +8,7 @@ import type { Area, Carpeta, Nota } from "@/lib/types";
 import { RichView } from "@/components/RichEditor";
 import NoteView from "@/components/NoteView";
 import { IconoEtiqueta } from "@/components/Etiqueta";
+import MapaNotas from "@/components/MapaNotas";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
@@ -71,6 +72,8 @@ export default function Cerebro() {
   const [ordMenu, setOrdMenu] = useState(false);
   /* La nota abierta, por su id: si la lista cambia de orden (al fijarla), sigue siendo la misma nota */
   const [abiertaId, setAbiertaId] = useState<string | null>(null);
+  const [mapa, setMapa] = useState(false);
+  const [deMapa, setDeMapa] = useState<string | null>(null);
   const [nueva, setNueva] = useState<"texto" | "lista" | null>(null);
   const [secMenu, setSecMenu] = useState(false);
   const [newMenu, setNewMenu] = useState(false);
@@ -263,6 +266,10 @@ export default function Cerebro() {
         <button className="k-sbtn k-ia" aria-label="Pregúntale a la IA" title="Pregúntale a la IA" onClick={() => dispatchEvent(new CustomEvent("mi-semana:preguntar"))}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4l1.7 4.6a2 2 0 0 0 1.2 1.2L18.5 11.5l-4.6 1.7a2 2 0 0 0-1.2 1.2L11 19l-1.7-4.6a2 2 0 0 0-1.2-1.2L3.5 11.5l4.6-1.7a2 2 0 0 0 1.2-1.2zM18.5 3.5v3M17 5h3M19 17v2.5M17.75 18.25h2.5" /></svg>
         </button>
+        {/* El mapa de las notas: solo en pantallas anchas (es para verlo, por gusto) */}
+        <button className="k-sbtn k-mapa" aria-label="Ver el mapa de mis notas" title="Mapa de mis notas" onClick={() => setMapa(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.2" /><circle cx="18" cy="6" r="2.2" /><circle cx="12" cy="17" r="2.6" /><path d="M7.8 8.3l3 6.5M16.6 7.8l-3.4 7M8.2 7l7.6-.8" /></svg>
+        </button>
         <button className="k-sbtn" aria-label={vista === "grid" ? "Ver una debajo de otra" : "Ver en cuadros"} title={vista === "grid" ? "Una debajo de otra" : "Cuadros"} onClick={() => setVista(vista === "grid" ? "una" : "grid")}>
           {vista === "grid" ? (
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="2" /><rect x="4" y="13" width="16" height="7" rx="2" /></svg>
@@ -323,6 +330,24 @@ export default function Cerebro() {
         </div>
       )}
 
+      {mapa && (
+        <MapaNotas
+          notas={notas}
+          carpetas={carpetas}
+          onNota={setDeMapa}
+          onCarpeta={(id) => {
+            const c = byId[id];
+            if (!c) return;
+            setMapa(false);
+            setQ("");
+            if (c.parent) go(c.parent, c.id);
+            else go(c.id);
+          }}
+          onClose={() => setMapa(false)}
+        />
+      )}
+      {/* Una nota abierta desde el mapa: se ve encima y al cerrarla sigues en el mapa */}
+      {deMapa && notas.some((n) => n.id === deMapa) && <NoteView list={notas.filter((n) => n.id === deMapa)} index={0} onIndex={() => {}} onClose={() => setDeMapa(null)} />}
       {abierta >= 0 && <NoteView list={list} index={abierta} onIndex={setAbierta} onClose={() => setAbierta(null)} />}
       {nueva && <NoteView list={[]} index={0} nueva={{ folder: sub?.id ?? sec.id, tipo: nueva }} onClose={() => setNueva(null)} />}
     </>

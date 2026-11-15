@@ -2381,3 +2381,31 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .st-reglas p{margin:0;line-height:1.45}
 .st-reglas .btn{min-height:44px}
 .re-aviso{margin:0 0 var(--e4);padding:var(--e3);border-radius:10px;background:var(--band);font-size:14px;line-height:1.45;color:var(--ink)}
+
+/* ---------- Versión 9.2: el mapa de las notas (solo en pantallas anchas) ---------- */
+.k-mapa{display:none}
+@media (min-width:900px){.k-mapa{display:grid}}
+.mp{position:fixed;inset:0;z-index:28;background:var(--bg);display:flex;flex-direction:column}
+@media (min-width:900px){.mp{left:104px}}
+.mp-bar{display:flex;align-items:center;gap:var(--e3);padding:var(--e3) var(--e4);border-bottom:1px solid var(--line)}
+.mp-h{margin:0;font-size:18px;font-weight:600;color:var(--ink)}
+.mp-n{margin-left:auto;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mp-svg{flex:1;min-height:0;width:100%;display:block;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.mp-svg:active{cursor:grabbing}
+.mp-l{stroke:var(--stone);stroke-width:1;opacity:.7;transition:opacity .15s}
+.mp-l.men{stroke:var(--primary);opacity:.55}
+.mp-l.on{stroke:var(--primary);opacity:1;stroke-width:1.4}
+.mp-l.off{opacity:.12}
+.mp-nodo{cursor:pointer;transition:opacity .15s}
+.mp-nodo.off{opacity:.18}
+.mp-toque{fill:transparent}
+.mp-nodo circle:not(.mp-toque){fill:var(--muted);stroke:var(--bg);stroke-width:1.5;transition:fill .15s}
+.mp-nodo.eti circle:not(.mp-toque){fill:var(--primary);opacity:.7}
+.mp-nodo.sec circle:not(.mp-toque){fill:var(--primary)}
+.mp-nodo.on circle:not(.mp-toque){fill:var(--primary);opacity:1}
+.mp-nodo text{font:400 11px Inter,system-ui,sans-serif;fill:var(--muted);paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+.mp-nodo.eti text{font-weight:500;fill:var(--ink)}
+.mp-nodo.sec text{font-weight:600;font-size:13px;fill:var(--ink)}
+.mp-nodo.on text{fill:var(--ink)}
+.mp-ayuda{margin:0;padding:var(--e2) var(--e4) var(--e3);font-size:13px;color:var(--muted);text-align:center;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.mp-l,.mp-nodo,.mp-nodo circle{transition:none}}
