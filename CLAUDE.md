@@ -10,7 +10,7 @@ El repositorio es **público**: no subas datos personales de David (salud, famil
 
 ## Stack
 - Next.js 16 App Router + TypeScript, exportación estática (`output: "export"` → `out/`). Sin servidor de Next.
-- `worker/index.ts`: Cloudflare Worker con la API `/api/*` (verifica el JWT de Access: no debilites esa verificación) y `scheduled()` cada minuto para los avisos. `worker/push.ts` (Web Push sin librerías), `worker/ai.ts` (Workers AI: Whisper para voz, Llama 3.3 para títulos y horario).
+- `worker/index.ts`: Cloudflare Worker con la API `/api/*` (verifica el JWT de Access: no debilites esa verificación) y `scheduled()` cada minuto para los avisos. `worker/push.ts` (Web Push sin librerías), `worker/ai.ts` (Workers AI: Whisper para voz, Llama 3.3 para títulos y horario). Con el secreto `ANTHROPIC_API_KEY`, `api()` envuelve `env.AI` con `conClaude()` (`worker/claude.ts`): toda llamada a Llama (texto y la foto de visión) la responde Claude Opus 5.5 con la misma forma `{ response }` (el `json_schema` se pide en el sistema; effort `low` si `max_tokens` ≤ 600, si no `medium`); si falla o se niega, sigue Llama. Whisper siempre en Cloudflare.
 - D1 `relaxmental-db` (id 4641ebda-b1ae-450b-8ad4-d8bd42083550): tabla genérica `items(user_email, tabla, id, data, updated_at)` + `push_subs`, `push_config`, `push_sent`. Workers Builds NO aplica migraciones: si creas una en `migrations/`, hay que aplicarla aparte.
 - Sin sesión la app guarda en localStorage (`mi-semana-v1`); así se prueba en local.
 

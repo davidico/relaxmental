@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "7.5";
+export const VERSION = "7.6";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Toda la IA con Claude: con tu clave de Anthropic, Claude arma tu horario y tu semana tipo, te dice cuándo hacer tus pendientes, lee tus fotos de compromisos, responde al diario y hace el resumen de la semana. Si Claude falla, sigue la IA de Cloudflare",
   "Notas como en Keep: ya no hay botón «Editar». Toca la nota donde quieras y escribes ahí mismo, con el cursor donde tocaste. Arriba, el basurero para borrarla. En las listas, la casilla marca y el texto se edita",
   "Una sola IA: «Pregúntale a la IA» es la misma en Hoy, en el botón + y en el Cerebro. Lee todas tus notas, tu día, tus últimos 14 días y lo que recuerda de ti, y te responde lo que sea que preguntes",
   "Cerebro más limpio: arriba solo el menú ☰ y el título. Renombrar y borrar están en el menú ☰, y en el móvil la nota nueva se crea con el botón +, ya en la etiqueta que estás viendo",

@@ -12,7 +12,7 @@ import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../li
 import { TIPOS } from "../lib/tipos";
 import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
-import { PRESUPUESTO_CLAUDE, responderClaude } from "./claude";
+import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
 import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
@@ -26,7 +26,7 @@ interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   /** "Application Audience (AUD) Tag" de la aplicación de Access */
   ACCESS_AUD?: string;
-  /** Secreto opcional: con él, «Pregúntale a tus notas» responde con Claude (Anthropic) */
+  /** Secreto opcional: con él, toda la IA de texto de la app responde con Claude (Anthropic); sin él, Llama de Cloudflare */
   ANTHROPIC_API_KEY?: string;
 }
 
@@ -359,7 +359,9 @@ async function preguntarIA(req: Request, env: Env, email: string): Promise<Respo
 
 /* ---------- API ---------- */
 
-async function api(req: Request, env: Env, url: URL): Promise<Response> {
+async function api(req: Request, envBase: Env, url: URL): Promise<Response> {
+  /* Con la clave de Anthropic, toda la IA de texto de la app la responde Claude (y si falla, Llama) */
+  const env: Env = { ...envBase, AI: conClaude(envBase.AI, envBase.ANTHROPIC_API_KEY) };
   const email = await accessEmail(req, env);
   if (!email) return json({ error: "no_auth" }, 401);
   /* Escrituras solo desde la propia app (otra web no puede mandar datos con tu sesión) */

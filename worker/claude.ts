@@ -78,3 +78,89 @@ export async function responderClaude(apiKey: string, o: { pregunta: string; cha
     return null;
   }
 }
+
+/* ---------- Toda la IA de texto con Claude ---------- */
+
+const LLAMA = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const VISION = "@cf/meta/llama-3.2-11b-vision-instruct";
+type IA = { run(model: string, input: Record<string, unknown>): Promise<Record<string, unknown>> };
+type Msg = { role?: unknown; content?: unknown };
+
+/**
+ * Con la clave de Anthropic, todo lo que la app le pide a la IA de texto (el horario del día, la semana tipo, el diario, el resumen,
+ * los títulos, la foto de un horario…) lo responde Claude. Se mantiene la misma forma de pedir y de responder que Workers AI
+ * ({ response: "…" }), así el resto del código no cambia. Si Claude falla o se niega, sigue Llama como antes.
+ * La voz (Whisper) sigue siempre en Cloudflare.
+ */
+export function conClaude(ai: IA, apiKey?: string): IA {
+  if (!apiKey) return ai;
+  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
+  return {
+    async run(model, input) {
+      if (model !== LLAMA && model !== VISION) return ai.run(model, input);
+      try {
+        const texto = await pedirClaude(client, input);
+        if (texto) return { response: texto };
+      } catch (e) {
+        if (e instanceof Anthropic.AuthenticationError) console.error("Claude: la clave ANTHROPIC_API_KEY no es válida");
+        else if (e instanceof Anthropic.RateLimitError) console.error("Claude: límite de uso alcanzado");
+        else if (e instanceof Anthropic.APIError) console.error(`Claude: error ${e.status}`);
+        else console.error("Claude: sin conexión");
+      }
+      return ai.run(model, input);
+    },
+  };
+}
+
+async function pedirClaude(client: Anthropic, input: Record<string, unknown>): Promise<string> {
+  const msgs = (Array.isArray(input.messages) ? input.messages : []) as Msg[];
+  const sistema = msgs.filter((m) => m.role === "system").map((m) => String(m.content ?? ""));
+  /* Si se pedía JSON con un esquema, se le pide igual en el texto (la app ya sabe sacar el JSON de la respuesta) */
+  const rf = input.response_format as { type?: string; json_schema?: unknown } | undefined;
+  if (rf?.type === "json_schema" && rf.json_schema) {
+    sistema.push(`Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin \`\`\`, que siga este esquema JSON:\n${JSON.stringify(rf.json_schema)}`);
+  }
+  /* El resto de la conversación, con los turnos de la misma persona juntos y empezando por la persona */
+  const turnos: { role: "user" | "assistant"; content: string }[] = [];
+  for (const m of msgs) {
+    if (m.role !== "user" && m.role !== "assistant") continue;
+    const t = String(m.content ?? "");
+    const prev = turnos[turnos.length - 1];
+    if (prev && prev.role === m.role) prev.content += `\n\n${t}`;
+    else turnos.push({ role: m.role, content: t });
+  }
+  while (turnos.length && turnos[0].role === "assistant") turnos.shift();
+  if (!turnos.length || turnos[turnos.length - 1].role === "assistant") turnos.push({ role: "user", content: "Continúa." });
+
+  const messages: Anthropic.Beta.BetaMessageParam[] = turnos.map((t) => ({ role: t.role, content: t.content }));
+  /* La foto de un horario: va como imagen en el último mensaje de la persona */
+  const img = typeof input.image === "string" ? input.image.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/) : null;
+  if (img) {
+    const ultimo = messages[messages.length - 1];
+    messages[messages.length - 1] = {
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: img[1] as "image/jpeg" | "image/png" | "image/webp", data: img[2] } },
+        { type: "text", text: String(ultimo.content) },
+      ],
+    };
+  }
+  /* Lo corto (títulos, tipos) va rápido; lo que arma o piensa (horario, diario, resumen) con más calma */
+  const pedidos = Number(input.max_tokens) || 1024;
+  const r = await client.beta.messages.create({
+    model: MODELO_CLAUDE,
+    /* Claude piensa antes de responder y eso también cuenta: se le deja margen de sobra */
+    max_tokens: Math.max(8000, pedidos * 4),
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    output_config: { effort: pedidos <= 600 ? "low" : "medium" },
+    ...(sistema.length ? { system: sistema.join("\n\n") } : {}),
+    messages,
+  });
+  if (r.stop_reason === "refusal") return "";
+  return r.content
+    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("")
+    .trim();
+}
