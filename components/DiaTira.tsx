@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useData } from "@/lib/data";
 import { addD, toMin } from "@/lib/dates";
 import type { Bloque } from "@/lib/plan";
@@ -143,6 +143,25 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
   const primero = blocks[0];
   const ultimo = blocks[blocks.length - 1];
 
+  /* Al abrir Hoy, la pantalla baja sola hasta el momento en que estás (el cuadro dorado o el punto de «Ahora»),
+     para no empezar en lo que ya pasó. Solo una vez por día abierto: después no se mueve aunque pasen los minutos. */
+  const lista = useRef<HTMLOListElement>(null);
+  const yaBajo = useRef("");
+  const hayDia = esHoy && blocks.length > 0;
+  useEffect(() => {
+    if (!hayDia || yaBajo.current === dia) return;
+    const id = requestAnimationFrame(() => {
+      yaBajo.current = dia;
+      const fila = lista.current?.querySelector<HTMLElement>(".lt-f.ahora");
+      if (!fila) return;
+      /* Si ya se ve entero donde está (el día acaba de empezar), no hace falta moverse */
+      const r = fila.getBoundingClientRect();
+      if (r.top >= 0 && r.bottom <= innerHeight - 80) return;
+      fila.scrollIntoView({ block: "center" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [hayDia, dia]);
+
   return (
     <section className="hy-sec lt-sec" aria-labelledby="lt-h">
       <div className="hy-sechead">
@@ -151,7 +170,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
         <button type="button" className="lt-editar" onClick={onEditar} aria-label={esHoy ? "Editar todo el día de hoy" : "Editar todo ese día"}>Editar todo</button>
       </div>
       {blocks.length ? (
-        <ol className="lt">
+        <ol className="lt" ref={lista}>
           {esHoy && minuto < toMin(primero.s) && filaAhora("antes", `Empiezas en ${dur(toMin(primero.s) - minuto)}`)}
           {blocks.map((b, i) => {
             const sig = blocks[i + 1];
