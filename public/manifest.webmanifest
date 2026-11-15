@@ -16,25 +16,25 @@
   ],
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@d295df165769189fe171a1224770a02684bf3de8/public/icon-192.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@a294eeabe8cbc8349bf47f15418bab6d3c4ae209/public/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@d295df165769189fe171a1224770a02684bf3de8/public/icon-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@a294eeabe8cbc8349bf47f15418bab6d3c4ae209/public/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@d295df165769189fe171a1224770a02684bf3de8/public/icon-maskable-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@a294eeabe8cbc8349bf47f15418bab6d3c4ae209/public/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@d295df165769189fe171a1224770a02684bf3de8/public/icon.svg",
+      "src": "https://cdn.jsdelivr.net/gh/davidico/relaxmental@a294eeabe8cbc8349bf47f15418bab6d3c4ae209/public/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
