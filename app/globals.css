@@ -2139,3 +2139,10 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .hd-ok{margin:0;font-size:14px}
 .hd-ok:empty{display:none}
 .hd-borrar{align-self:flex-start;color:var(--warn)}
+
+/* ---------- Versión 6.7: hábitos en el día (el «+» deja elegir un hábito; al hacerlo se marca en Hábitos) ---------- */
+.aq-habs{flex-wrap:wrap}
+.aq-habs button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aq-hab-nota{margin:var(--e2) 0 0;font-size:14px;line-height:1.4;color:var(--ok)}
+.aq-hab-nota .linkbtn{font-size:14px;min-height:0;padding:0;color:var(--pine)}
+.aq-hab-nota .linkbtn::after{content:"";position:absolute;inset:-12px -6px}

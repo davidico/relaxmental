@@ -21,6 +21,8 @@ export interface Tarea {
   min?: number;
   /** Subtarea de un momento del día: su clave «HH:MM|nombre» (lib/momentos.ts). No lleva hora propia */
   momento?: string;
+  /** Hábito al que cuenta al marcarla hecha (id). "" = la persona quitó el enlace; sin el campo, se reconoce por el nombre */
+  habito?: string;
 }
 
 /** Lo escrito en el planner antes de separar metas y tareas también cuenta como meta */

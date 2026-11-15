@@ -12,6 +12,8 @@ import MomentoSheet from "./MomentoSheet";
 import TaskSheet from "./TaskSheet";
 import { useFocus } from "./Shell";
 import { bloqueDeSub } from "@/lib/momentos";
+import { useMarcarTarea } from "@/lib/usarMarcar";
+import { habitoDeNombre, habitoDeTarea, marcarHabito } from "@/lib/habits";
 import type { Tarea } from "@/lib/types";
 import AvisoDespertar from "./AvisoDespertar";
 import Diario from "./Diario";
@@ -35,7 +37,7 @@ const alto = (min: number) => Math.round(Math.min(132, 44 + Math.max(0, min - 15
  * `minuto` es el minuto actual si el día es hoy; -1 si es un día futuro; 1440 si ya pasó.
  */
 export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string; blocks: Bloque[]; minuto: number; onEditar: () => void; onEntreno: () => void }) {
-  const { perfil, savePerfil, tareas, save, hoy, planFor } = useData();
+  const { perfil, savePerfil, tareas, save, hoy, planFor, habitos } = useData();
   const [aviso, setAviso] = useState<{ fecha: string; hora: string; cuando: string; pasado?: boolean } | null>(null);
   const [diario, setDiario] = useState(false);
   const [anadir, setAnadir] = useState<{ hora: string; dentro: { clave: string; nombre: string }[]; inicial: number } | null>(null);
@@ -48,13 +50,24 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
   const empezar = useFocus();
   const hechos = new Set(perfil.hechos?.[dia] ?? []);
   const estaHecho = (b: Bloque) => (b.tarea ? !!b.hecha : hechos.has(clave(b)));
+  const marcarTarea = useMarcarTarea();
+  /* Un momento o una tarea que cuenta como hábito: el hábito se marca a la vez */
+  const habitoDe = (b: Bloque) => {
+    if (b.tarea) {
+      const t = tareas.find((x) => x.id === b.tarea);
+      return t ? habitoDeTarea(t, habitos) : undefined;
+    }
+    return habitoDeNombre(b.t, habitos);
+  };
   const marcar = (b: Bloque) => {
     if (b.tarea) {
       const t = tareas.find((x) => x.id === b.tarea);
-      if (t) save("tareas", { ...t, done: !t.done });
+      if (t) marcarTarea(t);
       return;
     }
     const k = clave(b);
+    const h = habitoDeNombre(b.t, habitos);
+    if (h) save("habitos", marcarHabito(h, dia, !hechos.has(k)));
     const lista = hechos.has(k) ? [...hechos].filter((x) => x !== k) : [...hechos, k];
     /* Se guardan los últimos 45 días */
     const desde = addD(hoy, -45);
@@ -168,6 +181,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                     <span className="lt-s">
                       {ahora ? `Ahora, hasta las ${b.e}` : largo > 45 ? `${b.s} a ${b.e}, ${dur(largo)}` : dur(largo)}
                       {b.sub ? ` · ${b.sub}` : ""}
+                      {habitoDe(b) ? ` · Hábito` : ""}
                     </span>
                   </button>
                   {accion && <span className="lt-s lt-pista">{accion.pista}</span>}
@@ -177,7 +191,7 @@ export function Tira({ dia, blocks, minuto, onEditar, onEntreno }: { dia: string
                   <ul className="lt-subs" aria-label={`Subtareas de ${b.t}`}>
                     {subs.get(b)!.map((x) => (
                       <li key={x.id} className={x.done ? "hecho" : undefined}>
-                        <input type="checkbox" className="hy-check" checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} aria-label={`Hecho: ${x.title}`} />
+                        <input type="checkbox" className="hy-check" checked={x.done} onChange={() => marcarTarea(x)} aria-label={`Hecho: ${x.title}`} />
                         <button type="button" className="lt-subt" onClick={() => setCambiar({ tarea: x })} aria-label={`Cambiar ${x.title}`}>{x.title}</button>
                         {!!x.min && !x.done && (
                           <button type="button" className="lt-tiempo" onClick={() => empezar(x)} aria-label={`Empezar el temporizador de ${x.min} minutos: ${x.title}`}>

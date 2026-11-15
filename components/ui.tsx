@@ -1,5 +1,6 @@
 "use client";
 
+import { useMarcarTarea } from "@/lib/usarMarcar";
 import { borrarTarea } from "@/lib/deshacer";
 import { useData } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
@@ -105,11 +106,12 @@ export function DueChoice({ value, onChange, id }: { value: string; onChange: (v
 
 export function TaskRow({ x }: { x: Tarea }) {
   const { save, remove } = useData();
+  const marcarTarea = useMarcarTarea();
   const startFocus = useFocus();
   const t = today();
   return (
     <div className={`task${x.done ? " done" : ""}`}>
-      <input type="checkbox" className="tcheck" id={`c-${x.id}`} checked={x.done} aria-label={x.done ? "Marcar como pendiente" : "Marcar como hecha"} onChange={(e) => save("tareas", { ...x, done: e.target.checked })} />
+      <input type="checkbox" className="tcheck" id={`c-${x.id}`} checked={x.done} aria-label={x.done ? "Marcar como pendiente" : "Marcar como hecha"} onChange={(e) => marcarTarea(x, e.target.checked)} />
       <div className="tt">
         <label htmlFor={`c-${x.id}`} className="ttitle">{x.title}</label>
         {x.step && !x.done && <div className="step">{x.step}</div>}

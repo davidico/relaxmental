@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { newId, useData } from "@/lib/data";
 import { toMin } from "@/lib/dates";
 import TextoCrece from "./TextoCrece";
+import { habitoDeNombre, sortHabits } from "@/lib/habits";
 
 /** Los tiempos aproximados que se ofrecen (minutos) */
 export const TIEMPOS = [10, 15, 20, 30, 45, 60];
@@ -30,8 +31,20 @@ export default function AnadirAqui({
   inicial: number;
   onClose: () => void;
 }) {
-  const { save } = useData();
+  const { save, habitos } = useData();
   const [titulo, setTitulo] = useState("");
+  /* El hábito al que cuenta: undefined = se reconoce por el nombre; null = la persona lo quitó; id = elegido */
+  const [habSel, setHabSel] = useState<string | null | undefined>(undefined);
+  const lista = sortHabits(habitos);
+  const enlazado = habSel === null ? undefined : habSel ? habitos.find((h) => h.id === habSel) : habitoDeNombre(titulo, habitos);
+  const elegirHabito = (id: string) => {
+    if (enlazado?.id === id) return setHabSel(null);
+    const h = habitos.find((x) => x.id === id);
+    if (!h) return;
+    setHabSel(id);
+    /* Si no había escrito nada (o había otro hábito), el nombre es el del hábito */
+    if (!titulo.trim() || habitos.some((x) => x.name === titulo.trim())) setTitulo(h.name);
+  };
   const [donde, setDonde] = useState(inicial);
   const [min, setMin] = useState(15);
   const [guardadas, setGuardadas] = useState(0);
@@ -49,11 +62,12 @@ export default function AnadirAqui({
   const guardar = () => {
     const t = titulo.trim();
     if (!t) return;
-    const base = { id: newId(), title: t, step: "", due: dia, done: false, created: new Date().toISOString(), meta: false, min };
+    const base = { id: newId(), title: t, step: "", due: dia, done: false, created: new Date().toISOString(), meta: false, min, ...(enlazado ? { habito: enlazado.id } : habSel === null ? { habito: "" } : {}) };
     if (donde >= 0) {
       save("tareas", { ...base, momento: dentro[donde].clave });
       /* Las subtareas suelen ir de varias en varias: la hoja sigue abierta para la siguiente */
       setTitulo("");
+      setHabSel(undefined);
       setGuardadas((n) => n + 1);
       campo.current?.focus();
     } else {
@@ -78,6 +92,23 @@ export default function AnadirAqui({
         <h2 id="aq-h" className="aq-h">Añadir a tu día</h2>
         <label htmlFor="aq-t" className="sr-only">¿Qué vas a hacer?</label>
         <TextoCrece ref={campo} id="aq-t" className="ts-title" autoFocus autoComplete="off" enterKeyHint="done" placeholder="¿Qué vas a hacer?" value={titulo} onTexto={setTitulo} onEnter={() => form.current?.requestSubmit()} />
+
+        {lista.length > 0 && (
+          <div role="group" aria-labelledby="aq-hab">
+            <p id="aq-hab" className="aq-lbl">O uno de tus hábitos</p>
+            <div className="rd-chips aq-habs">
+              {lista.map((h) => (
+                <button key={h.id} type="button" aria-pressed={enlazado?.id === h.id} onClick={() => elegirHabito(h.id)}>{h.name}</button>
+              ))}
+            </div>
+            {enlazado && (
+              <p className="aq-hab-nota" role="status">
+                ✓ Al marcarla hecha, cuenta para tu hábito «{enlazado.name}».{" "}
+                <button type="button" className="linkbtn" onClick={() => setHabSel(null)}>No cuenta</button>
+              </p>
+            )}
+          </div>
+        )}
 
         {dentro.length > 0 && (
           <fieldset className="aq-donde">

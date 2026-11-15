@@ -81,3 +81,44 @@ export function total(h: Habito, desde: string, hasta: string) {
   for (const [d, v] of Object.entries(h.cantidades ?? {})) if (d >= desde && d <= hasta) n += v;
   return Math.round(n * 100) / 100;
 }
+
+/* ---------- Hábitos dentro del día: una tarea o un momento que cuenta como hábito ---------- */
+const VACIAS = new Set("el la los las de del y a al en un una por para con mi mis tu tus su sus que".split(" "));
+const llanoH = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+/** Las raíces de las palabras con significado («Leer la Biblia» → leer, bibli) */
+const raicesH = (t: string) => llanoH(t).split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !VACIAS.has(w)).map((w) => w.slice(0, 5));
+
+/**
+ * El hábito que se reconoce en el nombre de una tarea o de un momento: todas las palabras del hábito están en el nombre
+ * («Leer» en «Leer un capítulo»). Si encajan varios, el más concreto (el de más palabras).
+ */
+export function habitoDeNombre(nombre: string, habitos: Habito[]): Habito | undefined {
+  const r = new Set(raicesH(nombre));
+  if (!r.size) return undefined;
+  return habitos
+    .map((h) => ({ h, rs: raicesH(h.name) }))
+    .filter(({ rs }) => rs.length > 0 && rs.every((x) => r.has(x)))
+    .sort((a, b) => b.rs.length - a.rs.length)[0]?.h;
+}
+
+/** El hábito al que cuenta una tarea: el que se eligió, o el que se reconoce por su nombre (salvo que se quitara el enlace) */
+export function habitoDeTarea(x: { title: string; habito?: string }, habitos: Habito[]): Habito | undefined {
+  if (x.habito === "") return undefined;
+  return (x.habito ? habitos.find((h) => h.id === x.habito) : undefined) ?? habitoDeNombre(x.title, habitos);
+}
+
+/**
+ * Marca (o desmarca) un día de un hábito porque se hizo la tarea o el momento que cuenta para él.
+ * En un medible con meta, hacerlo anota la meta si aún no llegaba; desmarcar nunca borra cantidades anotadas.
+ */
+export function marcarHabito(h: Habito, dia: string, hecho: boolean): Habito {
+  if (tipoDe(h) === "medible") {
+    if (hecho && h.objetivo && cantidad(h, dia) < h.objetivo) return anotar(h, dia, h.objetivo);
+    if (hecho) return { ...h, hechos: { ...h.hechos, [dia]: true } };
+    if (cantidad(h, dia)) return h;
+  }
+  const hechos = { ...h.hechos };
+  if (hecho) hechos[dia] = true;
+  else delete hechos[dia];
+  return { ...h, hechos };
+}

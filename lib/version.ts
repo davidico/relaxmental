@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "6.6";
+export const VERSION = "6.7";
 export const VERSION_FECHA = "14 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hábitos en tu día: en el «+» entre momentos puedes elegir uno de tus hábitos, y al marcarlo hecho se marca también en Hábitos",
+  "La app reconoce sola los hábitos por el nombre (por ejemplo, «Correr 5 km» cuenta para «Correr») en tareas y momentos; en la línea dice «Hábito»",
   "Hábitos: el nombre se cambia tocándolo arriba, y el tipo, la unidad y la meta están debajo del calendario; todo se guarda solo, sin botón «Cambiar»",
   "Si termina un momento y una de sus subtareas sigue sin hacer, te llega un aviso que vibra fuerte y se queda en pantalla hasta que lo toques",
   "Semana, más simple: es tu planner, con una pestaña para lo personal y otra para el trabajo (metas, tareas y pendientes de cada lado)",

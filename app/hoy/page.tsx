@@ -16,6 +16,7 @@ import Diario from "@/components/Diario";
 import { Tira } from "@/components/DiaTira";
 import HorarioSemana from "@/components/HorarioSemana";
 import { bloqueDeSub } from "@/lib/momentos";
+import { useMarcarTarea } from "@/lib/usarMarcar";
 import TaskSheet from "@/components/TaskSheet";
 import ResumenSemana from "@/components/ResumenSemana";
 import WhenDialog from "@/components/WhenDialog";
@@ -197,6 +198,7 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
   const { tareas, save, planFor } = useData();
   const startFocus = useFocus();
   const [cambiar, setCambiar] = useState<Tarea | null>(null);
+  const marcarTarea = useMarcarTarea();
   const delDia = tareas.filter((x) => x.due === day);
   /* Las subtareas de un momento del día se ven en la línea, debajo de ese momento */
   const bloques = planFor(day);
@@ -213,7 +215,7 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
       <ul className="hy-pros">
         {xs.map((x) => (
           <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
-            <input type="checkbox" className="hy-check" checked={x.done} onChange={() => save("tareas", { ...x, done: !x.done })} aria-label={`Hecho: ${x.title}`} />
+            <input type="checkbox" className="hy-check" checked={x.done} onChange={() => marcarTarea(x)} aria-label={`Hecho: ${x.title}`} />
             {/* Tocar el nombre abre la tarea para cambiarla; el círculo la marca */}
             <button type="button" className="hy-task-b hy-task-btn" onClick={() => setCambiar(x)} aria-label={`Cambiar ${x.title}`}>
               <span className="hy-task-t">{x.title}</span>

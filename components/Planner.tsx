@@ -7,6 +7,7 @@ import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
 import { borrarTarea } from "@/lib/deshacer";
 import HoraInput from "./HoraInput";
+import { useMarcarTarea } from "@/lib/usarMarcar";
 
 /**
  * Weekly planner de un lado de tu vida (Personal o Trabajo, una pestaña cada uno): cada día con tus metas
@@ -105,6 +106,7 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
 
 function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titulo: string; tipo: "meta" | "tarea"; lado: Lado; due: string; items: Tarea[]; days: string[]; soloVer?: boolean }) {
   const { save } = useData();
+  const marcarTarea = useMarcarTarea();
   const [nuevo, setNuevo] = useState<string | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
   const id = `pl-${due || "pend"}-${tipo}-${lado}`;
@@ -140,7 +142,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
           ) : (
             <li key={x.id} className={x.done ? "hecho" : ""}>
               <label className="pl-tap">
-                <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => save("tareas", { ...x, done: !x.done })} />
+                <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => marcarTarea(x)} />
               </label>
               <button className="pl-txt" onClick={() => setAbierto(x.id)} aria-label={`Cambiar: ${x.title}`}>
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
