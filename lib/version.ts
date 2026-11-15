@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "8.3";
+export const VERSION = "8.4";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "En Hoy, «Para hoy, sin hora» ya no sale cuando no queda nada por hacer",
   "Al abrir Hoy, la pantalla baja sola hasta el momento en que estás: ya no empiezas en lo que pasó por la mañana",
   "Para quien empieza: al terminar las preguntas, la IA le propone enseguida su semana tipo y le pide que la revise y la cambie a su gusto",
   "Mi semana tipo, hecha por ti: en tu cuenta eliges el día (de lunes a domingo) y pones tus momentos con sus horas; puedes copiar un día a otros. Es la base de tu horario",

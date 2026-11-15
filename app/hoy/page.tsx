@@ -233,11 +233,16 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
   const startFocus = useFocus();
   const [cambiar, setCambiar] = useState<Tarea | null>(null);
   const marcarTarea = useMarcarTarea();
+  /* Las que se marcan hechas en esta visita */
+  const [recien, setRecien] = useState<string[]>([]);
   const delDia = tareas.filter((x) => x.due === day);
   /* Las subtareas de un momento del día se ven en la línea, debajo de ese momento */
   const bloques = planFor(day);
   const xs = delDia.filter((x) => !x.hora && !(x.momento && bloqueDeSub(x.momento, bloques))).sort((a, b) => Number(esMeta(b)) - Number(esMeta(a)) || a.created.localeCompare(b.created));
-  if (!xs.length) return null;
+  /* Si ya no queda nada por hacer, la sección no sale (hoy y los días que vienen). Lo que marcas ahora mismo se queda
+     a la vista hasta que salgas, por si quieres desmarcarlo; en los días pasados sí se ve lo que hiciste. */
+  const queda = xs.some((x) => !x.done || recien.includes(x.id));
+  if (!xs.length || (day >= hoy && !queda)) return null;
   const primera = day === hoy ? xs.find((x) => !x.done) : undefined;
   const etiqueta = (x: Tarea) => (esMeta(x) ? `Meta de ${x.lado === "trabajo" ? "trabajo" : "tu vida personal"}` : "Tarea");
   return (
@@ -249,7 +254,7 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
       <ul className="hy-pros">
         {xs.map((x) => (
           <li key={x.id} className={`hy-pro${x.done ? " hecho" : ""}`}>
-            <input type="checkbox" className="hy-check" checked={x.done} onChange={() => marcarTarea(x)} aria-label={`Hecho: ${x.title}`} />
+            <input type="checkbox" className="hy-check" checked={x.done} onChange={() => { if (!x.done) setRecien((r) => [...r, x.id]); marcarTarea(x); }} aria-label={`Hecho: ${x.title}`} />
             {/* Tocar el nombre abre la tarea para cambiarla; el círculo la marca */}
             <button type="button" className="hy-task-b hy-task-btn" onClick={() => setCambiar(x)} aria-label={`Cambiar ${x.title}`}>
               <span className="hy-task-t">{x.title}</span>
