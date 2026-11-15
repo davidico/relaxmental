@@ -215,11 +215,6 @@ export default function Cerebro() {
         document.body,
       )}
       <div className="k-dots" aria-hidden="true" />
-      <button className="hy-allday hy-ask k-ask" onClick={() => dispatchEvent(new CustomEvent("mi-semana:preguntar", { detail: { modo: "notas" } }))}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>
-        <span>Pregúntale a la IA</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-      </button>
 
       {form && (
         <form className="card pad k-form" onSubmit={(e) => { e.preventDefault(); guardarForm(); }}>
@@ -257,6 +252,10 @@ export default function Cerebro() {
         <svg className="k-sico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
         <label htmlFor="q" className="sr-only">Buscar en {sub?.name ?? sec.name}</label>
         <input id="q" type="search" placeholder={`Buscar en ${sub?.name ?? sec.name}`} value={q} onChange={(e) => setQ(e.target.value)} />
+        {/* La estrellita: la misma «Pregúntale a la IA» del botón + */}
+        <button className="k-sbtn k-ia" aria-label="Pregúntale a la IA" title="Pregúntale a la IA" onClick={() => dispatchEvent(new CustomEvent("mi-semana:preguntar"))}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4l1.7 4.6a2 2 0 0 0 1.2 1.2L18.5 11.5l-4.6 1.7a2 2 0 0 0-1.2 1.2L11 19l-1.7-4.6a2 2 0 0 0-1.2-1.2L3.5 11.5l4.6-1.7a2 2 0 0 0 1.2-1.2zM18.5 3.5v3M17 5h3M19 17v2.5M17.75 18.25h2.5" /></svg>
+        </button>
         <button className="k-sbtn" aria-label={vista === "grid" ? "Ver una debajo de otra" : "Ver en cuadros"} title={vista === "grid" ? "Una debajo de otra" : "Cuadros"} onClick={() => setVista(vista === "grid" ? "una" : "grid")}>
           {vista === "grid" ? (
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="7" rx="2" /><rect x="4" y="13" width="16" height="7" rx="2" /></svg>

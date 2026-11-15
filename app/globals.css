@@ -2257,3 +2257,4 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .nv-item{cursor:text;align-items:center;padding:0}
 .nv-ck{display:grid;place-items:center;width:44px;height:44px;margin-left:-10px;flex:none;cursor:pointer}
 .nv-item span{padding:10px 0}
+.k-ia{color:var(--primary)}
