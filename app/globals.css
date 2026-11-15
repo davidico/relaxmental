@@ -2182,3 +2182,20 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .hb-medir:hover{background:var(--band)}
 .hb-medir.on{border-color:transparent}
 .hb-medir svg{width:16px;height:16px}
+
+/* ---------- Versión 7.1: la semana de hábitos, igual de delicada (círculos de 28 px, se tocan en 44 px) ---------- */
+.hs-c{position:relative;isolation:isolate;width:44px;height:44px;max-width:none;min-height:0;aspect-ratio:auto;border:0;border-radius:50%;background:transparent;font-size:13px}
+.hs-c::before{content:"";position:absolute;inset:8px;z-index:-1;border-radius:50%;border:1.5px solid var(--field);background:transparent;transition:background .15s,border-color .15s}
+.hs-c.num::before{inset:7px 5px;border-radius:8px}
+.hs-c:hover:not(:disabled){border-color:transparent}
+.hs-c:hover:not(:disabled)::before{border-color:var(--primary)}
+.hs-c:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+.hs-c:disabled{border:0}
+.hs-c:disabled::before{border-style:dashed;border-color:var(--stone)}
+.hs-c.on{background:transparent;border:0;font-weight:500}
+.hs-c.on::before{background:var(--primary);border-color:var(--primary)}
+.hs-c.parte{border:0}
+.hs-c.parte::before{border-color:var(--primary)}
+.hs-c svg{width:14px;height:14px;stroke-width:2.5}
+.hs-fila{padding:var(--e2) 0 var(--e1)}
+.hs-nombre{margin-bottom:0}
