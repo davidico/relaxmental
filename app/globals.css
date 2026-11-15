@@ -2147,3 +2147,16 @@ textarea.hd-nombre:focus{border-color:var(--primary);background:var(--surface);o
 .aq-hab-nota .linkbtn{font-size:14px;min-height:0;padding:0;color:var(--pine)}
 .aq-hab-nota .linkbtn::after{content:"";position:absolute;inset:-12px -6px}
 .ms-hab-nota{margin-top:var(--e2)}
+
+/* ---------- Versión 6.9: «Pregúntale» a pantalla completa ---------- */
+/* En el teléfono el chat ocupa toda la pantalla; en el ordenador, una ventana alta */
+.modal:has(>.pq){padding-top:0}
+.pq{height:100%;max-height:100%;border-radius:0;box-shadow:none}
+.pq .sheet-head{padding-top:max(16px,env(safe-area-inset-top,0px))}
+/* Las respuestas de la IA usan todo el ancho para leerse mejor */
+.pq-turno.ia{max-width:100%;align-self:stretch}
+@media (min-width:900px){
+  .modal:has(>.pq){padding-top:max(24px,env(safe-area-inset-top,0px));align-items:center}
+  .pq{height:min(900px,calc(100% - 48px));border-radius:14px;box-shadow:var(--pop)}
+  .pq-turno.ia{max-width:85%;align-self:flex-start}
+}
