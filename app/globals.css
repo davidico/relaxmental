@@ -2487,3 +2487,57 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .pq-cambios-nota{font-size:14px;color:var(--muted)}
 .pq-cambios .vok{margin:var(--e3) 0 0}
 
+
+/* ---------- Versión 10.4: «Pregúntale a la IA», con el diseño del chat de Claude (y los colores de la app) ---------- */
+/* Arriba solo cerrar, el título y «Nueva conversación». La charla va en una columna de lectura; tus mensajes en burbuja gris a la derecha
+   y las respuestas como texto suelto, sin burbuja. Abajo, un cuadro redondeado que crece con el texto, con el micrófono y el botón de enviar dentro. */
+.cq{background:var(--bg)}
+.cq-head{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:var(--e2);padding:8px max(8px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.cq-titulo{margin:0;text-align:center;font-size:16px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cq-ib,.cq-ib-hueco{width:44px;height:44px}
+.cq-ib{display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;padding:0}
+.cq-ib svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cq-ib:hover{background:var(--band)}
+.cq-ib:focus-visible,.cq-idea:focus-visible,.cq-enviar:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.cq-ib.chico{color:var(--muted)}
+.cq-ib.chico svg{width:18px;height:18px}
+.cq-log{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.cq-col{box-sizing:border-box;max-width:720px;min-height:100%;margin:0 auto;padding:var(--e5) max(16px,env(safe-area-inset-right,0px)) var(--e4) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:var(--e5)}
+/* Antes de empezar: el logo, un saludo y unas ideas */
+.cq-vacio{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--e5) 0}
+.cq-marca{width:48px;height:48px;border-radius:12px;display:block}
+.cq-marca.chica{width:24px;height:24px;border-radius:6px}
+.cq-saludo{margin:var(--e4) 0 var(--e2);font-size:26px;font-weight:500;letter-spacing:-.01em;line-height:1.2;color:var(--ink)}
+.cq-sub{margin:0;max-width:34ch;font-size:16px;line-height:1.45;color:var(--muted)}
+.cq-ideas{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--e2);margin-top:var(--e5)}
+.cq-idea{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-size:15px;line-height:1.35;text-align:left;cursor:pointer}
+.cq-idea:hover{background:var(--band)}
+/* Los mensajes */
+.cq-msg p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.6;color:var(--ink)}
+.cq-msg.yo{align-self:flex-end;max-width:85%;padding:10px 16px;border-radius:20px;background:var(--band);scroll-margin-top:var(--e4)}
+.cq-msg.yo p{line-height:1.45}
+.cq-msg.ia{align-self:stretch;min-width:0}
+.cq-msg.ia .pq-fuentes{border-top:none;padding-top:0;margin-top:var(--e3)}
+.cq-acc{display:flex;align-items:center;gap:var(--e1);margin:var(--e1) 0 0 -12px}
+.cq-copiada{font-size:14px;color:var(--muted)}
+.cq-pensando{display:flex;align-items:center;gap:10px;font-size:16px;color:var(--muted)}
+.cq-pensando .cq-marca{animation:cq-late 1.4s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes cq-late{50%{opacity:.45;transform:scale(.86)}}
+/* Abajo: el cuadro de escribir */
+.cq-abajo{padding:var(--e2) max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.cq-composer{box-sizing:border-box;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:2px;padding:12px 8px 6px 16px;border:1px solid var(--line);border-radius:22px;background:var(--surface);cursor:text;transition:border-color .15s}
+.cq-composer:focus-within{border-color:var(--field)}
+.cq-composer textarea{display:block;width:100%;min-height:24px;max-height:168px;margin:0;padding:0 8px 0 0;border:none;border-radius:0;background:transparent;box-shadow:none;outline:none;resize:none;font:inherit;font-size:16px;line-height:1.5;color:var(--ink);overflow-y:auto}
+.cq-composer textarea::placeholder{color:var(--muted);opacity:1}
+.cq-barra{display:flex;align-items:center;justify-content:space-between;gap:var(--e2);margin-left:-10px}
+.cq-enviar{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:none;border-radius:12px;background:var(--primary);color:var(--on-primary);cursor:pointer;transition:background-color .15s}
+.cq-enviar svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cq-enviar:hover:not(:disabled){background:var(--primary-hover)}
+.cq-enviar:disabled{background:var(--band);color:var(--muted);cursor:default}
+.cq-nota{max-width:720px;margin:var(--e2) auto 0;font-size:14px;line-height:1.4;text-align:center;color:var(--muted)}
+.cq ::selection{background:color-mix(in srgb,var(--primary) 22%,transparent)}
+@media (min-width:700px){
+  .cq{max-width:860px}
+  .cq-head{padding-inline:12px}
+}
+@media (prefers-reduced-motion:reduce){.cq-pensando .cq-marca{animation:none}.cq-composer,.cq-enviar{transition:none}}

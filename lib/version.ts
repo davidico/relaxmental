@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.3";
+export const VERSION = "10.4";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "«Pregúntale a la IA» con el diseño del chat de Claude: tus mensajes en burbuja, las respuestas como texto limpio, un cuadro de escribir que crece, botón para copiar la respuesta y para empezar una conversación nueva",
   "«Pregúntale a la IA» ya puede poner cosas en tu semana: si le pides que meta tus metas dentro de tu día o que mueva algo, te enseña los cambios con una casilla cada uno y los aplicas con un botón",
   "Logo y Planner en azul petróleo y dorado: el amanecer dorado sobre petróleo, y en el Planner lo personal en petróleo y el trabajo en dorado",
   "El logo del amanecer pasa al verde oliva y dorado del logo de antes, y las franjas del Planner usan exactamente esos dos colores",
