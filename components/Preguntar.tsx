@@ -6,36 +6,27 @@ import VoiceButton from "./VoiceButton";
 import NoteView from "./NoteView";
 
 type Turno = { de: "yo" | "ia"; texto: string; fuentes?: { id: string; titulo: string }[] };
+/** Antes había dos modos (tu día / tus notas); ahora es la misma IA para todo. Se deja el tipo para quien aún lo pase */
 export type ModoPregunta = "dia" | "notas";
-const TEXTOS = {
-  dia: {
-    titulo: "Pregúntale a la IA",
-    sub: "Responde con lo que recuerda de ti y tus últimos días.",
-    ideas: ["¿Qué me recomiendas para mañana?", "¿En qué voy más atrasado?", "¿Cómo fue mi semana?"],
-    nota: "Puede equivocarse. No cambia nada en tu app.",
-  },
-  notas: {
-    titulo: "Pregúntale a tus notas",
-    sub: "Busca en todo tu Cerebro y te dice en qué nota está.",
-    ideas: ["¿Qué he escrito últimamente?", "¿Qué ideas tengo apuntadas?", "¿En qué nota hablo de…? (escribe el tema)"],
-    nota: "Puede equivocarse: abre la nota para comprobarlo. No cambia nada.",
-  },
+const T = {
+  titulo: "Pregúntale a la IA",
+  sub: "Conoce tu día, tus últimos días y todas tus notas. Pregúntale lo que quieras.",
+  ideas: ["¿Qué me recomiendas para mañana?", "¿Qué he escrito últimamente?", "¿Cómo fue mi semana?", "¿En qué nota hablo de…? (escribe el tema)"],
+  nota: "Puede equivocarse: si cita una nota, ábrela para comprobarlo. No cambia nada en tu app.",
 };
 
 /**
- * «Pregúntale a la IA»: una conversación corta. No cambia nada en la app.
- * - modo «dia»: sobre tu tiempo; responde con lo que recuerda de ti, tus últimos 14 días y tu día de hoy.
- * - modo «notas»: sobre tu Cerebro; el Worker busca las notas que hablan de eso y la IA responde con ellas,
- *   diciendo en cuáles está. Debajo de la respuesta salen esas notas para abrirlas.
+ * «Pregúntale a la IA»: una conversación corta, la misma desde Hoy, el botón + y el Cerebro. No cambia nada en la app.
+ * El Worker le da todas tus notas, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.
+ * Si la respuesta cita notas, salen debajo para abrirlas.
  */
-export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => void; modo?: ModoPregunta }) {
+export default function Preguntar({ onClose }: { onClose: () => void; modo?: ModoPregunta }) {
   const { mode, offline, planFor, hoy, notas } = useData();
-  const T = TEXTOS[modo];
   const [abierta, setAbierta] = useState<string | null>(null);
   const [charla, setCharla] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<"" | "pensando" | "error">("");
-  /* Quién respondió la última vez (en las notas: Claude si está conectado, o la IA de Cloudflare) */
+  /* Quién respondió la última vez: Claude si está conectado, o la IA de Cloudflare */
   const [ia, setIa] = useState<"" | "claude" | "cloudflare">("");
   const fin = useRef<HTMLDivElement>(null);
   const puede = mode === "cloud" && !offline;
@@ -58,10 +49,10 @@ export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => vo
     setEstado("pensando");
     try {
       const charlaTxt = previa.map((t) => ({ de: t.de, texto: t.texto }));
-      const r = await fetch(modo === "notas" ? "/api/ai/notas" : "/api/ai/preguntar", {
+      const r = await fetch("/api/ai/preguntar", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(modo === "notas" ? { pregunta: q, charla: charlaTxt } : { pregunta: q, charla: charlaTxt, itinerario: planFor(hoy).map((b) => `${b.s}-${b.e} ${b.t}`) }),
+        body: JSON.stringify({ pregunta: q, charla: charlaTxt, itinerario: planFor(hoy).map((b) => `${b.s}-${b.e} ${b.t}`) }),
       });
       if (!r.ok) throw new Error();
       const { respuesta, fuentes, ia: quien } = (await r.json()) as { respuesta: string; fuentes?: { id: string; titulo: string }[]; ia?: "claude" | "cloudflare" };
@@ -141,10 +132,10 @@ export default function Preguntar({ onClose, modo = "dia" }: { onClose: () => vo
         >
           <VoiceButton compact onText={(p) => setTexto((x) => [x.trim(), ...p].filter(Boolean).join(" "))} />
           <label htmlFor="pq-in" className="sr-only">Tu pregunta</label>
-          <input id="pq-in" value={texto} maxLength={600} placeholder="Escribe tu pregunta…" autoComplete="off" enterKeyHint="send" disabled={!puede} onChange={(e) => setTexto(e.target.value)} />
+          <input id="pq-in" value={texto} maxLength={1200} placeholder="Escribe tu pregunta…" autoComplete="off" enterKeyHint="send" disabled={!puede} onChange={(e) => setTexto(e.target.value)} />
           <button className="btn" type="submit" disabled={!puede || !texto.trim() || estado === "pensando"}>Enviar</button>
         </form>
-        <p className="pq-nota">{modo === "notas" && ia === "claude" ? "Responde Claude. " : ""}{T.nota}</p>
+        <p className="pq-nota">{ia === "claude" ? "Responde Claude. " : ""}{T.nota}</p>
       </div>
     </div>
     {/* La nota se abre fuera de la hoja, a pantalla completa, y al cerrarla sigues en la conversación */}

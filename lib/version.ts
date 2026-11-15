@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "7.3";
+export const VERSION = "7.4";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Una sola IA: «Pregúntale a la IA» es la misma en Hoy, en el botón + y en el Cerebro. Lee todas tus notas, tu día, tus últimos 14 días y lo que recuerda de ti, y te responde lo que sea que preguntes",
   "Cerebro más limpio: arriba solo el menú ☰ y el título. Renombrar y borrar están en el menú ☰, y en el móvil la nota nueva se crea con el botón +, ya en la etiqueta que estás viendo",
   "Cerebro como Google Keep: el botón ☰ abre un menú con todas tus secciones y etiquetas a la vista. En cada nota, su etiqueta sale abajo en una cajita: tócala para cambiarla",
   "Hábitos › Semana, también más delicada: círculos pequeños y filas más juntas",

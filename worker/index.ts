@@ -11,10 +11,10 @@
 import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
 import { subtareasQueQuedaron } from "./avisos";
-import { PRESUPUESTO, elegirNotas, type NotaTexto } from "./notas";
-import { PRESUPUESTO_CLAUDE, responderNotasClaude } from "./claude";
+import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
+import { PRESUPUESTO_CLAUDE, responderClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -271,6 +271,92 @@ async function diasReales(env: Env, email: string) {
 }
 const fechaMas = (f: string, n: number) => new Date(new Date(f + "T12:00:00Z").getTime() + n * 864e5).toISOString().slice(0, 10);
 
+/** Pregúntale a la IA: con la clave de Anthropic responde Claude (todas las notas + el contexto de hoy); si no, la IA de Cloudflare */
+async function preguntarIA(req: Request, env: Env, email: string): Promise<Response> {
+  const b = (await req.json()) as { pregunta?: string; charla?: { de?: string; texto?: string }[]; itinerario?: unknown };
+  const pregunta = String(b.pregunta ?? "").trim().slice(0, 1200);
+  if (!pregunta) return json({ error: "bad_request" }, 400);
+  const charla = (Array.isArray(b.charla) ? b.charla : [])
+    .slice(-6)
+    .map((m) => ({ de: m?.de === "ia" ? ("ia" as const) : ("yo" as const), texto: String(m?.texto ?? "").slice(0, 1200) }))
+    .filter((m) => m.texto);
+  const now = berlinNow();
+  const ahora = `${String(Math.floor(now.min / 60)).padStart(2, "0")}:${String(now.min % 60).padStart(2, "0")}`;
+  const itinerario = Array.isArray(b.itinerario) ? b.itinerario.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
+  const [nq, cq, memoria, reciente, perfil] = await Promise.all([
+    env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'notas'").bind(email).all<{ id: string; data: string }>(),
+    env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'carpetas'").bind(email).all<{ id: string; data: string }>(),
+    memoriaDe(env, email),
+    recienteDe(env, email, now.date),
+    perfilDe(env, email),
+  ]);
+  const carpetas = new Map<string, string>();
+  for (const r of cq.results) {
+    try {
+      carpetas.set(r.id, String((JSON.parse(r.data) as { name?: unknown }).name ?? ""));
+    } catch {
+      /* una carpeta rara no impide buscar */
+    }
+  }
+  const notas: NotaTexto[] = [];
+  for (const r of nq.results) {
+    try {
+      const n = JSON.parse(r.data) as { title?: unknown; text?: unknown; folder?: unknown; created?: unknown; ref?: unknown; items?: { t?: unknown }[] };
+      const texto = (Array.isArray(n.items) && n.items.length ? n.items.map((i) => String(i?.t ?? "")).join("\n") : String(n.text ?? "")).trim();
+      const titulo = String(n.title ?? "").trim();
+      if (!texto && !titulo) continue;
+      notas.push({ id: r.id, titulo, carpeta: carpetas.get(String(n.folder ?? "")) ?? "", fecha: String(n.ref || n.created || "").slice(0, 10), texto: texto.slice(0, 40000) });
+    } catch {
+      /* una nota rara no impide buscar en las demás */
+    }
+  }
+  /* En una conversación, la pregunta anterior ayuda a entender «¿y qué más decía?» */
+  const previa = [...charla].reverse().find((m) => m.de === "yo")?.texto ?? "";
+  const fuentesDe = (xs: NotaTexto[], usadas: number[]) => usadas.map((i) => ({ id: xs[i].id, titulo: xs[i].titulo || "Sin título" }));
+
+  /* Con la clave de Anthropic, Claude lee el Cerebro entero (o lo que quepa, eligiendo por palabras si fuera enorme) y el contexto de hoy */
+  if (env.ANTHROPIC_API_KEY) {
+    const total = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0);
+    const elegidas = total <= PRESUPUESTO_CLAUDE ? elegirNotas(notas, "", PRESUPUESTO_CLAUDE) : elegirNotas(notas, `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`, PRESUPUESTO_CLAUDE);
+    const dia = DIAS_ES[new Date(now.date + "T12:00:00Z").getUTCDay()];
+    const contexto = [
+      `Hoy es ${dia} ${now.date}, son las ${ahora} (hora de Berlín).`,
+      `MI ITINERARIO DE HOY:\n${itinerario.join("\n") || "(vacío)"}`,
+      `MIS ÚLTIMOS 14 DÍAS:\n${reciente.slice(0, 20000) || "(sin datos)"}`,
+      memoria.length ? `LO QUE RECUERDAS DE MÍ:\n${memoria.map((x) => "- " + x).join("\n")}` : "",
+      `MIS REGLAS:\n${perfil.reglas.slice(0, 6000) || "(ninguna)"}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    const r = await responderClaude(env.ANTHROPIC_API_KEY, { pregunta, charla, notas: elegidas.notas, contexto });
+    if (r) return json({ respuesta: r.respuesta, ia: "claude", fuentes: fuentesDe(elegidas.notas, r.usadas) });
+  }
+
+  /* Sin Claude (o si falló), la IA de Cloudflare. Si la pregunta es sobre lo escrito, busca en las notas como siempre */
+  if (notas.length && /\b(notas?|apunt|escrib|cerebro|sueñ|profec|idea|lista|dónde (dije|hablo|habl[eé])|guard)/i.test(`${pregunta} ${previa}`)) {
+    const cabe = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0) <= PRESUPUESTO;
+    const palabras = cabe ? "" : `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
+    const elegidas = elegirNotas(notas, palabras);
+    let halladas = elegidas.notas;
+    let delTema = false;
+    /* Con todo el Cerebro delante, primero se apartan las notas que hablan del tema y luego se responde solo con esas */
+    if (elegidas.todas && halladas.length > 12) {
+      const pos = await notasDelTema(env.AI, { pregunta, charla, notas: halladas });
+      if (pos && pos.length && pos.length <= 60) {
+        halladas = pos.map((i) => halladas[i]);
+        delTema = true;
+      }
+    }
+    const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas, todas: elegidas.todas, delTema });
+    if (respuesta) return json({ respuesta, ia: "cloudflare", fuentes: fuentesDe(halladas, usadas) });
+  }
+  /* El resto: su tiempo o cualquier otra cosa, con su contexto y las pocas notas que más se parecen a la pregunta */
+  const cerca = notas.length ? buscarNotas(notas, `${pregunta} ${previa}`, 5, 1500) : [];
+  const respuesta = await responder(env.AI, { hoy: now.date, ahora, pregunta, charla, reciente, memoria, reglas: perfil.reglas, itinerario, notas: cerca.length ? textoNotas(cerca) : "" });
+  if (!respuesta) return json({ error: "ai_empty" }, 502);
+  return json({ respuesta, ia: "cloudflare" });
+}
+
 /* ---------- API ---------- */
 
 async function api(req: Request, env: Env, url: URL): Promise<Response> {
@@ -413,68 +499,6 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
   }
   /* Preguntar a tus notas: se buscan las que hablan de eso (todas las secciones, también las privadas) y la IA responde con ellas.
      Es el único sitio donde la IA lee notas del Cerebro, y solo cuando la persona pregunta. */
-  if (url.pathname === "/api/ai/notas" && req.method === "POST") {
-    const b = (await req.json()) as { pregunta?: string; charla?: { de?: string; texto?: string }[] };
-    const pregunta = String(b.pregunta ?? "").trim().slice(0, 600);
-    if (!pregunta) return json({ error: "bad_request" }, 400);
-    const charla = (Array.isArray(b.charla) ? b.charla : [])
-      .slice(-6)
-      .map((m) => ({ de: m?.de === "ia" ? ("ia" as const) : ("yo" as const), texto: String(m?.texto ?? "").slice(0, 1200) }))
-      .filter((m) => m.texto);
-    const [nq, cq] = await Promise.all([
-      env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'notas'").bind(email).all<{ id: string; data: string }>(),
-      env.DB.prepare("SELECT id, data FROM items WHERE user_email = ? AND tabla = 'carpetas'").bind(email).all<{ id: string; data: string }>(),
-    ]);
-    const carpetas = new Map<string, string>();
-    for (const r of cq.results) {
-      try {
-        carpetas.set(r.id, String((JSON.parse(r.data) as { name?: unknown }).name ?? ""));
-      } catch {
-        /* una carpeta rara no impide buscar */
-      }
-    }
-    const notas: NotaTexto[] = [];
-    for (const r of nq.results) {
-      try {
-        const n = JSON.parse(r.data) as { title?: unknown; text?: unknown; folder?: unknown; created?: unknown; ref?: unknown; items?: { t?: unknown }[] };
-        const texto = (Array.isArray(n.items) && n.items.length ? n.items.map((i) => String(i?.t ?? "")).join("\n") : String(n.text ?? "")).trim();
-        const titulo = String(n.title ?? "").trim();
-        if (!texto && !titulo) continue;
-        notas.push({ id: r.id, titulo, carpeta: carpetas.get(String(n.folder ?? "")) ?? "", fecha: String(n.ref || n.created || "").slice(0, 10), texto: texto.slice(0, 40000) });
-      } catch {
-        /* una nota rara no impide buscar en las demás */
-      }
-    }
-    if (!notas.length) return json({ respuesta: "Todavía no tienes notas en tu Cerebro.", fuentes: [] });
-    /* En una conversación, la pregunta anterior ayuda a entender «¿y qué más decía?» */
-    const previa = [...charla].reverse().find((m) => m.de === "yo")?.texto ?? "";
-    /* Con la clave de Anthropic, Claude lee el Cerebro entero de una vez (o lo que quepa, eligiendo por palabras si fuera enorme) */
-    if (env.ANTHROPIC_API_KEY) {
-      const total = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0);
-      const elegidas = total <= PRESUPUESTO_CLAUDE ? elegirNotas(notas, "", PRESUPUESTO_CLAUDE) : elegirNotas(notas, `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`, PRESUPUESTO_CLAUDE);
-      const r = await responderNotasClaude(env.ANTHROPIC_API_KEY, { pregunta, charla, notas: elegidas.notas });
-      if (r) return json({ respuesta: r.respuesta, ia: "claude", fuentes: r.usadas.map((i) => ({ id: elegidas.notas[i].id, titulo: elegidas.notas[i].titulo || "Sin título" })) });
-    }
-    /* Sin Claude (o si falló), la IA de Cloudflare:
-       si todo el Cerebro cabe, la IA lo lee entero (no hace falta buscar por palabras); si no, se eligen las notas que más se parecen */
-    const cabe = notas.reduce((s, n) => s + n.texto.length + n.titulo.length + 60, 0) <= PRESUPUESTO;
-    const palabras = cabe ? "" : `${pregunta} ${previa} ${await palabrasClave(env.AI, `${previa} ${pregunta}`.trim())}`;
-    const elegidas = elegirNotas(notas, palabras);
-    let halladas = elegidas.notas;
-    let delTema = false;
-    /* Con todo el Cerebro delante, primero se apartan las notas que hablan del tema y luego se responde solo con esas:
-       así la respuesta trae el repaso completo y no solo lo primero que encuentra */
-    if (elegidas.todas && halladas.length > 12) {
-      const pos = await notasDelTema(env.AI, { pregunta, charla, notas: halladas });
-      if (pos && pos.length && pos.length <= 60) {
-        halladas = pos.map((i) => halladas[i]);
-        delTema = true;
-      }
-    }
-    const { respuesta, usadas } = await responderNotas(env.AI, { pregunta, charla, notas: halladas, todas: elegidas.todas, delTema });
-    if (!respuesta) return json({ error: "ai" }, 502);
-    return json({ respuesta, ia: "cloudflare", fuentes: usadas.map((i) => ({ id: halladas[i].id, titulo: halladas[i].titulo || "Sin título" })) });
-  }
   /* Qué tipo de actividad es cada nombre del horario que la app no reconoce (para su ícono y su botón) */
   if (url.pathname === "/api/ai/tipos" && req.method === "POST") {
     const b = (await req.json()) as { nombres?: { t?: unknown; sub?: unknown }[] };
@@ -539,23 +563,8 @@ async function api(req: Request, env: Env, url: URL): Promise<Response> {
     if (!r.resumen) return json({ error: "ai_empty" }, 502);
     return json(r);
   }
-  /* Pregúntale a la IA: responde con la memoria, los últimos días y el día de hoy */
-  if (url.pathname === "/api/ai/preguntar" && req.method === "POST") {
-    const b = (await req.json()) as { pregunta?: string; charla?: { de?: string; texto?: string }[]; itinerario?: unknown };
-    const pregunta = String(b.pregunta ?? "").trim();
-    if (!pregunta) return json({ error: "bad_request" }, 400);
-    const now = berlinNow();
-    const [memoria, reciente, perfil] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, now.date), perfilDe(env, email)]);
-    const charla = (Array.isArray(b.charla) ? b.charla : [])
-      .slice(-6)
-      .map((m) => ({ de: m?.de === "ia" ? ("ia" as const) : ("yo" as const), texto: String(m?.texto ?? "").slice(0, 1200) }))
-      .filter((m) => m.texto);
-    const itinerario = Array.isArray(b.itinerario) ? b.itinerario.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
-    const ahora = `${String(Math.floor(now.min / 60)).padStart(2, "0")}:${String(now.min % 60).padStart(2, "0")}`;
-    const respuesta = await responder(env.AI, { hoy: now.date, ahora, pregunta, charla, reciente, memoria, reglas: perfil.reglas, itinerario });
-    if (!respuesta) return json({ error: "ai_empty" }, 502);
-    return json({ respuesta });
-  }
+  /* Pregúntale a la IA (la misma desde Hoy, el botón + y el Cerebro): lee todas tus notas y tu contexto de hoy y responde a lo que sea */
+  if ((url.pathname === "/api/ai/preguntar" || url.pathname === "/api/ai/notas") && req.method === "POST") return preguntarIA(req, env, email);
   if (url.pathname === "/api/ai/horario" && req.method === "POST") {
     const { imagen } = (await req.json()) as { imagen?: string };
     if (!imagen || !/^data:image\/(jpeg|png|webp);base64,/.test(imagen) || imagen.length > 6_000_000) return json({ error: "bad_image" }, 400);

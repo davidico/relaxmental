@@ -496,7 +496,7 @@ export async function resumenSemana(
 /** «Pregúntale a la IA»: responde con lo que sabe de la persona (memoria, últimos días, su día de hoy) */
 export async function responder(
   ai: AI,
-  o: { hoy: string; ahora: string; pregunta: string; charla: { de: "yo" | "ia"; texto: string }[]; reciente: string; memoria: string[]; reglas: string; itinerario: string[] },
+  o: { hoy: string; ahora: string; pregunta: string; charla: { de: "yo" | "ia"; texto: string }[]; reciente: string; memoria: string[]; reglas: string; itinerario: string[]; notas?: string },
 ): Promise<string> {
   const dia = DIAS[new Date(o.hoy + "T12:00:00Z").getUTCDay()];
   const r = await ai.run(LLM, {
@@ -504,14 +504,15 @@ export async function responder(
       {
         role: "system",
         content:
-          "Eres el asistente de organización de una persona dentro de su app de agenda. Respondes a lo que te pregunta sobre su tiempo, sus metas, sus tareas y sus hábitos, usando SOLO los datos que te doy (su memoria, sus últimos días, su itinerario de hoy y sus reglas). " +
+          "Eres la IA de una persona dentro de su app de agenda y segundo cerebro. Te puede preguntar lo que sea. Sobre su tiempo, sus metas, sus tareas y sus hábitos, usa SOLO los datos que te doy (su memoria, sus últimos días, su itinerario de hoy, sus reglas y, si vienen, algunas de sus notas). " +
+          "Si pregunta algo general que no es de su agenda, responde con lo que sabes, breve y útil. " +
           "Responde en español, en segunda persona, directo y amable, en menos de 120 palabras, sin listas largas ni formato especial. Da una recomendación concreta cuando te la pida (qué, qué día y a qué hora). " +
           "Si los datos no alcanzan para responder, dilo y pregunta lo que te falta. No inventes compromisos, cifras ni recuerdos. No des consejos médicos, legales ni financieros: sugiere consultar a un profesional. " +
           "No puedes cambiar nada en la app: si recomiendas apuntar algo, dile que lo añada en su planner.",
       },
       {
         role: "user",
-        content: `CONTEXTO (no es una pregunta):\nHoy es ${dia} ${o.hoy}, son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.itinerario.join("\n") || "(vacío)"}\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 9000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+        content: `CONTEXTO (no es una pregunta):\nHoy es ${dia} ${o.hoy}, son las ${o.ahora}.\n\nMI ITINERARIO DE HOY:\n${o.itinerario.join("\n") || "(vacío)"}\n\nMIS ÚLTIMOS DÍAS:\n${o.reciente.slice(0, 9000) || "(sin datos)"}${textoMemoria(o.memoria)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}${o.notas ? `\n\nALGUNAS DE MIS NOTAS (las que más se parecen a la pregunta):\n${o.notas.slice(0, 9000)}` : ""}`,
       },
       { role: "assistant", content: "Entendido. ¿Qué quieres saber?" },
       ...o.charla.slice(-6).map((m) => ({ role: m.de === "yo" ? "user" : "assistant", content: m.texto.slice(0, 1200) })),

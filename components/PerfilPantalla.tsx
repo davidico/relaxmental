@@ -37,8 +37,7 @@ const IA_USOS: { cuando: string; lee: string; da: string }[] = [
   { cuando: "Guardas tu diario", lee: "el texto de ese día, lo que hiciste y lo que no, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "hasta 3 propuestas; si aprendió algo nuevo de ti, lo apunta en su memoria; y los temas personales que podrías hablar con alguien, que solo se guardan si tú los apuntas en una lista." },
   { cuando: "Pides el resumen de tu semana", lee: "tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "un repaso de la semana, hasta 3 recomendaciones y, si aprendió algo nuevo, lo apunta en su memoria." },
   { cuando: "En tu horario hay una actividad que la app no reconoce por su nombre", lee: "el nombre y la descripción de esa actividad (no tus tareas ni tus notas).", da: "qué tipo de actividad es (despertar, ejercicio, diario…), para ponerle su ícono y su botón. Lo guarda y no vuelve a preguntar por ella." },
-  { cuando: "Le preguntas a tus notas (en el Cerebro)", lee: "tu pregunta y tus notas del Cerebro, de todas las secciones, también las privadas. Si caben, las lee todas; si son muchas, solo las que más se parecen a lo que preguntas.", da: "la respuesta, con la lista por fechas si está en varias notas, y esas notas para que las abras. No guarda nada. Si conectaste Claude, responde Claude (de Anthropic); si no, la IA de Cloudflare." },
-  { cuando: "Le haces una pregunta", lee: "tu pregunta, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "una respuesta corta. No cambia nada en la app." },
+  { cuando: "Le preguntas algo en «Pregúntale a la IA» (en Hoy, en el botón + o en el Cerebro: es la misma)", lee: "tu pregunta, todas tus notas del Cerebro (de todas las secciones, también las privadas; si fueran muchísimas, las que más se parecen a lo que preguntas), tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti y tus reglas.", da: "la respuesta a lo que sea que preguntes: sobre tus notas (con la lista por fechas y esas notas para abrirlas), sobre tu tiempo o cualquier otra cosa. No guarda nada ni cambia nada en la app. Si conectaste Claude, responde Claude (de Anthropic); si no, la IA de Cloudflare." },
 ];
 
 export default function PerfilPantalla({ ver }: { ver: Ver }) {
@@ -385,7 +384,7 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
               <li>Tus reglas mandan: es el texto que lee siempre.</li>
               <li>Tus compromisos con fecha son fijos: no los mueve ni pone nada encima.</li>
               <li>Aprende de lo que corriges: compara lo que te propuso con cómo lo dejaste y busca lo que se repite.</li>
-              <li>«Tus últimos 14 días» es un resumen que arma la app: qué momentos de tu día marcaste como hechos y cuáles no, lo que cambiaste a mano, tus hábitos, tus metas y tareas (hechas, sin hacer y lo que viene) y tus diarios. Nunca tus notas del Cerebro. Con eso ajusta lo que te propone: si algo casi nunca lo cumples a esa hora, te lo pone a otra o más corto.</li>
+              <li>«Tus últimos 14 días» es un resumen que arma la app: qué momentos de tu día marcaste como hechos y cuáles no, lo que cambiaste a mano, tus hábitos, tus metas y tareas (hechas, sin hacer y lo que viene) y tus diarios. Con eso ajusta lo que te propone: si algo casi nunca lo cumples a esa hora, te lo pone a otra o más corto.</li>
               <li>No vuelve a proponer lo que ya aceptaste o rechazaste.</li>
               <li>Antes de mostrarte algo, la app descarta horas imposibles, fechas pasadas y bloques que se pisan.</li>
             </ul>
@@ -393,12 +392,12 @@ export default function PerfilPantalla({ ver }: { ver: Ver }) {
             <h3>Tus datos</h3>
             <ul>
               <li>La IA funciona en Cloudflare, el mismo servicio donde se guardan tus datos. Cloudflare no conserva lo que se le envía ni lo usa para entrenar modelos.</li>
-              <li>La excepción es «Pregúntale a tus notas» si conectaste Claude: entonces tus notas y tu pregunta van a Claude, de Anthropic, que no usa lo que recibe por su API para entrenar sus modelos.</li>
+              <li>La excepción es «Pregúntale a la IA» si conectaste Claude: entonces tu pregunta, tus notas, tu día, tus últimos 14 días (con tus diarios), lo que recuerda de ti y tus reglas van a Claude, de Anthropic, que no usa lo que recibe por su API para entrenar sus modelos.</li>
               <li>
                 Su memoria es una lista de frases que puedes ver, corregir y borrar en <Link href="/perfil/memoria">Lo que la IA recuerda de mí</Link>. No recuerda nada más.
               </li>
               <li>«Tus últimos 14 días» son tus diarios, tus metas y tareas (hechas y sin hacer) y tus hábitos. Solo los lee cuando guardas el diario, pides el resumen o le preguntas algo.</li>
-              <li>Tus notas del Cerebro solo las lee cuando tú le preguntas por ellas en «Pregúntale a tus notas». En todo lo demás no las lee.</li>
+              <li>Tus notas del Cerebro solo las lee cuando tú le preguntas algo en «Pregúntale a la IA». Lo que te propone por su cuenta (tu horario, el diario, el resumen de la semana) no las lee.</li>
               <li>Lo único que se guarda sin tu «Sí» es el texto que dictas, el título de una nota dictada y lo que apunta en su memoria. Puedes cambiarlo o borrarlo.</li>
             </ul>
 
