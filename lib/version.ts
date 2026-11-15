@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.1";
+export const VERSION = "10.2";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Logo y Planner en azul petróleo y dorado: el amanecer dorado sobre petróleo, y en el Planner lo personal en petróleo y el trabajo en dorado",
   "El logo del amanecer pasa al verde oliva y dorado del logo de antes, y las franjas del Planner usan exactamente esos dos colores",
   "Logo nuevo, más simple: un amanecer dorado sobre tu lista, en azul petróleo",
   "El Planner, como uno de papel: la franja de cada día va en color lleno, verde oliva en lo personal y dorado en el trabajo (ya no en tonos lavados)",

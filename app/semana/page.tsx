@@ -196,7 +196,7 @@ export default function Semana() {
           </button>
         </div>
       </div>
-      {/* Cada lado tiene su color: lo personal, verde oliva; el trabajo, dorado (los colores del ícono). Dentro, todo lo que lleva acento usa el de su lado.
+      {/* Cada lado tiene su color: lo personal, petróleo; el trabajo, dorado (los colores del logo). Dentro, todo lo que lleva acento usa el de su lado.
           Se pasa de uno a otro tocando la pestaña o deslizando con el dedo. */}
       <PlanificarSemana donde="planner" lunesVisto={mon} />
       <div className="plan">

@@ -2425,22 +2425,22 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .profile a.btn{text-decoration:none}
 
 /* ---------- Versión 9.4: el Planner, con un color para lo personal y otro para el trabajo ---------- */
-/* Lo personal en verde oliva y el trabajo en dorado, en colores planos (sin tintes lavados), como un planner de papel. Dentro del planner,
-   todo lo que lleva acento (checks, «+ Añadir», botones de sus hojas) toma el color de su lado. Cada lado tiene un tono para el texto
-   (contraste AA sobre el fondo) y el color lleno de las cabeceras de los días (`--cab-bg`, con su texto `--cab-tx`), que es el mismo en claro y oscuro. */
-.plan{--lado-personal:#56622b;--lado-trabajo:#8a6a12;--vivo-personal:#56622b;--vivo-trabajo:#d9b44a;
-  --primary:#56622b;--primary-hover:#4a5524;--primary-edge:#56622b;--pine:#56622b;--pine-soft:#eff2e3;--sage:#d8dfbf;--focus:#56622b;
-  --cab-bg:#56622b;--cab-tx:#f5f4ee}
+/* Los colores del logo: lo personal en azul petróleo (el de toda la app) y el trabajo en dorado, en colores planos como un planner de papel.
+   Dentro del planner, todo lo que lleva acento (checks, «+ Añadir», botones de sus hojas) toma el color de su lado. Cada lado tiene un tono
+   para el texto (contraste AA sobre el fondo) y el color lleno de las cabeceras de los días (`--cab-bg`, con su texto `--cab-tx`), igual en claro y oscuro. */
+.plan{--lado-personal:#2f5d62;--lado-trabajo:#8a6a12;--vivo-personal:#2f5d62;--vivo-trabajo:#e9b93c;
+  --primary:#2f5d62;--primary-hover:#264d51;--primary-edge:#2f5d62;--pine:#2f5d62;--pine-soft:#edf3f3;--sage:#d3e2e3;--focus:#2f5d62;
+  --cab-bg:#2f5d62;--cab-tx:#ffffff}
 .plan-panel[data-lado="trabajo"]{--primary:#8a6a12;--primary-hover:#74580c;--primary-edge:#8a6a12;--pine:#8a6a12;--pine-soft:#fbf3dc;--sage:#efdca0;--focus:#8a6a12;
-  --cab-bg:#e3c46f;--cab-tx:#2b2408}
+  --cab-bg:#e9b93c;--cab-tx:#2b2408}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .plan{--lado-personal:#c0cc8a;--lado-trabajo:#e3c46f;--vivo-personal:#a9b76c;--vivo-trabajo:#d9b44a;
-    --primary:#c0cc8a;--primary-hover:#d0daa3;--primary-edge:#c0cc8a;--pine:#c8d397;--pine-soft:#2b301d;--sage:#3d4526;--focus:#c0cc8a}
-  :root:not([data-theme="light"]) .plan-panel[data-lado="trabajo"]{--primary:#e3c46f;--primary-hover:#ecd38d;--primary-edge:#e3c46f;--pine:#e8cf85;--pine-soft:#3a3220;--sage:#574a22;--focus:#e3c46f}
+  :root:not([data-theme="light"]) .plan{--lado-personal:#9ccbcc;--lado-trabajo:#e9c768;--vivo-personal:#7fb3b5;--vivo-trabajo:#e9b93c;
+    --primary:#9ccbcc;--primary-hover:#b4dadb;--primary-edge:#9ccbcc;--pine:#9ccbcc;--pine-soft:#22302f;--sage:#2c403f;--focus:#9ccbcc}
+  :root:not([data-theme="light"]) .plan-panel[data-lado="trabajo"]{--primary:#e9c768;--primary-hover:#f0d68c;--primary-edge:#e9c768;--pine:#ecce7c;--pine-soft:#3a3220;--sage:#574a22;--focus:#e9c768}
 }
-:root[data-theme="dark"] .plan{--lado-personal:#c0cc8a;--lado-trabajo:#e3c46f;--vivo-personal:#a9b76c;--vivo-trabajo:#d9b44a;
-  --primary:#c0cc8a;--primary-hover:#d0daa3;--primary-edge:#c0cc8a;--pine:#c8d397;--pine-soft:#2b301d;--sage:#3d4526;--focus:#c0cc8a}
-:root[data-theme="dark"] .plan-panel[data-lado="trabajo"]{--primary:#e3c46f;--primary-hover:#ecd38d;--primary-edge:#e3c46f;--pine:#e8cf85;--pine-soft:#3a3220;--sage:#574a22;--focus:#e3c46f}
+:root[data-theme="dark"] .plan{--lado-personal:#9ccbcc;--lado-trabajo:#e9c768;--vivo-personal:#7fb3b5;--vivo-trabajo:#e9b93c;
+  --primary:#9ccbcc;--primary-hover:#b4dadb;--primary-edge:#9ccbcc;--pine:#9ccbcc;--pine-soft:#22302f;--sage:#2c403f;--focus:#9ccbcc}
+:root[data-theme="dark"] .plan-panel[data-lado="trabajo"]{--primary:#e9c768;--primary-hover:#f0d68c;--primary-edge:#e9c768;--pine:#ecce7c;--pine-soft:#3a3220;--sage:#574a22;--focus:#e9c768}
 /* Las dos pestañas enseñan siempre su color (un punto delante); la elegida, además, en el texto y la raya */
 .plan-tab{display:inline-flex;align-items:center;gap:var(--e2)}
 .plan-tab::before{content:"";width:9px;height:9px;border-radius:50%;flex:none;background:var(--vivo-personal)}

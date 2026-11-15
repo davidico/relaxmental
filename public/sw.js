@@ -2,7 +2,7 @@
    - Páginas: primero la red; si falla, la copia guardada.
    - Archivos de la app (/_next, iconos): copia guardada y se actualiza en segundo plano.
    - Nunca toca /api ni el login de Cloudflare Access. */
-const CACHE = "mi-semana-v4";
+const CACHE = "mi-semana-v5";
 const SHELL = ["/hoy", "/semana", "/habitos", "/cerebro", "/tareas", "/perfil"];
 
 self.addEventListener("install", (e) => {
