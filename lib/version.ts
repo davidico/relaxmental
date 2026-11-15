@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "9.9";
+export const VERSION = "9.10";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "El Planner, como uno de papel: la franja de cada día va en color lleno, verde oliva en lo personal y dorado en el trabajo (ya no en tonos lavados)",
   "Colores del Planner más vivos: el verde de lo personal es más verde y el dorado del trabajo, más dorado",
   "En el Planner se pasa de Personal a Trabajo deslizando con el dedo (o tocando la pestaña): los dos lados se deslizan y la rayita de la pestaña viaja con ellos",
   "El Planner toma los colores del ícono de la app: lo personal en verde oliva y el trabajo en dorado",

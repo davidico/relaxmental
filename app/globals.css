@@ -2425,30 +2425,34 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 .profile a.btn{text-decoration:none}
 
 /* ---------- Versión 9.4: el Planner, con un color para lo personal y otro para el trabajo ---------- */
-/* Lo personal en verde y el trabajo en dorado (los colores del ícono, más vivos: los pidió David). Dentro del planner, todo lo que lleva acento
-   (checks, «+ Añadir», el punto de hoy, botones de sus hojas) toma el color de su lado. El dorado tiene dos tonos: uno oscuro para
-   el texto (contraste AA) y uno vivo (`--lado-vivo`) para el punto, la raya y el tinte de las cabeceras. */
-.plan{--lado-personal:#4a7a1c;--lado-trabajo:#946c00;--vivo-personal:#6aa51f;--vivo-trabajo:#e8b41a;
-  --primary:#4a7a1c;--primary-hover:#3e6816;--primary-edge:#4a7a1c;--pine:#4a7a1c;--pine-soft:#edf5e0;--sage:#d0e4b0;--focus:#4a7a1c;--lado-vivo:var(--vivo-personal)}
-.plan-panel[data-lado="trabajo"]{--primary:#946c00;--primary-hover:#7d5b00;--primary-edge:#946c00;--pine:#946c00;--pine-soft:#fdf3cf;--sage:#f4dc86;--focus:#946c00;--lado-vivo:var(--vivo-trabajo)}
+/* Lo personal en verde oliva y el trabajo en dorado, en colores planos (sin tintes lavados), como un planner de papel. Dentro del planner,
+   todo lo que lleva acento (checks, «+ Añadir», botones de sus hojas) toma el color de su lado. Cada lado tiene un tono para el texto
+   (contraste AA sobre el fondo) y el color lleno de las cabeceras de los días (`--cab-bg`, con su texto `--cab-tx`), que es el mismo en claro y oscuro. */
+.plan{--lado-personal:#5f6e26;--lado-trabajo:#8a6a12;--vivo-personal:#6a7a2e;--vivo-trabajo:#c8a240;
+  --primary:#5f6e26;--primary-hover:#515e1f;--primary-edge:#5f6e26;--pine:#5f6e26;--pine-soft:#eff2e3;--sage:#d8dfbf;--focus:#5f6e26;
+  --cab-bg:#6a7a2e;--cab-tx:#ffffff}
+.plan-panel[data-lado="trabajo"]{--primary:#8a6a12;--primary-hover:#74580c;--primary-edge:#8a6a12;--pine:#8a6a12;--pine-soft:#fbf3dc;--sage:#efdca0;--focus:#8a6a12;
+  --cab-bg:#c8a240;--cab-tx:#2b2408}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .plan{--lado-personal:#b4d97a;--lado-trabajo:#f2c744;--vivo-personal:#9ccf52;--vivo-trabajo:#f2c744;
-    --primary:#b4d97a;--primary-hover:#c6e596;--primary-edge:#b4d97a;--pine:#bcdf86;--pine-soft:#26331a;--sage:#3a4f22;--focus:#b4d97a}
-  :root:not([data-theme="light"]) .plan-panel[data-lado="trabajo"]{--primary:#f2c744;--primary-hover:#f7d568;--primary-edge:#f2c744;--pine:#f4cd58;--pine-soft:#3d3214;--sage:#5e4c14;--focus:#f2c744}
+  :root:not([data-theme="light"]) .plan{--lado-personal:#c0cc8a;--lado-trabajo:#e3c46f;--vivo-personal:#a9b76c;--vivo-trabajo:#d9b44a;
+    --primary:#c0cc8a;--primary-hover:#d0daa3;--primary-edge:#c0cc8a;--pine:#c8d397;--pine-soft:#2b301d;--sage:#3d4526;--focus:#c0cc8a}
+  :root:not([data-theme="light"]) .plan-panel[data-lado="trabajo"]{--primary:#e3c46f;--primary-hover:#ecd38d;--primary-edge:#e3c46f;--pine:#e8cf85;--pine-soft:#3a3220;--sage:#574a22;--focus:#e3c46f}
 }
-:root[data-theme="dark"] .plan{--lado-personal:#b4d97a;--lado-trabajo:#f2c744;--vivo-personal:#9ccf52;--vivo-trabajo:#f2c744;
-  --primary:#b4d97a;--primary-hover:#c6e596;--primary-edge:#b4d97a;--pine:#bcdf86;--pine-soft:#26331a;--sage:#3a4f22;--focus:#b4d97a}
-:root[data-theme="dark"] .plan-panel[data-lado="trabajo"]{--primary:#f2c744;--primary-hover:#f7d568;--primary-edge:#f2c744;--pine:#f4cd58;--pine-soft:#3d3214;--sage:#5e4c14;--focus:#f2c744}
+:root[data-theme="dark"] .plan{--lado-personal:#c0cc8a;--lado-trabajo:#e3c46f;--vivo-personal:#a9b76c;--vivo-trabajo:#d9b44a;
+  --primary:#c0cc8a;--primary-hover:#d0daa3;--primary-edge:#c0cc8a;--pine:#c8d397;--pine-soft:#2b301d;--sage:#3d4526;--focus:#c0cc8a}
+:root[data-theme="dark"] .plan-panel[data-lado="trabajo"]{--primary:#e3c46f;--primary-hover:#ecd38d;--primary-edge:#e3c46f;--pine:#e8cf85;--pine-soft:#3a3220;--sage:#574a22;--focus:#e3c46f}
 /* Las dos pestañas enseñan siempre su color (un punto delante); la elegida, además, en el texto y la raya */
 .plan-tab{display:inline-flex;align-items:center;gap:var(--e2)}
 .plan-tab::before{content:"";width:9px;height:9px;border-radius:50%;flex:none;background:var(--vivo-personal)}
 .plan-tab.trabajo::before{background:var(--vivo-trabajo)}
 .plan-tabs .plan-tab[aria-selected="true"]{color:var(--lado-personal);border-bottom-color:transparent}
 .plan-tabs .plan-tab.trabajo[aria-selected="true"]{color:var(--lado-trabajo)}
-/* La cabecera de cada día, con un tinte del color de su lado (el día de hoy, un poco más) */
-.plan .pl-cab,.plan .pl-cab.petroleo,.plan .pl-cab.suave,.plan .pl-cab.apagado,.plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--lado-vivo) 16%,var(--surface))}
-.plan .pl-cab.pl-hoy{background:color-mix(in srgb,var(--lado-vivo) 34%,var(--surface))}
-.plan .pl-cab.pl-hoy::before{background:var(--lado-vivo)}
+/* La cabecera de cada día, en el color lleno de su lado y con el texto encima (como las franjas de un planner de papel).
+   Los días que ya pasaron, en gris: el color es para lo que queda por delante. Hoy lleva un punto y va en negrita. */
+.plan .pl-cab,.plan .pl-cab.petroleo,.plan .pl-cab.suave,.plan .pl-cab.pl-hoy{background:var(--cab-bg);color:var(--cab-tx);border-bottom-color:var(--cab-bg);font-weight:500}
+.plan .pl-cab.pl-hoy{font-weight:600}
+.plan .pl-cab.pl-hoy::before{background:var(--cab-tx)}
+.plan .pl-cab.apagado{background:var(--band);color:var(--muted);border-bottom-color:var(--line)}
 
 /* ---------- Versión 9.5: «Planifica tu semana» (domingos) ---------- */
 .ps-hecha{display:flex;align-items:center;flex-wrap:wrap;gap:var(--e2);margin:0 0 var(--e3);font-size:14px;color:var(--ok)}
