@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.6";
+export const VERSION = "10.7";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "«Planear semana › Por días»: ahora escribes las metas de cada día ahí mismo (Personal o Trabajo) y la IA les propone la hora, sin tener que ir al Planner",
   "«Planear semana» en el Planner: elige «Por metas» (escribes en qué quieres avanzar y la IA decide cuántos días y a qué horas) o «Por días» (la IA pone hora a las metas que pusiste en cada día)",
   "Las metas ya no salen en Hoy como tareas para tachar: van aparte, en «Tus metas de hoy», hasta que tienen su hora",
   "Añadir una meta o tarea en el Planner abre la misma hoja sencilla que «Nueva tarea», con su Guardar y ya con el día y el lado puestos",

@@ -2605,4 +2605,17 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 /* Hoy: las metas sin hora, aparte de las tareas */
 .hm-metas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--e2)}
 .hm-metas li{display:flex;align-items:center;gap:var(--e3);font-size:16px;color:var(--ink);overflow-wrap:anywhere}
+/* «Por días»: las metas se escriben en la misma ventana, en cada día */
+.ps-dias-cab{display:flex;align-items:center;justify-content:space-between;gap:var(--e3);flex-wrap:wrap}
+.ps-lista.ps-dias>li.ps-dia{gap:var(--e2)!important;padding:12px 14px!important}
+.ps-dia-metas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--e2);width:100%}
+.ps-dia-metas li{display:flex;align-items:baseline;gap:var(--e3);font-size:16px;color:var(--ink)}
+.ps-dia-metas .ps-punto{align-self:center}
+.ps-dia-t{flex:1;min-width:0;overflow-wrap:anywhere}
+.ps-dia-h{flex:none;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ps-dia-mas{min-height:44px;padding:0;color:var(--pine)}
+.ps-dia-form{display:flex;flex-direction:column;gap:var(--e2);width:100%}
+.ps-dia-acc{display:flex;gap:var(--e2)}
 
+.ps-dia .ps-dia-metas .ps-dia-t{font-size:16px;color:var(--ink)}
+.ps-dia .ps-dia-metas .ps-dia-h{font-size:14px;color:var(--muted)}

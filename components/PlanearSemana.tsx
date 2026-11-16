@@ -84,6 +84,17 @@ export default function PlanearSemana({ lunes, lado, onClose }: { lunes: string;
   };
   const sinPlanear = metas.filter((m) => !sesionesDe(tareas, m.id).some((x) => x.due >= hoy));
 
+  /* Por días: se escriben aquí mismo, día por día (del lado que elijas); las que aún no tienen hora son las que la IA planea */
+  const [ladoDias, setLadoDias] = useState<Lado>(lado);
+  const [escribiendo, setEscribiendo] = useState<string | null>(null);
+  const [textoDia, setTextoDia] = useState("");
+  const metasDelDia = (f: string) => tareas.filter((x) => esMeta(x) && !x.done && x.due === f).sort((a, b) => (a.hora ?? "99").localeCompare(b.hora ?? "99") || a.created.localeCompare(b.created));
+  const anadirDia = (f: string) => {
+    const t = textoDia.trim();
+    if (!t) return;
+    save("tareas", { id: newId(), title: t.slice(0, 120), step: "", due: f, done: false, created: new Date().toISOString(), meta: true, lado: ladoDias });
+    setTextoDia("");
+  };
   /* Por días: las metas puestas en un día de la semana que aún no tienen hora */
   const metasDias = tareas.filter((x) => esMeta(x) && !x.done && !x.hora && !x.momento && fechas.includes(x.due));
 
@@ -244,19 +255,67 @@ export default function PlanearSemana({ lunes, lado, onClose }: { lunes: string;
             </section>
           ) : (
             <section className="ps-sec" aria-labelledby="ps-dias-h">
-              <h3 id="ps-dias-h" className="ps-h">Metas en tus días, sin hora</h3>
-              {metasDias.length ? (
-                <ul className="ps-lista">
-                  {[...new Set(metasDias.map((x) => x.due))].sort().map((f) => (
+              <div className="ps-dias-cab">
+                <h3 id="ps-dias-h" className="ps-h">Tus metas, día por día</h3>
+                <div className="ps-lados" role="radiogroup" aria-label="Las metas nuevas son de">
+                  {(["personal", "trabajo"] as Lado[]).map((l) => (
+                    <button key={l} type="button" role="radio" aria-checked={ladoDias === l} className={`ps-lado ${l}`} onPointerDown={(e) => escribiendo && e.preventDefault() /* el teclado sigue abierto */} onClick={() => { setLadoDias(l); if (escribiendo) document.getElementById(`ps-d-${escribiendo}`)?.focus(); }}>
+                      {l === "personal" ? "Personal" : "Trabajo"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="ps-nota">Escribe en qué quieres avanzar cada día. Después, «Proponme horas» le busca un hueco a cada una.</p>
+              <ul className="ps-lista ps-dias">
+                {fechas.map((f) => {
+                  const del = metasDelDia(f);
+                  return (
                     <li key={f} className="ps-dia">
                       <b>{nombreDia(f)}</b>
-                      <span>{metasDias.filter((x) => x.due === f).map((x) => x.title).join(" · ")}</span>
+                      {del.length > 0 && (
+                        <ul className="ps-dia-metas">
+                          {del.map((x) => (
+                            <li key={x.id} className={x.lado === "trabajo" ? "trabajo" : "personal"}>
+                              <span className={`ps-punto ${x.lado === "trabajo" ? "trabajo" : "personal"}`} aria-hidden="true" />
+                              <span className="ps-dia-t">{x.title}</span>
+                              <span className="ps-dia-h">{x.hora ? `${x.hora}${x.fin ? `–${x.fin}` : ""}` : x.momento ? "dentro de un momento" : "sin hora"}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {escribiendo === f ? (
+                        <form
+                          className="ps-dia-form"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            anadirDia(f);
+                          }}
+                        >
+                          <label htmlFor={`ps-d-${f}`} className="sr-only">Nueva meta para el {nombreDia(f).toLowerCase()}</label>
+                          <TextoCrece
+                            id={`ps-d-${f}`}
+                            className="campo1"
+                            autoFocus
+                            autoComplete="off"
+                            enterKeyHint="done"
+                            maxLength={120}
+                            placeholder={`Meta ${ladoDias === "trabajo" ? "de trabajo " : ""}para el ${nombreDia(f).toLowerCase()}`}
+                            value={textoDia}
+                            onTexto={setTextoDia}
+                            onKeyDown={(e) => e.key === "Escape" && (e.preventDefault(), setEscribiendo(null))}
+                          />
+                          <div className="ps-dia-acc">
+                            <button className="btn sm" type="submit" disabled={!textoDia.trim()}>Añadir</button>
+                            <button className="btn ghost sm" type="button" onClick={() => { setEscribiendo(null); setTextoDia(""); }}>Listo</button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button type="button" className="linkbtn ps-dia-mas" onClick={() => { setEscribiendo(f); setTextoDia(""); }}>+ Añadir meta</button>
+                      )}
                     </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="ps-nota">No tienes metas sin hora en los días que quedan de esta semana. Escríbelas en cada día del Planner (en «Metas», con «+ Añadir») y vuelve aquí.</p>
-              )}
+                  );
+                })}
+              </ul>
             </section>
           )}
 
