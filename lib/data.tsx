@@ -113,6 +113,8 @@ export type Perfil = {
   revision?: { mes?: string };
   /** Semana tipo (día de la semana -> bloques) */
   plantilla?: Plantilla;
+  /** Metas de cada semana (lunes → metas): en lo que quiere avanzar, sin día ni hora; «Planear semana» les propone días y horas */
+  metasSemana?: Record<string, { id: string; t: string; lado: "personal" | "trabajo" }[]>;
   /** La última semana que la persona marcó como planificada en el Planner (la fecha de su lunes) */
   semanaPlanificada?: string | null;
   /** Los recordatorios de hábitos y del diario: encendidos o no, y a qué hora (lib/avisos.ts) */

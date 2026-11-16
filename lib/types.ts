@@ -23,6 +23,8 @@ export interface Tarea {
   momento?: string;
   /** Hábito al que cuenta al marcarla hecha (id). "" = la persona quitó el enlace; sin el campo, se reconoce por el nombre */
   habito?: string;
+  /** Un bloque para trabajar en una meta de la semana (su id en `perfil/metasSemana`), puesto con «Planear semana» */
+  metaSemana?: string;
 }
 
 /** Lo escrito en el planner antes de separar metas y tareas también cuenta como meta */

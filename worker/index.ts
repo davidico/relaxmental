@@ -17,7 +17,7 @@ import { subtareasQueQuedaron } from "./avisos";
 import { PRESUPUESTO, buscarNotas, elegirNotas, type NotaTexto } from "./notas";
 import { PRESUPUESTO_CLAUDE, conClaude, responderClaude } from "./claude";
 import { sendPush, vapid, type Sub } from "./push";
-import { aCompromisos, conclusiones, horasMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, reglasDeTipo, resumenDias, title, transcribe, type AI } from "./ai";
+import { aCompromisos, conclusiones, horasMetas, sesionesMetas, diasPendientes, tiposDe, palabrasClave, notasDelTema, responderNotas, propuestasDiario, responder, resumenSemana, leerHorario, textoNotas, planDay, preguntas, reescribirReglas, reglasDeTipo, resumenDias, title, transcribe, type AI } from "./ai";
 
 const APP = "https://relaxmental.davidcueva-dico.workers.dev";
 
@@ -566,6 +566,19 @@ async function api(req: Request, envBase: Env, url: URL): Promise<Response> {
     const bloques = Array.isArray(b.bloques) ? b.bloques.map((x) => String(x).slice(0, 160)).slice(0, 60) : [];
     const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, b.fecha)]);
     return json({ propuestas: await horasMetas(env.AI, { fecha: b.fecha, ahora: String(b.ahora), metas, bloques, reglas: String(b.reglas ?? ""), memoria, reciente }) });
+  }
+  /* Planear semana por metas: en qué días y a qué horas trabajar cada meta de la semana */
+  if (url.pathname === "/api/ai/semana-metas" && req.method === "POST") {
+    const b = (await req.json()) as { hoy?: string; ahora?: string; metas?: { id?: unknown; t?: unknown; lado?: unknown }[]; dias?: { fecha?: unknown; bloques?: unknown }[]; reglas?: string };
+    if (typeof b.hoy !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.hoy) || !/^\d{2}:\d{2}$/.test(String(b.ahora ?? ""))) return json({ error: "bad_request" }, 400);
+    const metas = (Array.isArray(b.metas) ? b.metas : []).slice(0, 12).map((m) => ({ id: String(m?.id ?? "").slice(0, 60), t: String(m?.t ?? "").slice(0, 120), lado: m?.lado === "trabajo" ? "trabajo" : "personal" })).filter((m) => m.id && m.t);
+    const dias = (Array.isArray(b.dias) ? b.dias : [])
+      .slice(0, 7)
+      .map((d) => ({ fecha: String(d?.fecha ?? ""), bloques: Array.isArray(d?.bloques) ? d.bloques.map((x) => String(x).slice(0, 160)).slice(0, 40) : [] }))
+      .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.fecha) && d.fecha >= b.hoy!);
+    if (!metas.length || !dias.length) return json({ propuestas: [] });
+    const [memoria, reciente] = await Promise.all([memoriaDe(env, email), recienteDe(env, email, b.hoy)]);
+    return json({ propuestas: await sesionesMetas(env.AI, { hoy: b.hoy, ahora: String(b.ahora), metas, dias, reglas: String(b.reglas ?? ""), memoria, reciente }) });
   }
   /* El diario de la noche: propuestas para seguir organizándose */
   if (url.pathname === "/api/ai/diario" && req.method === "POST") {

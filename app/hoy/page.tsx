@@ -120,6 +120,7 @@ export default function Hoy() {
         <div className="hy-col">
           {esHoy && <Atrasadas day={t} />}
           <SinHora day={dia} hoy={t} />
+          <HorasMetas day={dia} hoy={t} />
           <Tira dia={dia} blocks={blocks} minuto={esHoy ? minute : dia < t ? 1440 : -1} onEditar={() => setEditing(true)} onEntreno={() => setEntreno(true)} />
         </div>
         {/* El orden del código es el que se ve (y el del teclado): en el móvil todo va en una columna */}
@@ -242,13 +243,13 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
   const delDia = tareas.filter((x) => x.due === day);
   /* Las subtareas de un momento del día se ven en la línea, debajo de ese momento */
   const bloques = planFor(day);
-  const xs = delDia.filter((x) => !x.hora && !(x.momento && bloqueDeSub(x.momento, bloques))).sort((a, b) => Number(esMeta(b)) - Number(esMeta(a)) || a.created.localeCompare(b.created));
+  /* Las metas no son tareas para tachar: sin hora salen aparte (HorasMetas), con su propuesta de horas */
+  const xs = delDia.filter((x) => !esMeta(x) && !x.hora && !(x.momento && bloqueDeSub(x.momento, bloques))).sort((a, b) => a.created.localeCompare(b.created));
   /* Si ya no queda nada por hacer, la sección no sale (hoy y los días que vienen). Lo que marcas ahora mismo se queda
      a la vista hasta que salgas, por si quieres desmarcarlo; en los días pasados sí se ve lo que hiciste. */
   const queda = xs.some((x) => !x.done || recien.includes(x.id));
   if (!xs.length || (day >= hoy && !queda)) return null;
   const primera = day === hoy ? xs.find((x) => !x.done) : undefined;
-  const etiqueta = (x: Tarea) => (esMeta(x) ? `Meta de ${x.lado === "trabajo" ? "trabajo" : "tu vida personal"}` : "Tarea");
   return (
     <section aria-labelledby="hy-una" className="hy-sec">
       <div className="hy-sechead">
@@ -262,7 +263,6 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
             {/* Tocar el nombre abre la tarea para cambiarla; el círculo la marca */}
             <button type="button" className="hy-task-b hy-task-btn" onClick={() => setCambiar(x)} aria-label={`Cambiar ${x.title}`}>
               <span className="hy-task-t">{x.title}</span>
-              <span className="hy-step">{etiqueta(x)}</span>
               {x.step && !x.done && <span className="hy-step">Primer paso: {x.step}</span>}
             </button>
             {x.id === primera?.id && (
@@ -274,7 +274,6 @@ function SinHora({ day, hoy }: { day: string; hoy: string }) {
           </li>
         ))}
       </ul>
-      {day === hoy && <HorasMetas day={day} metas={delDia.filter(esMeta)} />}
       {cambiar && <TaskSheet editar={cambiar} onClose={() => setCambiar(null)} />}
     </section>
   );

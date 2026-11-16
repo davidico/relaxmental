@@ -817,3 +817,60 @@ export async function horasMetas(
       return true;
     });
 }
+
+/**
+ * «Planear semana» por metas: la persona escribe en qué quiere avanzar esta semana y la IA decide cuántos días y a qué horas
+ * trabajar cada meta, mirando el horario de cada día. Devuelve los bloques propuestos; la persona elige cuáles aplicar.
+ */
+export async function sesionesMetas(
+  ai: AI,
+  o: { hoy: string; ahora: string; metas: { id: string; t: string; lado: string }[]; dias: { fecha: string; bloques: string[] }[]; reglas: string; memoria?: string[]; reciente?: string },
+): Promise<{ id: string; fecha: string; s: string; e: string }[]> {
+  const nombre = (f: string) => `${DIAS[new Date(f + "T12:00:00Z").getUTCDay()]} ${f}`;
+  const r = await ai.run(LLM, {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Ayudas a una persona a planear su semana. Te da sus metas de la semana (en lo que quiere avanzar, no tareas sueltas) y el horario de cada día. " +
+          "Para cada meta decide cuántos días trabajarla (normalmente de 1 a 5, según lo grande que sea y el tiempo libre que tenga) y en qué horas: bloques realistas (s y e en HH:MM, normalmente de 45 a 120 minutos). " +
+          "Las metas de trabajo van en bloques de trabajo o en huecos libres de horario laboral; las personales en huecos personales. " +
+          "Nunca encima de compromisos fijos (iglesia, turnos, citas), comidas, pastillas, descanso ni de tareas o metas que ya tienen hora; sí puede ir dentro de bloques genéricos como «trabajo», «bloque de mañana» o «libre». " +
+          "Reparte bien la semana: no lo amontones todo en un día, deja aire y respeta los días de descanso. No solapes los bloques entre sí. Hoy, solo después de la hora actual. " +
+          "Respeta sus reglas y ten en cuenta lo que recuerdas de ella y sus últimos 14 días (a qué hora rinde mejor, qué suele cumplir y qué no). " +
+          'Responde SOLO con JSON: {"propuestas":[{"id":"…","fecha":"AAAA-MM-DD","s":"HH:MM","e":"HH:MM"}]}',
+      },
+      {
+        role: "user",
+        content: `HOY: ${nombre(o.hoy)}, ahora son las ${o.ahora}.\n\nMIS METAS DE LA SEMANA:\n${o.metas.map((m) => `${m.id} · [${m.lado}] ${m.t}`).join("\n")}\n\nMI HORARIO DE CADA DÍA:\n${o.dias.map((d) => `${nombre(d.fecha)}:\n${d.bloques.join("\n") || "(vacío)"}`).join("\n\n")}${textoMemoria(o.memoria)}${textoReciente(o.reciente, 6000)}\n\nMIS REGLAS:\n${o.reglas.slice(0, 2500) || "(ninguna)"}`,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        type: "object",
+        properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, fecha: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id", "fecha", "s", "e"] } } },
+        required: ["propuestas"],
+      },
+    },
+    max_tokens: 2000,
+    temperature: 0.2,
+  });
+  const xs = parsed<{ propuestas: unknown }>(r)?.propuestas;
+  if (!Array.isArray(xs)) return [];
+  const hm = /^([01]\d|2[0-3]):[0-5]\d$/;
+  const ids = new Set(o.metas.map((m) => m.id));
+  const fechas = new Set(o.dias.map((d) => d.fecha));
+  const usados: Record<string, [string, string][]> = {};
+  return xs
+    .map((x: Record<string, unknown>) => ({ id: String(x?.id ?? ""), fecha: String(x?.fecha ?? ""), s: String(x?.s ?? ""), e: String(x?.e ?? "") }))
+    .filter((x) => {
+      if (!ids.has(x.id) || !fechas.has(x.fecha) || !hm.test(x.s) || !hm.test(x.e) || x.e <= x.s) return false;
+      if (x.fecha === o.hoy && x.s < o.ahora) return false;
+      const u = (usados[x.fecha] ??= []);
+      if (u.some(([s, e]) => x.s < e && s < x.e)) return false;
+      u.push([x.s, x.e]);
+      return true;
+    })
+    .slice(0, 40);
+}

@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.5";
+export const VERSION = "10.6";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "«Planear semana» en el Planner: elige «Por metas» (escribes en qué quieres avanzar y la IA decide cuántos días y a qué horas) o «Por días» (la IA pone hora a las metas que pusiste en cada día)",
+  "Las metas ya no salen en Hoy como tareas para tachar: van aparte, en «Tus metas de hoy», hasta que tienen su hora",
   "Añadir una meta o tarea en el Planner abre la misma hoja sencilla que «Nueva tarea», con su Guardar y ya con el día y el lado puestos",
   "Los campos para escribir (como «Dile algo que deba saber de ti») ya no sacan el menú de contraseñas y tarjetas del teclado",
   "«Pregúntale a la IA» con el diseño del chat de Claude: tus mensajes en burbuja, las respuestas como texto limpio, un cuadro de escribir que crece, botón para copiar la respuesta y para empezar una conversación nueva",

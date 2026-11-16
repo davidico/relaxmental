@@ -2548,3 +2548,61 @@ textarea.re-texto:focus{outline:none;box-shadow:none}
 textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 .mem-fila textarea.crece{flex:1 1 100%;width:auto;min-width:0}
 
+/* ---------- Versión 10.6: metas que no son tareas y «Planear semana» (por metas o por días) ---------- */
+/* Los colores de los dos lados, también fuera del planner (la ventana de planear y las metas de Hoy) */
+.ps,.hm-metas{--c-personal:#2f5d62;--c-trabajo:#e9b93c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ps,:root:not([data-theme="light"]) .hm-metas{--c-personal:#9ccbcc}}
+:root[data-theme="dark"] .ps,:root[data-theme="dark"] .hm-metas{--c-personal:#9ccbcc}
+/* Arriba del planner: las metas de la semana de ese lado y el botón «Planear semana» */
+.pl-msem{margin:0 0 var(--e4);padding:var(--e3) var(--e4) var(--e4);border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.pl-msem-cab{display:flex;align-items:center;justify-content:space-between;gap:var(--e3);flex-wrap:wrap}
+.pl-msem-cab h2{margin:0;font-size:16px;font-weight:600;color:var(--ink)}
+.pl-msem-cab .btn{min-height:44px}
+.pl-msem .pl-nota{margin:var(--e2) 0 0}
+.pl-msem-l{list-style:none;margin:var(--e2) 0 0;padding:0;display:flex;flex-direction:column}
+.pl-msem-l li{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e3);padding:10px 0;border-top:1px solid var(--line)}
+.pl-msem-l li:first-child{border-top:none}
+.pl-msem-t{min-width:0;overflow-wrap:anywhere;font-size:16px;color:var(--ink)}
+.pl-msem-n{flex:none;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* La ventana «Planear la semana» */
+.ps-cuerpo{display:flex;flex-direction:column;gap:var(--e4)}
+.ps-modos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e2)}
+.ps-modo{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e1);min-height:44px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.ps-modo:hover{background:var(--band)}
+.ps-modo[aria-checked="true"]{border:2px solid var(--primary);padding:11px 13px;background:var(--pine-soft)}
+.ps-modo:focus-visible,.ps-lado:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ps-modo-t{font-size:16px;font-weight:600}
+.ps-modo-d{font-size:14px;line-height:1.35;color:var(--muted)}
+.ps-sec{display:flex;flex-direction:column;gap:var(--e3)}
+.ps-h{margin:0;font-size:16px;font-weight:600;color:var(--ink)}
+.ps-nota{margin:0;font-size:15px;line-height:1.45;color:var(--muted)}
+.ps-lista{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.ps-lista li{display:flex;align-items:center;gap:var(--e3);min-height:44px;padding:8px 6px 8px 14px}
+.ps-lista li+li{border-top:1px solid var(--line)}
+.ps-meta-t{flex:1;min-width:0;display:flex;flex-direction:column;font-size:16px;overflow-wrap:anywhere}
+.ps-meta-t small{font-size:14px;color:var(--muted)}
+.ps-punto,.hm-punto{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c-personal)}
+.ps-meta.trabajo .ps-punto,.ps-punto.trabajo,.hm-metas li.trabajo .hm-punto{background:var(--c-trabajo)}
+.ps-punto.personal{background:var(--c-personal)}
+.ps-x{flex:none}
+.ps-dia{flex-direction:column;align-items:flex-start!important;gap:2px!important;padding:10px 14px!important}
+.ps-dia b{font-weight:600}
+.ps-dia span{font-size:15px;color:var(--muted)}
+.ps-nueva{display:flex;flex-direction:column;gap:var(--e2)}
+.ps-nueva-pie{display:flex;align-items:center;justify-content:space-between;gap:var(--e3);flex-wrap:wrap}
+.ps-lados{display:inline-flex;gap:var(--e1);padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.ps-lado{display:inline-flex;align-items:center;gap:var(--e2);min-height:38px;padding:0 12px;border:none;border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:15px;cursor:pointer}
+.ps-lado::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c-personal)}
+.ps-lado.trabajo::before{background:var(--c-trabajo)}
+.ps-lado[aria-checked="true"]{background:var(--band);color:var(--ink);font-weight:600}
+.ps-res{margin-top:0}
+.ps-grupo+.ps-grupo{margin-top:var(--e3);padding-top:var(--e3);border-top:1px solid var(--line)}
+.ps-grupo-h{display:flex;align-items:center;gap:var(--e2);margin:0;font-size:16px;font-weight:600;color:var(--ink)}
+.ps-grupo-sub{margin:2px 0 0 18px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ps-res{scroll-margin-top:var(--e3)}
+.ps-res .ps-grupo ul li+li{border-top:none}
+@media (max-width:420px){.ps-modos{grid-template-columns:1fr}}
+/* Hoy: las metas sin hora, aparte de las tareas */
+.hm-metas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--e2)}
+.hm-metas li{display:flex;align-items:center;gap:var(--e3);font-size:16px;color:var(--ink);overflow-wrap:anywhere}
+

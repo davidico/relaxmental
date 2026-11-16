@@ -4,6 +4,7 @@ import CuandoPendientes from "./CuandoPendientes";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import TaskSheet from "./TaskSheet";
+import PlanearSemana, { sesionesDe, textoHoras, useMetasSemana } from "./PlanearSemana";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
@@ -51,6 +52,8 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
     return () => m.removeEventListener("change", on);
   }, []);
   return (
+    <>
+    <MetasDeLaSemana lunes={days[0]} lado={lado} />
     <div className="pl">
       {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}
       <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby={`pl-pend-h-${lado}`}>
@@ -104,6 +107,45 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
         })}
       </div>
     </div>
+    </>
+  );
+}
+
+/**
+ * Arriba del planner: las metas de la semana de este lado (en lo que quieres avanzar) y el botón «Planear semana»,
+ * que deja elegir entre planear por metas (la IA decide días y horas) o por días (la IA pone hora a las metas de cada día).
+ */
+function MetasDeLaSemana({ lunes, lado }: { lunes: string; lado: Lado }) {
+  const { tareas } = useData();
+  const { metas } = useMetasSemana(lunes);
+  const [abierto, setAbierto] = useState(false);
+  const mias = metas.filter((m) => m.lado === lado);
+  const min = (s: string, e: string) => Number(e.slice(0, 2)) * 60 + Number(e.slice(3)) - (Number(s.slice(0, 2)) * 60 + Number(s.slice(3)));
+  return (
+    <section className="pl-msem" aria-labelledby={`pl-msem-h-${lado}`}>
+      <div className="pl-msem-cab">
+        <h2 id={`pl-msem-h-${lado}`}>Metas de la semana</h2>
+        <button type="button" className="btn sm" onClick={() => setAbierto(true)}>Planear semana</button>
+      </div>
+      {mias.length ? (
+        <ul className="pl-msem-l">
+          {mias.map((m) => {
+            const ses = sesionesDe(tareas, m.id);
+            const total = ses.reduce((a, x) => a + min(x.hora!, x.fin!), 0);
+            return (
+              <li key={m.id}>
+                <span className="pl-msem-t">{m.t}</span>
+                <span className="pl-msem-n">{ses.length ? `${ses.length === 1 ? "1 día" : `${ses.length} días`} · ${textoHoras(total)}` : "Sin planear"}</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="pl-nota">¿En qué quieres avanzar esta semana? Con «Planear semana» escribes tus metas y la IA te propone días y horas.</p>
+      )}
+      {/* La ventana va en body (se encarga ella) y con el color de la app: planea los dos lados a la vez */}
+      {abierto && <PlanearSemana lunes={lunes} lado={lado} onClose={() => setAbierto(false)} />}
+    </section>
   );
 }
 
