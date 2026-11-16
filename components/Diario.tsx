@@ -9,6 +9,7 @@ import { leerDiario } from "@/lib/aprender";
 import VoiceButton from "./VoiceButton";
 import { esMeta, type Nota, type Tarea } from "@/lib/types";
 import { llano } from "@/lib/tipos";
+import TextoCrece from "./TextoCrece";
 
 /** A partir de esta hora aparece el momento del diario */
 export const HORA_DIARIO = 21;
@@ -133,7 +134,7 @@ export default function Diario({ hoja, onClose }: { hoja?: boolean; onClose?: ()
                 </fieldset>
                 <div className="dia-quien">
                   <label htmlFor={`${id}-quien`}>¿Con quién?</label>
-                  <input id={`${id}-quien`} value={quien} maxLength={40} autoComplete="off" placeholder="Dios, mi pareja, un amigo…" onChange={(e) => setQuien(e.target.value)} />
+                  <TextoCrece id={`${id}-quien`} className="campo1" value={quien} maxLength={40} autoComplete="off" enterKeyHint="done" placeholder="Dios, mi pareja, un amigo…" onTexto={setQuien} />
                 </div>
                 <div className="row actions">
                   <button className="btn ghost" type="button" onClick={() => setLista("no")}>Ahora no</button>

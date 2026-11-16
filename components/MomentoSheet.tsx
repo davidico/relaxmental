@@ -95,7 +95,7 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
         <TextoCrece id="ms-t" className="ts-title" autoComplete="off" enterKeyHint="done" placeholder="Nombre" value={t} onTexto={setT} />
         <div className="ts-campo">
           <label htmlFor="ms-sub">Descripción (opcional)</label>
-          <TextoCrece id="ms-sub" className="ms-sub" autoComplete="off" enterKeyHint="done" value={sub} onTexto={setSub} />
+          <TextoCrece id="ms-sub" className="ms-sub" autoComplete="off" enterKeyHint="done" value={sub} onTexto={setSub} onEnter={() => {}} />
         </div>
         <div className="ms-horas">
           <div className="ts-campo">

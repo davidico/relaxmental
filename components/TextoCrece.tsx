@@ -4,7 +4,8 @@ import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, type Textarea
 
 /**
  * Un campo de una línea que crece hacia abajo cuando el texto no cabe (en vez de esconderlo a los lados).
- * Enter no hace salto de línea: llama a `onEnter` si se indica.
+ * Enter no hace salto de línea: llama a `onEnter` si se indica y, si no, envía su formulario.
+ * Al no ser un <input>, el teclado del móvil no le pone encima el menú de contraseñas, tarjetas y direcciones.
  */
 const TextoCrece = forwardRef<HTMLTextAreaElement, Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange"> & { value: string; onTexto: (v: string) => void; onEnter?: () => void }>(
   function TextoCrece({ value, onTexto, onEnter, onKeyDown, className, ...resto }, ref) {
@@ -25,9 +26,11 @@ const TextoCrece = forwardRef<HTMLTextAreaElement, Omit<TextareaHTMLAttributes<H
         onChange={(e) => onTexto(e.target.value.replace(/\s*\n+\s*/g, " "))}
         onKeyDown={(e) => {
           onKeyDown?.(e);
-          if (e.key === "Enter" && !e.defaultPrevented) {
+          if (e.key === "Enter" && !e.defaultPrevented && !e.nativeEvent.isComposing) {
             e.preventDefault();
-            onEnter?.();
+            /* Sin onEnter, Intro hace lo que hacía un campo de una línea: enviar su formulario */
+            if (onEnter) onEnter();
+            else e.currentTarget.form?.requestSubmit();
           }
         }}
         {...resto}

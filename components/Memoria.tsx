@@ -5,6 +5,7 @@ import { useData } from "@/lib/data";
 import { MES } from "@/lib/dates";
 import { anadirRecuerdos, type Recuerdo } from "@/lib/aprender";
 import { avisarBorrado } from "@/lib/deshacer";
+import TextoCrece from "./TextoCrece";
 
 const ORIGEN: Record<Recuerdo["origen"], string> = { diario: "De tu diario", semana: "De tu semana", tu: "Lo escribiste tú" };
 const cuando = (iso: string) => {
@@ -50,7 +51,7 @@ export default function Memoria() {
       >
         <label htmlFor="mem-in">Dile algo que deba saber de ti</label>
         <div className="mem-fila">
-          <input id="mem-in" value={nuevo} maxLength={200} placeholder="Ej.: Rindo más de mañana…" autoComplete="off" onChange={(e) => setNuevo(e.target.value)} />
+          <TextoCrece id="mem-in" className="campo1" value={nuevo} maxLength={200} placeholder="Ej.: Rindo más de mañana…" autoComplete="off" enterKeyHint="done" onTexto={setNuevo} />
           <button className="btn" type="submit" disabled={!nuevo.trim()}>Añadir</button>
         </div>
       </form>
@@ -71,7 +72,7 @@ export default function Memoria() {
                   }}
                 >
                   <label htmlFor={`mem-${r.id}`} className="sr-only">Corregir</label>
-                  <input id={`mem-${r.id}`} autoFocus value={texto} maxLength={200} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setEditando(null)} />
+                  <TextoCrece id={`mem-${r.id}`} className="campo1" autoFocus value={texto} maxLength={200} enterKeyHint="done" onTexto={setTexto} onKeyDown={(e) => e.key === "Escape" && setEditando(null)} />
                   <div className="mem-fila">
                     <button className="btn sm" type="submit" disabled={!texto.trim()}>Guardar</button>
                     <button className="btn ghost sm" type="button" onClick={() => setEditando(null)}>Cancelar</button>

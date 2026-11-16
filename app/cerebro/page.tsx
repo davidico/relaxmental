@@ -9,6 +9,7 @@ import { RichView } from "@/components/RichEditor";
 import NoteView from "@/components/NoteView";
 import { IconoEtiqueta } from "@/components/Etiqueta";
 import MapaNotas from "@/components/MapaNotas";
+import TextoCrece from "@/components/TextoCrece";
 
 const COLORS: Area[] = ["iglesia", "tukuna", "trabajo", "familia", "salud", "aleman", "casa"];
 const byOrder = (a: Carpeta, b: Carpeta) => a.orden - b.orden || a.name.localeCompare(b.name);
@@ -231,7 +232,7 @@ export default function Cerebro() {
           <label htmlFor="k-name" className="flabel">
             {form.mode === "seccion" ? "Nombre de la nueva sección" : form.mode === "carpeta" ? `Nueva etiqueta en ${sec.name}` : sub ? "Nombre de la etiqueta" : "Nombre de la sección"}
           </label>
-          <input id="k-name" autoFocus placeholder={form.mode === "carpeta" ? "Ej. Cosas por orar, Inspiración…" : "Ej. Espiritual, Trabajo…"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <TextoCrece id="k-name" className="campo1" autoFocus autoComplete="off" enterKeyHint="done" placeholder={form.mode === "carpeta" ? "Ej. Cosas por orar, Inspiración…" : "Ej. Espiritual, Trabajo…"} value={form.name} onTexto={(name) => setForm({ ...form, name })} />
           {form.mode !== "carpeta" && !(form.mode === "renombrar" && sub) && (
             <label className="k-check">
               <input type="checkbox" checked={form.privada} onChange={(e) => setForm({ ...form, privada: e.target.checked })} />

@@ -2,12 +2,15 @@
 
 import CuandoPendientes from "./CuandoPendientes";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import TaskSheet from "./TaskSheet";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
 import { borrarTarea } from "@/lib/deshacer";
 import HoraInput from "./HoraInput";
 import { useMarcarTarea } from "@/lib/usarMarcar";
+import TextoCrece from "./TextoCrece";
 
 /**
  * Weekly planner de un lado de tu vida (Personal o Trabajo, una pestaña cada uno): cada día con tus metas
@@ -107,24 +110,8 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
 function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titulo: string; tipo: "meta" | "tarea"; lado: Lado; due: string; items: Tarea[]; days: string[]; soloVer?: boolean }) {
   const { save } = useData();
   const marcarTarea = useMarcarTarea();
-  const [nuevo, setNuevo] = useState<string | null>(null);
+  const [nuevo, setNuevo] = useState(false);
   const [abierto, setAbierto] = useState<string | null>(null);
-  const id = `pl-${due || "pend"}-${tipo}-${lado}`;
-  const anadir = () => {
-    const t = leerHora(nuevo ?? "");
-    if (!t.title) return setNuevo(null);
-    save("tareas", {
-      id: newId(),
-      title: t.title,
-      step: "",
-      due,
-      ...(t.hora && due ? { hora: t.hora, ...(t.fin ? { fin: t.fin } : {}) } : {}),
-      done: false,
-      created: new Date().toISOString(),
-      ...(tipo === "meta" ? { lado, meta: true } : { meta: false, ...(lado === "trabajo" ? { lado } : {}) }),
-    });
-    setNuevo("");
-  };
   return (
     <div className={`pl-lado ${tipo === "meta" ? lado : "tarea"}`}>
       {titulo && <h3 className="pl-lado-h">{titulo}</h3>}
@@ -152,31 +139,22 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
           ),
         )}
       </ul>
-      {soloVer ? null : nuevo === null ? (
-        <button className="pl-add" onClick={() => setNuevo("")} aria-label={`${tipo === "meta" ? "Añadir meta" : due ? "Añadir tarea" : "Añadir pendiente"} ${lado === "trabajo" ? "de trabajo" : "personal"}`}>
+      {!soloVer && (
+        <button className="pl-add" onClick={() => setNuevo(true)} aria-label={`${tipo === "meta" ? "Añadir meta" : due ? "Añadir tarea" : "Añadir pendiente"} ${lado === "trabajo" ? "de trabajo" : "personal"}`}>
           + Añadir
         </button>
-      ) : (
-        <form
-          className="pl-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            anadir();
-          }}
-        >
-          <label htmlFor={id} className="sr-only">{tipo === "meta" ? `Nueva meta ${lado === "trabajo" ? "de trabajo" : "personal"}` : "Nueva tarea"}</label>
-          <input
-            id={id}
-            autoFocus
-            value={nuevo}
-            placeholder={tipo === "meta" ? "Ej.: Contabilidad" : due ? "Ej.: 10:00 Llamar al banco" : "¿Qué tienes que hacer?"}
-            enterKeyHint="done"
-            onChange={(e) => setNuevo(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && setNuevo(null)}
-            onBlur={() => (nuevo?.trim() ? anadir() : setNuevo(null))}
-          />
-        </form>
       )}
+      {/* La misma hoja sencilla que «Nueva tarea» (nombre, primer paso, reloj y Guardar), ya con el día y el lado puestos.
+          Va fuera del planner (en body) para cubrir toda la pantalla, pero con los colores de su lado */}
+      {nuevo &&
+        createPortal(
+          <div className="plan">
+            <div className="plan-panel" data-lado={lado}>
+              <TaskSheet inicial={{ due }} tipo={{ meta: tipo === "meta", lado }} onClose={() => setNuevo(false)} />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -222,7 +200,7 @@ function Editar({ x, days, onClose }: { x: Tarea; days: string[]; onClose: () =>
         <div className="pl-campos">
           <div className="pl-campo">
             <label htmlFor={`pe-t-${x.id}`}>Qué es</label>
-            <input id={`pe-t-${x.id}`} autoFocus value={txt} autoComplete="off" onChange={(e) => setTxt(e.target.value)} />
+            <TextoCrece id={`pe-t-${x.id}`} className="campo1" autoFocus value={txt} autoComplete="off" enterKeyHint="done" onTexto={setTxt} />
           </div>
           <div className="pl-campo">
             <label htmlFor={`pe-d-${x.id}`}>Día</label>

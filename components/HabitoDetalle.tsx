@@ -33,7 +33,7 @@ export function CamposHabito({
       {!sinNombre && (
       <div className="hf-campo">
         <label htmlFor={`${idp}-n`}>Nombre</label>
-        <input id={`${idp}-n`} required autoFocus autoComplete="off" placeholder={v.tipo === "dejar" ? "Ej.: Redes sociales…" : v.tipo === "medible" ? "Ej.: Correr…" : "Ej.: Leer un capítulo…"} value={v.name} onChange={(e) => onChange({ name: e.target.value })} />
+        <TextoCrece id={`${idp}-n`} className="campo1" required autoFocus autoComplete="off" enterKeyHint="done" placeholder={v.tipo === "dejar" ? "Ej.: Redes sociales…" : v.tipo === "medible" ? "Ej.: Correr…" : "Ej.: Leer un capítulo…"} value={v.name} onTexto={(name) => onChange({ name })} />
       </div>
       )}
       <div className="hf-campo">

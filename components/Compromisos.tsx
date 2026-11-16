@@ -6,6 +6,7 @@ import { DOW, addD, fdate, pd } from "@/lib/dates";
 import { achicar } from "@/lib/imagen";
 import HoraInput from "./HoraInput";
 import type { Evento, Eventos } from "@/lib/plan";
+import TextoCrece from "./TextoCrece";
 
 type Fila = Evento & { fecha: string; k: number };
 let n = 0;
@@ -88,7 +89,7 @@ export default function Compromisos() {
               </label>
               <label className="cmp-t">
                 <span>Qué</span>
-                <input value={f.t} placeholder="Ej. Turno de mañana" onChange={(x) => cambiar(f.k, { t: x.target.value })} />
+                <TextoCrece className="campo1" value={f.t} autoComplete="off" placeholder="Ej. Turno de mañana" onTexto={(t) => cambiar(f.k, { t })} onEnter={() => {}} />
               </label>
               <label>
                 <span>Desde</span>

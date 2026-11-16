@@ -22,7 +22,11 @@ const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${S
  * Con `editar` es la misma hoja para cambiar una tarea que ya existe (todo se puede cambiar) o borrarla;
  * si es una subtarea, además deja elegir dentro de qué momento va.
  */
-export default function TaskSheet({ onClose, inicial, editar }: { onClose: () => void; inicial?: { due?: string; hora?: string }; editar?: Tarea }) {
+export default function TaskSheet({ onClose, inicial, editar, tipo }: { onClose: () => void; inicial?: { due?: string; hora?: string }; editar?: Tarea; /** Desde el Planner: si es una meta y de qué lado */ tipo?: { meta: boolean; lado: "personal" | "trabajo" } }) {
+  /* Lo que se escribe en el Planner se guarda como allí: las metas llevan su lado; las tareas, solo si son de trabajo */
+  const clase = tipo ? (tipo.meta ? { meta: true, lado: tipo.lado } : { meta: false, ...(tipo.lado === "trabajo" ? { lado: "trabajo" as const } : {}) }) : { meta: false };
+  const nombre = tipo?.meta ? "meta" : "tarea";
+  const deTrabajo = tipo?.lado === "trabajo" ? " de trabajo" : "";
   const { save, remove, hoy, planFor, dias, perfil } = useData();
   const [title, setTitle] = useState(editar?.title ?? "");
   const [step, setStep] = useState(editar?.step ?? "");
@@ -38,7 +42,7 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
   const [verCuando, setVerCuando] = useState(false);
   const [guardadas, setGuardadas] = useState(0);
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const stepRef = useRef<HTMLInputElement>(null);
+  const stepRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [permiso, setPermiso] = useState<NotificationPermission | "no">("default");
 
@@ -76,7 +80,7 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
       onClose();
       return;
     }
-    save("tareas", { id: newId(), title: title.trim(), step: step.trim(), done: false, created: new Date().toISOString(), meta: false, ...cuando });
+    save("tareas", { id: newId(), title: title.trim(), step: step.trim(), done: false, created: new Date().toISOString(), ...clase, ...cuando });
     setTitle("");
     setStep("");
     setHora("");
@@ -96,18 +100,18 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
         className="sheet ts"
         role="dialog"
         aria-modal="true"
-        aria-label={editar ? "Editar tarea" : "Nueva tarea"}
+        aria-label={editar ? "Editar tarea" : `Nueva ${nombre}${deTrabajo}`}
         onSubmit={(e) => {
           e.preventDefault();
           guardar();
         }}
       >
-        <label htmlFor="ts-title" className="sr-only">{editar ? "Nombre de la tarea" : "Nueva tarea"}</label>
-        <TextoCrece ref={titleRef} id="ts-title" className="ts-title" autoFocus={!editar} autoComplete="off" enterKeyHint="done" placeholder="Nueva tarea" value={title} onTexto={setTitle} onEnter={() => formRef.current?.requestSubmit()} />
+        <label htmlFor="ts-title" className="sr-only">{editar ? "Nombre de la tarea" : `Nueva ${nombre}${deTrabajo}`}</label>
+        <TextoCrece ref={titleRef} id="ts-title" className="ts-title" autoFocus={!editar} autoComplete="off" enterKeyHint="done" placeholder={editar ? "Nueva tarea" : `Nueva ${nombre}${deTrabajo}`} value={title} onTexto={setTitle} onEnter={() => formRef.current?.requestSubmit()} />
         {verPaso && (
           <>
             <label htmlFor="ts-step" className="sr-only">Primer paso</label>
-            <input ref={stepRef} id="ts-step" className="ts-step" autoFocus={!editar} enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onChange={(e) => setStep(e.target.value)} />
+            <TextoCrece ref={stepRef} id="ts-step" className="ts-step" autoFocus={!editar} autoComplete="off" enterKeyHint="done" placeholder="Primer paso de 2 minutos" value={step} onTexto={setStep} onEnter={() => formRef.current?.requestSubmit()} />
           </>
         )}
 
@@ -193,7 +197,7 @@ export default function TaskSheet({ onClose, inicial, editar }: { onClose: () =>
             }}
           />
         )}
-        <p className="ts-ok" role="status">{guardadas > 0 ? `✓ ${guardadas === 1 ? "Tarea guardada" : `${guardadas} tareas guardadas`}. Escribe otra o toca fuera para cerrar.` : ""}</p>
+        <p className="ts-ok" role="status">{guardadas > 0 ? `✓ ${guardadas === 1 ? `${nombre === "meta" ? "Meta guardada" : "Tarea guardada"}` : `${guardadas} ${nombre}s guardadas`}. Escribe otra o toca fuera para cerrar.` : ""}</p>
       </form>
     </div>
   );

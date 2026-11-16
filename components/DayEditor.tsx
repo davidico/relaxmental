@@ -8,6 +8,7 @@ import { areaColor } from "@/lib/types";
 import { cssC } from "./ui";
 import HoraInput from "./HoraInput";
 import { aprender, registrarCambio } from "@/lib/aprender";
+import TextoCrece from "./TextoCrece";
 
 
 /** Editor de un día: cambiar horas, títulos, borrar o añadir bloques */
@@ -81,7 +82,7 @@ export default function DayEditor({ date, onClose }: { date: string; onClose: ()
                   <span aria-hidden="true">–</span>
                   <HoraInput id={`ed-e-${i}`} label="Termina" value={b.e} onChange={(v) => set(i, { e: v })} invalid={!!bad} desde={b.s} />
                 </div>
-                <input id={`ed-t-${i}`} className="ed-name" placeholder="Qué haces" value={b.t} onChange={(e) => set(i, { t: e.target.value })} />
+                <TextoCrece id={`ed-t-${i}`} className="ed-name campo1" autoComplete="off" placeholder="Qué haces" value={b.t} onTexto={(t) => set(i, { t })} onEnter={() => {}} />
                 <textarea id={`ed-sub-${i}`} className="ed-sub" rows={2} placeholder="Detalle (opcional): qué vas a hacer exactamente, notas…" value={b.sub ?? ""} onChange={(e) => set(i, { sub: e.target.value })} />
                 <button className="x" aria-label="Quitar bloque" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
               </div>
