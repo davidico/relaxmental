@@ -2684,3 +2684,8 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 .hf-ayuda{margin:var(--e2) 0 0;font-size:14px;color:var(--muted)}
 .hb-cuando{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
 
+/* ---------- Versión 11.3: «Cambiar este momento»: el nombre en un cuadro (se ve que se puede cambiar) y la descripción, debajo, más pequeña ---------- */
+textarea.ms-nombre{padding:12px 14px;border:1px solid var(--field);border-radius:8px;background:var(--surface);font-size:18px;font-weight:500;line-height:1.35;min-height:48px;color:var(--ink)}
+textarea.ms-sub{padding:8px 12px;font-size:16px;line-height:1.35;min-height:44px;color:var(--muted)}
+textarea.ms-sub:focus{color:var(--ink)}
+

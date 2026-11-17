@@ -91,8 +91,11 @@ export default function MomentoSheet({ dia, bloque, onClose }: { dia: string; bl
         }}
       >
         <h2 id="ms-h" className="aq-h">Cambiar este momento</h2>
-        <label htmlFor="ms-t" className="sr-only">Nombre</label>
-        <TextoCrece id="ms-t" className="ts-title" autoComplete="off" enterKeyHint="done" placeholder="Nombre" value={t} onTexto={setT} />
+        {/* El nombre, en un cuadro como los demás campos para que se vea que se puede cambiar */}
+        <div className="ts-campo">
+          <label htmlFor="ms-t">Nombre</label>
+          <TextoCrece id="ms-t" className="ms-nombre" autoComplete="off" enterKeyHint="done" placeholder="Nombre" value={t} onTexto={setT} />
+        </div>
         <div className="ts-campo">
           <label htmlFor="ms-sub">Descripción (opcional)</label>
           <TextoCrece id="ms-sub" className="ms-sub" autoComplete="off" enterKeyHint="done" value={sub} onTexto={setSub} onEnter={() => {}} />
