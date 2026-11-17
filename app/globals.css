@@ -2660,3 +2660,8 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 .pl-hdias .ps-nota{margin:0}
 @media (prefers-reduced-motion:reduce){.pl-elegir-b{transition:none}}
 
+
+/* ---------- Versión 10.10: en Hábitos, el círculo de marcar tiene una zona de toque más grande ---------- */
+/* Toda la tarjeta abre el mes; alrededor del círculo (y de «Anotar») hay una zona invisible más grande que marca,
+   para que un toque un poco desviado no abra el mes por error. El círculo se ve igual. */
+.hb-check::after,.hb-medir::after{content:"";position:absolute;inset:-16px -16px -16px -14px;border-radius:12px}

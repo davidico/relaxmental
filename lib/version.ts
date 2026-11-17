@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.9";
+export const VERSION = "10.10";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hábitos: el círculo de marcar tiene una zona de toque más grande, para que un toque un poco desviado no abra el mes por error",
   "El Planner, como uno de papel: cada día en una tarjeta con su parte de Trabajo y su parte Personal (sin pestañas)",
   "Cada semana empieza preguntando cómo planearla: por metas (escribes tus metas y la IA las reparte en tus días) o por días (escribes en cada día lo que quieres trabajar)",
   "Mantenimiento: la herramienta con la que se construye la app (Next.js) pasa a la versión 16.4.6, que corrige un fallo de seguridad",
