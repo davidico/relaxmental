@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "10.8";
+export const VERSION = "10.9";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "El Planner, como uno de papel: cada día en una tarjeta con su parte de Trabajo y su parte Personal (sin pestañas)",
+  "Cada semana empieza preguntando cómo planearla: por metas (escribes tus metas y la IA las reparte en tus días) o por días (escribes en cada día lo que quieres trabajar)",
   "Mantenimiento: la herramienta con la que se construye la app (Next.js) pasa a la versión 16.4.6, que corrige un fallo de seguridad",
   "«Planear semana › Por días»: ahora escribes las metas de cada día ahí mismo (Personal o Trabajo) y la IA les propone la hora, sin tener que ir al Planner",
   "«Planear semana» en el Planner: elige «Por metas» (escribes en qué quieres avanzar y la IA decide cuántos días y a qué horas) o «Por días» (la IA pone hora a las metas que pusiste en cada día)",

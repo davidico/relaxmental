@@ -2619,3 +2619,44 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 
 .ps-dia .ps-dia-metas .ps-dia-t{font-size:16px;color:var(--ink)}
 .ps-dia .ps-dia-metas .ps-dia-h{font-size:14px;color:var(--muted)}
+
+/* ---------- Versión 10.9: el Planner como uno de papel (cada día con Trabajo y Personal) y planear la semana por metas o por días ---------- */
+.plan{--c-personal:#2f5d62;--c-trabajo:#e9b93c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .plan{--c-personal:#9ccbcc}}
+:root[data-theme="dark"] .plan{--c-personal:#9ccbcc}
+/* La parte de Trabajo de cada día lleva los tonos dorados (la Personal, los petróleo de .plan) */
+.plan .pl-sec[data-lado="trabajo"]{--primary:#8a6a12;--primary-hover:#74580c;--primary-edge:#8a6a12;--pine:#8a6a12;--pine-soft:#fbf3dc;--sage:#efdca0;--focus:#8a6a12}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .plan .pl-sec[data-lado="trabajo"]{--primary:#e9c768;--primary-hover:#f0d68c;--primary-edge:#e9c768;--pine:#ecce7c;--pine-soft:#3a3220;--sage:#574a22;--focus:#e9c768}}
+:root[data-theme="dark"] .plan .pl-sec[data-lado="trabajo"]{--primary:#e9c768;--primary-hover:#f0d68c;--primary-edge:#e9c768;--pine:#ecce7c;--pine-soft:#3a3220;--sage:#574a22;--focus:#e9c768}
+/* El día: la franja de arriba en petróleo lleno; dentro, «Trabajo» y «Personal» subrayados con su color */
+.plan .pl-cab,.plan .pl-cab.petroleo,.plan .pl-cab.pl-hoy{background:#2f5d62;color:#fff;border-bottom-color:#2f5d62}
+.plan .pl-cab.pl-hoy::before{background:#fff}
+.plan .pl-cab.apagado{background:var(--band);color:var(--muted);border-bottom-color:var(--line)}
+.pl-sec{padding:var(--e1) 0 0}
+.pl-sec+.pl-sec{padding-top:0}
+.plan .pl-sec .pl-lado-h{display:block;margin:var(--e2) 0 var(--e1);padding-bottom:6px;border-bottom:2px solid var(--c-personal);font-size:15px;font-weight:600;color:var(--primary)}
+.plan .pl-sec[data-lado="trabajo"] .pl-lado-h{border-bottom-color:var(--c-trabajo)}
+.plan .pl-dia.pasado .pl-sec .pl-lado-h{border-bottom-color:var(--line);color:var(--muted)}
+/* Semana sin planear: elegir cómo */
+.pl-elegir{display:flex;flex-direction:column;gap:var(--e4);padding:var(--e5) 0}
+.pl-elegir h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.pl-elegir-op{display:grid;grid-template-columns:1fr;gap:var(--e3)}
+@media (min-width:700px){.pl-elegir-op{grid-template-columns:1fr 1fr}}
+.pl-elegir-b{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e2);min-height:120px;padding:var(--e5);border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background-color .15s}
+.pl-elegir-b:hover{border-color:var(--primary);background:var(--pine-soft)}
+.pl-elegir-b:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.pl-elegir-t{font-size:20px;font-weight:600}
+.pl-elegir-d{font-size:16px;line-height:1.45;color:var(--muted)}
+/* Planear por metas, en la misma pantalla */
+.pl-pormetas{display:flex;flex-direction:column;gap:var(--e3);padding:var(--e3) 0 var(--e5);max-width:640px}
+.pl-pm-cab{display:flex;align-items:center;justify-content:space-between;gap:var(--e3)}
+.pl-pm-cab h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.pl-pm-cab .linkbtn{min-height:44px}
+.pl-pm-pie{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e3);margin-top:var(--e2)}
+.pl-otra{min-height:44px;margin-top:var(--e1);padding:0;font-size:15px;color:var(--muted)}
+.pl-msem-t{display:inline-flex;align-items:center;gap:var(--e2)}
+.pl-hdias-fila{display:flex;align-items:center;justify-content:space-between;gap:var(--e3);flex-wrap:wrap}
+.pl-hdias-fila p{margin:0;font-size:16px;color:var(--ink)}
+.pl-hdias .ps-nota{margin:0}
+@media (prefers-reduced-motion:reduce){.pl-elegir-b{transition:none}}
+

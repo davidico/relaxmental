@@ -4,7 +4,7 @@ import CuandoPendientes from "./CuandoPendientes";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import TaskSheet from "./TaskSheet";
-import PlanearSemana, { sesionesDe, textoHoras, useMetasSemana } from "./PlanearSemana";
+import { ElegirPlan, HorasDias, PorMetas, ResumenMetas, useMetasSemana, type ModoSemana } from "./PlanearSemana";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
 import { esMeta, type Tarea } from "@/lib/types";
@@ -14,9 +14,9 @@ import { useMarcarTarea } from "@/lib/usarMarcar";
 import TextoCrece from "./TextoCrece";
 
 /**
- * Weekly planner de un lado de tu vida (Personal o Trabajo, una pestaña cada uno): cada día con tus metas
- * (en lo que quieres avanzar) y debajo las tareas puntuales de ese día; arriba (o a un lado), las tareas sin día.
- * Todo sale en Hoy (y en el itinerario si tiene hora).
+ * Weekly planner, como uno de papel: cada día en una tarjeta con dos partes, Trabajo y Personal, con sus metas y tareas
+ * (las que tienen hora, con su hora). Cada semana se planea primero: por metas (la IA las reparte en días y horas) o por días
+ * (escribes en cada día lo que quieres trabajar). Al lado (o arriba en el móvil), las tareas sin día. Todo sale en Hoy.
  */
 export type Lado = "personal" | "trabajo";
 const ladoDe = (x: Tarea): Lado => (x.lado === "trabajo" ? "trabajo" : "personal");
@@ -38,9 +38,21 @@ export function leerHora(texto: string): { title: string; hora?: string; fin?: s
   return title ? { title, hora } : { title: texto.trim() };
 }
 
-export default function Planner({ days, hoy, lado }: { days: string[]; hoy: string; lado: Lado }) {
-  const { tareas } = useData();
-  const pendientes = tareas.filter((x) => !x.done && !x.due && ladoDe(x) === lado).sort(orden);
+export default function Planner({ days, hoy }: { days: string[]; hoy: string }) {
+  const { tareas, perfil, savePerfil } = useData();
+  const lunes = days[0];
+  /* Cómo se planeó cada semana: si aún no se eligió y no hay metas, primero se elige (por metas o por días) */
+  const semanas = (perfil.semanas ?? {}) as Record<string, { modo: ModoSemana | null }>;
+  const guardado = semanas[lunes];
+  const { metas: metasSem } = useMetasSemana(lunes);
+  const hayMetas = metasSem.length > 0 || tareas.some((t) => esMeta(t) && days.includes(t.due));
+  const pasada = days[6] < hoy;
+  const modo: ModoSemana | null = guardado ? guardado.modo : hayMetas || pasada ? "dias" : null;
+  const poner = (m: ModoSemana | null) => savePerfil("semanas", { ...semanas, [lunes]: { modo: m } });
+  const [escribiendoMetas, setEscribiendoMetas] = useState(false);
+  useEffect(() => setEscribiendoMetas(false), [lunes]);
+
+  const pendientes = tareas.filter((x) => !x.done && !x.due).sort(orden);
   const [verPend, setVerPend] = useState(false);
   /* En pantallas anchas (dos columnas) Pendientes está siempre abierto */
   const [ancho, setAncho] = useState(false);
@@ -51,101 +63,65 @@ export default function Planner({ days, hoy, lado }: { days: string[]; hoy: stri
     m.addEventListener("change", on);
     return () => m.removeEventListener("change", on);
   }, []);
+
+  if (escribiendoMetas) return <PorMetas lunes={lunes} onListo={() => { poner("metas"); setEscribiendoMetas(false); }} onVolver={() => setEscribiendoMetas(false)} />;
+  if (!modo) return <ElegirPlan onMetas={() => setEscribiendoMetas(true)} onDias={() => poner("dias")} />;
+
   return (
     <>
-    <MetasDeLaSemana lunes={days[0]} lado={lado} />
-    <div className="pl">
-      {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}
-      <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby={`pl-pend-h-${lado}`}>
-        <h2 id={`pl-pend-h-${lado}`}>
-          {ancho ? (
-            "Pendientes"
-          ) : (
-            <button className="pl-pend-btn" aria-expanded={verPend} aria-controls={`pl-pend-cuerpo-${lado}`} onClick={() => setVerPend(!verPend)}>
-              <span>Pendientes</span>
-              <span className="pl-pend-n">{pendientes.length === 0 ? "ninguno" : pendientes.length}</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
+      {!pasada && (modo === "metas" ? <ResumenMetas lunes={lunes} onCambiar={() => setEscribiendoMetas(true)} onOtra={() => poner(null)} /> : <HorasDias days={days} onOtra={() => poner(null)} />)}
+      <div className="pl">
+        {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}
+        <section className={`pl-pend${ancho || verPend ? " abierto" : ""}`} aria-labelledby="pl-pend-h">
+          <h2 id="pl-pend-h">
+            {ancho ? (
+              "Pendientes"
+            ) : (
+              <button className="pl-pend-btn" aria-expanded={verPend} aria-controls="pl-pend-cuerpo" onClick={() => setVerPend(!verPend)}>
+                <span>Pendientes</span>
+                <span className="pl-pend-n">{pendientes.length === 0 ? "ninguno" : pendientes.length}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+            )}
+          </h2>
+          {(ancho || verPend) && (
+            <div id="pl-pend-cuerpo">
+              <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
+              <CuandoPendientes pendientes={pendientes} />
+              <Lista titulo="" tipo="tarea" lado="personal" due="" items={pendientes} days={days} />
+            </div>
           )}
-        </h2>
-        {(ancho || verPend) && (
-          <div id={`pl-pend-cuerpo-${lado}`}>
-            <p className="pl-nota">Tareas sin día fijo. Ábrelas para pasarlas a un día.</p>
-            <CuandoPendientes pendientes={pendientes} />
-            <Lista titulo="" tipo="tarea" lado={lado} due="" items={pendientes} days={days} />
-          </div>
-        )}
-      </section>
-      <div className="pl-dias">
-        {days.map((d, i) => {
-          const f = pd(d);
-          const deDia = tareas.filter((x) => x.due === d && ladoDe(x) === lado).sort(orden);
-          const metas = deDia.filter(esMeta);
-          const sueltas = deDia.filter((x) => !esMeta(x));
-          /* Los días que ya pasaron se ven, pero apagados y sin tocar; si no tuvieron nada, en una sola línea */
-          const pasado = d < hoy;
-          const vacio = pasado && !deDia.length;
-          const tono = d === hoy ? "pl-hoy" : pasado ? "apagado" : i >= 5 ? "suave" : "petroleo";
-          return (
-            <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${pasado ? " pasado" : ""}${vacio ? " vacio" : ""}`} aria-labelledby={`pl-${d}-${lado}`}>
-              <h2 id={`pl-${d}-${lado}`} className={`pl-cab ${tono}`}>
-                {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : pasado ? " · Ya pasó" : ""}`}
-                {vacio && <span className="pl-cab-n"> · nada</span>}
-              </h2>
-              {!vacio && (
-                <>
-                  {(!pasado || metas.length > 0) && <Lista titulo="Metas" tipo="meta" lado={lado} due={d} items={metas} days={days} soloVer={pasado} />}
-                  {(!pasado || sueltas.length > 0) && (
-                    <div className="pl-tareas">
-                      <Lista titulo="Tareas" tipo="tarea" lado={lado} due={d} items={sueltas} days={days} soloVer={pasado} />
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-          );
-        })}
-      </div>
-    </div>
-    </>
-  );
-}
-
-/**
- * Arriba del planner: las metas de la semana de este lado (en lo que quieres avanzar) y el botón «Planear semana»,
- * que deja elegir entre planear por metas (la IA decide días y horas) o por días (la IA pone hora a las metas de cada día).
- */
-function MetasDeLaSemana({ lunes, lado }: { lunes: string; lado: Lado }) {
-  const { tareas } = useData();
-  const { metas } = useMetasSemana(lunes);
-  const [abierto, setAbierto] = useState(false);
-  const mias = metas.filter((m) => m.lado === lado);
-  const min = (s: string, e: string) => Number(e.slice(0, 2)) * 60 + Number(e.slice(3)) - (Number(s.slice(0, 2)) * 60 + Number(s.slice(3)));
-  return (
-    <section className="pl-msem" aria-labelledby={`pl-msem-h-${lado}`}>
-      <div className="pl-msem-cab">
-        <h2 id={`pl-msem-h-${lado}`}>Metas de la semana</h2>
-        <button type="button" className="btn sm" onClick={() => setAbierto(true)}>Planear semana</button>
-      </div>
-      {mias.length ? (
-        <ul className="pl-msem-l">
-          {mias.map((m) => {
-            const ses = sesionesDe(tareas, m.id);
-            const total = ses.reduce((a, x) => a + min(x.hora!, x.fin!), 0);
+        </section>
+        <div className="pl-dias">
+          {days.map((d) => {
+            const f = pd(d);
+            const deDia = tareas.filter((x) => x.due === d).sort(orden);
+            /* Los días que ya pasaron se ven, pero apagados y sin tocar; si no tuvieron nada, en una sola línea */
+            const pasado = d < hoy;
+            const vacio = pasado && !deDia.length;
             return (
-              <li key={m.id}>
-                <span className="pl-msem-t">{m.t}</span>
-                <span className="pl-msem-n">{ses.length ? `${ses.length === 1 ? "1 día" : `${ses.length} días`} · ${textoHoras(total)}` : "Sin planear"}</span>
-              </li>
+              <section key={d} className={`pl-dia${d === hoy ? " es-hoy" : ""}${pasado ? " pasado" : ""}${vacio ? " vacio" : ""}`} aria-labelledby={`pl-${d}`}>
+                <h2 id={`pl-${d}`} className={`pl-cab ${d === hoy ? "pl-hoy" : pasado ? "apagado" : "petroleo"}`}>
+                  {`${DOW[f.getDay()]} ${f.getDate()}${d === hoy ? " · Hoy" : pasado ? " · Ya pasó" : ""}`}
+                  {vacio && <span className="pl-cab-n"> · nada</span>}
+                </h2>
+                {/* Como en un planner de papel: dentro de cada día, primero Trabajo y luego Personal */}
+                {!vacio &&
+                  (["trabajo", "personal"] as Lado[]).map((l) => {
+                    const xs = deDia.filter((x) => ladoDe(x) === l);
+                    if (pasado && !xs.length) return null;
+                    return (
+                      <div key={l} className="pl-sec" data-lado={l}>
+                        <Lista titulo={l === "trabajo" ? "Trabajo" : "Personal"} tipo="meta" lado={l} due={d} items={xs} days={days} soloVer={pasado} />
+                      </div>
+                    );
+                  })}
+              </section>
             );
           })}
-        </ul>
-      ) : (
-        <p className="pl-nota">¿En qué quieres avanzar esta semana? Con «Planear semana» escribes tus metas y la IA te propone días y horas.</p>
-      )}
-      {/* La ventana va en body (se encarga ella) y con el color de la app: planea los dos lados a la vez */}
-      {abierto && <PlanearSemana lunes={lunes} lado={lado} onClose={() => setAbierto(false)} />}
-    </section>
+        </div>
+      </div>
+    </>
   );
 }
 
