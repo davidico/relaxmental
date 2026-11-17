@@ -2675,3 +2675,12 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 /* Una meta puesta dentro de un momento de su día dice en cuál */
 .pl-en{display:block;font-size:14px;color:var(--muted);font-weight:400}
 
+/* ---------- Versión 11.2: los hábitos con su hora preferida y cuántas veces por semana ---------- */
+.hf-lbl{margin:0 0 var(--e2);font-size:15px;font-weight:600;color:var(--ink)}
+.hf-veces{gap:var(--e2)}
+.hf-veces button{min-width:44px;padding:0 12px}
+.hf-veces button[aria-pressed="true"],.rd-chips.hf-veces button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.hf-hora{display:flex;align-items:center;gap:var(--e3);flex-wrap:wrap}
+.hf-ayuda{margin:var(--e2) 0 0;font-size:14px;color:var(--muted)}
+.hb-cuando{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+

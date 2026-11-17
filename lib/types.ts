@@ -86,6 +86,10 @@ export interface Habito {
   cantidades?: Record<string, number>;
   /** Medible: meta diaria opcional; el día cuenta como hecho al llegar a ella (sin meta, con cualquier cantidad) */
   objetivo?: number;
+  /** A qué hora prefiere hacerlo (HH:MM); a esa hora le llega un aviso si aún no lo marcó */
+  hora?: string;
+  /** Cuántas veces por semana quiere hacerlo (1 a 6); sin el campo, todos los días */
+  veces?: number;
 }
 
 

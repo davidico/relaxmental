@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "11.1";
+export const VERSION = "11.2";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Hábitos: al crearlos (o en «Hora, veces y tipo») eliges a qué hora prefieres hacerlo y cuántas veces por semana. A esa hora te avisa si aún no lo marcaste, y los de unas veces por semana cuentan la semana («1 de 3») en vez de la racha de días",
   "Al planear tus metas, la IA las mete dentro del momento de tu día que les toca (las de trabajo, dentro de «Trabajo»), como la vitamina D dentro del desayuno; solo si ninguno encaja les busca una hora libre",
   "En el Planner, las metas van con un punto delante, como en un planner de papel: ya no llevan el círculo de tachar de las tareas",
   "Hábitos: el círculo de marcar tiene una zona de toque más grande, para que un toque un poco desviado no abra el mes por error",

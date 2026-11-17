@@ -231,7 +231,7 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
   const sinDia = tareas.filter((t) => !t.done && !t.due);
   if (sinDia.length) partes.push("PENDIENTES SIN DÍA:\n" + sinDia.slice(0, 15).map((t) => `- ${String(t.title).slice(0, 80)}`).join("\n"));
 
-  const habitos = leer<{ name?: string; hechos?: Record<string, boolean>; tipo?: string; unidad?: string; cantidades?: Record<string, number> }>(hq.results).filter((h) => h.name);
+  const habitos = leer<{ name?: string; hechos?: Record<string, boolean>; tipo?: string; unidad?: string; cantidades?: Record<string, number>; hora?: string; veces?: number }>(hq.results).filter((h) => h.name);
   if (habitos.length) {
     const ult = Array.from({ length: 14 }, (_, i) => fechaMas(hoy, -i));
     partes.push(
@@ -246,7 +246,9 @@ async function recienteDe(env: Env, email: string, hoy: string): Promise<string>
             }
             const suma = h.tipo === "medible" ? Math.round(ult.reduce((t, f) => t + (h.cantidades?.[f] ?? 0), 0) * 100) / 100 : 0;
             const clase = h.tipo === "dejar" ? " (lo quiere dejar; cuenta los días que lo logró)" : h.tipo === "medible" ? ` (medible: ${suma} ${h.unidad ?? ""} en total)` : "";
-            return `- ${h.name}${clase}: ${n} de 14 días${racha > 1 ? `, racha actual de ${racha}` : ""}`;
+            const v = h.tipo !== "dejar" && typeof h.veces === "number" && h.veces >= 1 && h.veces < 7 ? h.veces : 7;
+            const pref = [typeof h.hora === "string" && h.hora ? `prefiere hacerlo a las ${h.hora}` : "", v < 7 ? `quiere hacerlo ${v} ${v === 1 ? "vez" : "veces"} por semana` : ""].filter(Boolean).join(", ");
+            return `- ${h.name}${clase}${pref ? ` (${pref})` : ""}: ${n} de 14 días${racha > 1 ? `, racha actual de ${racha}` : ""}`;
           })
           .join("\n"),
     );
@@ -789,17 +791,42 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
     const { sent, failed } = await notifyUser(env, user_email, aviso);
     if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
   };
-  if (cfg.habitos.on && toca(cfg.habitos.hora)) {
+  /* Los hábitos: cada uno a su hora preferida (si la tiene) y, a la hora del recordatorio, los que faltan.
+     Uno de unas veces por semana no avisa si esa semana ya las cumplió */
+  type HabitoAviso = { id?: unknown; name?: unknown; orden?: unknown; hechos?: Record<string, boolean>; hora?: unknown; veces?: unknown; tipo?: unknown };
+  const lunes = fechaMas(date, -((new Date(date + "T12:00:00Z").getUTCDay() + 6) % 7));
+  const cumplida = (h: HabitoAviso) => {
+    const v = h.tipo !== "dejar" && typeof h.veces === "number" && h.veces >= 1 && h.veces < 7 ? h.veces : 7;
+    if (v >= 7) return false;
+    let n = 0;
+    for (let d = lunes; d <= date; d = fechaMas(d, 1)) if (h.hechos?.[d]) n++;
+    return n >= v;
+  };
+  let habitos: HabitoAviso[] | null = null;
+  const leerHabitos = async () => {
+    if (habitos) return habitos;
     const { results: hs } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'habitos'").bind(user_email).all<{ data: string }>();
-    const faltan: { name: string; orden: number }[] = [];
+    habitos = [];
     for (const r of hs) {
       try {
-        const h = JSON.parse(r.data) as { name?: unknown; orden?: unknown; hechos?: Record<string, boolean> } | null;
-        if (h && typeof h.name === "string" && h.name.trim() && !h.hechos?.[date]) faltan.push({ name: h.name.trim().slice(0, 60), orden: Number(h.orden) || 0 });
+        const h = JSON.parse(r.data) as HabitoAviso | null;
+        if (h && typeof h.name === "string" && h.name.trim()) habitos.push(h);
       } catch {
         /* un hábito raro no impide avisar de los demás */
       }
     }
+    return habitos;
+  };
+  {
+    for (const h of await leerHabitos()) {
+      if (typeof h.hora !== "string" || !/^\d{2}:\d{2}$/.test(h.hora) || !toca(h.hora) || h.hechos?.[date] || cumplida(h)) continue;
+      const nombre = String(h.name).trim().slice(0, 60);
+      await recordar(`habito ${String(h.id)} ${date}`, { title: nombre, body: `Es tu hora de ${nombre.toLowerCase()}. Toca para marcarlo cuando lo hagas.`, tag: `habito-${String(h.id)}`, url: "/habitos" });
+    }
+  }
+  if (cfg.habitos.on && toca(cfg.habitos.hora)) {
+    const faltan: { name: string; orden: number }[] = [];
+    for (const h of await leerHabitos()) if (!h.hechos?.[date] && !cumplida(h)) faltan.push({ name: String(h.name).trim().slice(0, 60), orden: Number(h.orden) || 0 });
     if (faltan.length) {
       const nombres = faltan.sort((a, b) => a.orden - b.orden).map((h) => h.name);
       await recordar(`habitos ${date}`, {

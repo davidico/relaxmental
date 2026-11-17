@@ -1,5 +1,5 @@
 import type { Habito } from "./types";
-import { addD, today } from "./dates";
+import { addD, mondayOf, today } from "./dates";
 
 /** Días seguidos cumplidos, contando hasta hoy (o hasta ayer si hoy aún no lo marcaste) */
 export function streak(h: Habito, t = today()) {
@@ -135,3 +135,14 @@ export function habitoDeMomento(nombre: string, habitos: Habito[], mapa?: Record
   if (mapa && k in mapa) return mapa[k] ? habitos.find((h) => h.id === mapa[k]) : undefined;
   return habitoDeNombre(nombre, habitos);
 }
+
+/** Cuántas veces por semana quiere hacerlo (7 = todos los días). Un mal hábito para dejar es siempre de todos los días */
+export const vecesDe = (h: Habito) => (h.tipo !== "dejar" && h.veces && h.veces >= 1 && h.veces < 7 ? h.veces : 7);
+/** Cuántas veces lo hizo esta semana (de lunes a hoy) */
+export function enLaSemana(h: Habito, t = today()) {
+  const lunes = mondayOf(t);
+  let n = 0;
+  for (let d = lunes; d <= t; d = addD(d, 1)) if (h.hechos[d]) n++;
+  return n;
+}
+export const textoVeces = (n: number) => (n >= 7 ? "Todos los días" : n === 1 ? "1 vez por semana" : `${n} veces por semana`);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
-import { bestStreak, cantidad, conUnidad, sortHabits, streak, tipoDe, type TipoHabito } from "@/lib/habits";
+import { bestStreak, cantidad, conUnidad, enLaSemana, sortHabits, streak, textoVeces, tipoDe, vecesDe, type TipoHabito } from "@/lib/habits";
 import type { Habito } from "@/lib/types";
 import { toggleHecho } from "@/components/ui";
 import HabitoAnotar from "@/components/HabitoAnotar";
@@ -27,6 +27,12 @@ function Mes({ h, t }: { h: Habito; t: string }) {
 /** La frase de cada tarjeta: anima, nunca regaña (en «dejar» no se habla de recaídas) */
 function frase(h: Habito, t: string) {
   const tipo = tipoDe(h);
+  /* Unas veces por semana: se cuenta la semana, no los días seguidos */
+  const v = vecesDe(h);
+  if (v < 7 && tipo !== "medible") {
+    const n = enLaSemana(h, t);
+    return n >= v ? "Esta semana ya está" : h.hechos[t] ? `Hoy ya está · te ${v - n === 1 ? "falta 1 vez" : `faltan ${v - n} veces`} esta semana` : `Esta semana te ${v - n === 1 ? "falta 1 vez" : `faltan ${v - n} veces`}`;
+  }
   const on = !!h.hechos[t];
   const s = streak(h, t);
   if (tipo === "medible") {
@@ -38,7 +44,7 @@ function frase(h: Habito, t: string) {
   return on ? "Hoy ya está" : s > 0 ? "Hoy aún no: márcalo y sigue la racha" : bestStreak(h) > 0 ? "Empieza otra vez hoy" : "Hoy es buen día para empezar";
 }
 
-const VACIO = { name: "", tipo: "marca" as TipoHabito, unidad: "", objetivo: "" };
+const VACIO = { name: "", tipo: "marca" as TipoHabito, unidad: "", objetivo: "", hora: "", veces: 7 };
 
 export default function Habitos() {
   const { habitos, save } = useData();
@@ -76,13 +82,24 @@ export default function Habitos() {
                 const s = streak(h, t);
                 const best = bestStreak(h);
                 const c = cantidad(h, t);
+                /* Si es de unas veces por semana, el número grande es lo hecho esta semana («2 de 3»); si no, la racha de días */
+                const v = vecesDe(h);
+                const semanal = v < 7 && tipo !== "medible";
+                const enSemana = semanal ? enLaSemana(h, t) : 0;
                 return (
                   <article className="card hb" key={h.id} aria-labelledby={`hb-${h.id}`}>
                     <div className="hb-top">
-                      <div className={`hb-num${s ? "" : " cero"}`}>
-                        <b>{s}</b>
-                        <span>{s === 1 ? "día" : "días"}</span>
-                      </div>
+                      {semanal ? (
+                        <div className={`hb-num${enSemana ? "" : " cero"}`}>
+                          <b>{enSemana}</b>
+                          <span>de {v}</span>
+                        </div>
+                      ) : (
+                        <div className={`hb-num${s ? "" : " cero"}`}>
+                          <b>{s}</b>
+                          <span>{s === 1 ? "día" : "días"}</span>
+                        </div>
+                      )}
                       <div className="hb-txt">
                         <h2 id={`hb-${h.id}`}>
                           {/* Toda la tarjeta abre el mes (el botón se estira sobre ella); el check de la derecha queda por encima */}
@@ -90,7 +107,8 @@ export default function Habitos() {
                         </h2>
                         {tipo === "dejar" && <span className="hb-tipo">Para dejar</span>}
                         <span>{frase(h, t)}</span>
-                        {best > s && <span>Tu mejor racha: {best} días</span>}
+                        {!semanal && best > s && <span>Tu mejor racha: {best} días</span>}
+                        {(h.hora || semanal) && <span className="hb-cuando">{[h.hora ? `A las ${h.hora}` : "", semanal ? textoVeces(v) : ""].filter(Boolean).join(" · ")}</span>}
                       </div>
                       {tipo === "medible" ? (
                         <button className={`hb-medir${on ? " on" : ""}`} aria-label={`Anotar ${h.name} de hoy${c ? `: llevas ${conUnidad(h, c)}` : ""}`} onClick={() => setAnotando(h)}>
