@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { newId, useData } from "@/lib/data";
-import { aplicarCambio, type Cambio } from "@/lib/cambios";
+import { aplicarCambio, aplicarCambiosDia, type Cambio, type CambioDia } from "@/lib/cambios";
+import { baseDe } from "@/lib/plan";
 import VoiceButton from "./VoiceButton";
 import NoteView from "./NoteView";
 
@@ -19,7 +20,7 @@ const T = {
 /**
  * «Pregúntale a la IA»: una conversación corta, la misma desde Hoy, el botón + y el Cerebro.
  * El Worker le da todas tus notas, tu itinerario de hoy, tus últimos 14 días, lo que recuerda de ti, tus reglas y lo que puede organizar.
- * Si la respuesta cita notas, salen debajo para abrirlas. Si propone cambios en tus metas y tareas (con Claude), salen debajo con su casilla
+ * Si la respuesta cita notas, salen debajo para abrirlas. Si propone cambios en tus metas y tareas o en los momentos de un día (con Claude), salen debajo con su casilla
  * y un botón «Aplicar»: nada cambia hasta que lo tocas.
  */
 export default function Preguntar({ onClose }: { onClose: () => void; modo?: ModoPregunta }) {
@@ -244,15 +245,43 @@ function Copiar({ texto }: { texto: string }) {
  * de nuevo en ese momento, así que si ya la cambiaste o la marcaste hecha mientras tanto, ese cambio no se aplica.
  */
 function Cambios({ cambios }: { cambios: Cambio[] }) {
-  const { tareas, save } = useData();
+  const { tareas, save, dias, saveDia, perfil, savePerfil } = useData();
   const [si, setSi] = useState<boolean[]>(() => cambios.map(() => true));
   const [hecho, setHecho] = useState<null | { n: number; fuera: number }>(null);
   const marcados = si.filter(Boolean).length;
   const aplicar = () => {
     let n = 0;
     let fuera = 0;
+    /* 1) Los momentos de cada día (como al cambiarlos a mano: solo ese día). Lo que estaba dentro de un momento, y su marca de hecho, lo siguen */
+    const porDia = new Map<string, CambioDia[]>();
     cambios.forEach((c, i) => {
-      if (!si[i]) return;
+      if (si[i] && c.dia) porDia.set(c.due, [...(porDia.get(c.due) ?? []), c.dia]);
+    });
+    const hechos = { ...(perfil.hechos ?? {}) };
+    let tocaHechos = false;
+    const siguen = new Map<string, string>();
+    for (const [fecha, cs] of porDia) {
+      const r = aplicarCambiosDia(baseDe(fecha, { dias, plantilla: perfil.plantilla, eventos: perfil.eventos }), cs);
+      saveDia(fecha, r.bloques);
+      n += cs.length;
+      for (const [vieja, nueva] of r.claves) {
+        if (vieja === nueva) continue;
+        siguen.set(`${fecha}|${vieja}`, nueva);
+        const h = hechos[fecha] ?? [];
+        if (h.includes(vieja)) {
+          hechos[fecha] = [...h.filter((x) => x !== vieja), ...(nueva ? [nueva] : [])];
+          tocaHechos = true;
+        }
+      }
+    }
+    if (tocaHechos) savePerfil("hechos", hechos);
+    for (const x of tareas) {
+      const k = `${x.due}|${x.momento}`;
+      if (x.momento && siguen.has(k)) save("tareas", { ...x, momento: siguen.get(k) || undefined });
+    }
+    /* 2) Las metas y tareas */
+    cambios.forEach((c, i) => {
+      if (!si[i] || c.dia) return;
       const t = aplicarCambio(c, c.id ? tareas.find((x) => x.id === c.id) : undefined, () => ({ id: newId(), created: new Date().toISOString() }));
       if (!t) {
         fuera++;

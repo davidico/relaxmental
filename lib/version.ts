@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "11.4";
+export const VERSION = "11.5";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "«Pregúntale a la IA» ya puede cambiar los momentos de tus días (por ejemplo «el martes no hay iglesia»): quita, cambia o añade un momento ese día, y tú lo aplicas. Tu semana tipo es solo un modelo",
   "Al dictar el diario, la barra de grabación ya no se sale de la pantalla: se acomoda en dos líneas",
   "«Cambiar este momento»: el nombre va en un cuadro, para que se vea que se puede cambiar, y la descripción, debajo, en más pequeño",
   "Hábitos: al crearlos (o en «Hora, veces y tipo») eliges a qué hora prefieres hacerlo y cuántas veces por semana. A esa hora te avisa si aún no lo marcaste, y los de unas veces por semana cuentan la semana («1 de 3») en vez de la racha de días",
