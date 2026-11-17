@@ -2665,3 +2665,11 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 /* Toda la tarjeta abre el mes; alrededor del círculo (y de «Anotar») hay una zona invisible más grande que marca,
    para que un toque un poco desviado no abra el mes por error. El círculo se ve igual. */
 .hb-check::after,.hb-medir::after{content:"";position:absolute;inset:-16px -16px -16px -14px;border-radius:12px}
+
+/* ---------- Versión 11.0: en el Planner las metas van con un punto (no con el círculo de tachar) ---------- */
+.pl-bala-caja{display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:44px}
+.pl-bala{display:block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--c-personal)}
+.pl-sec[data-lado="trabajo"] .pl-bala{background:var(--c-trabajo)}
+.pl-visto .pl-bala{margin:8px 8px 0;background:var(--muted)}
+.pl-dia.pasado .pl-bala{background:var(--muted)}
+

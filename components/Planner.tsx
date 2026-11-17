@@ -136,19 +136,24 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
       <ul className="pl-items">
         {soloVer && !items.length && tipo === "meta" && <li className="pl-vacio">Nada</li>}
         {items.map((x) =>
+          /* Las metas no son tareas para tachar: van con un punto delante, como en un planner de papel; las tareas, con su círculo */
           soloVer ? (
-            <li key={x.id} className={`pl-visto${x.done ? " hecho" : ""}`}>
-              <span className="pl-marca" aria-hidden="true">{x.done ? "✓" : "○"}</span>
+            <li key={x.id} className={`pl-visto${!esMeta(x) && x.done ? " hecho" : ""}`}>
+              {esMeta(x) ? <span className="pl-bala" aria-hidden="true" /> : <span className="pl-marca" aria-hidden="true">{x.done ? "✓" : "○"}</span>}
               <span className="pl-txt">
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
-                <span className="sr-only">{x.done ? " (hecho)" : " (sin hacer)"}</span>
+                {!esMeta(x) && <span className="sr-only">{x.done ? " (hecho)" : " (sin hacer)"}</span>}
               </span>
             </li>
           ) : (
-            <li key={x.id} className={x.done ? "hecho" : ""}>
-              <label className="pl-tap">
-                <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => marcarTarea(x)} />
-              </label>
+            <li key={x.id} className={!esMeta(x) && x.done ? "hecho" : esMeta(x) ? "es-meta" : ""}>
+              {esMeta(x) ? (
+                <span className="pl-bala-caja" aria-hidden="true"><span className="pl-bala" /></span>
+              ) : (
+                <label className="pl-tap">
+                  <input type="checkbox" className="hy-check pl-check" checked={x.done} aria-label={`Hecho: ${x.title}`} onChange={() => marcarTarea(x)} />
+                </label>
+              )}
               <button className="pl-txt" onClick={() => setAbierto(x.id)} aria-label={`Cambiar: ${x.title}`}>
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
               </button>
