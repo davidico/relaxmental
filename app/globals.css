@@ -2672,4 +2672,6 @@ textarea.crece.campo1{min-height:var(--tap);line-height:1.4}
 .pl-sec[data-lado="trabajo"] .pl-bala{background:var(--c-trabajo)}
 .pl-visto .pl-bala{margin:8px 8px 0;background:var(--muted)}
 .pl-dia.pasado .pl-bala{background:var(--muted)}
+/* Una meta puesta dentro de un momento de su día dice en cuál */
+.pl-en{display:block;font-size:14px;color:var(--muted);font-weight:400}
 

@@ -773,10 +773,24 @@ export async function tiposDe(ai: AI, nombres: { t: string; sub?: string }[], ti
   return out;
 }
 
+/** Los momentos de un itinerario que la app manda con su clave al final («07:15-08:00 Desayuno [07:15|Desayuno]»): clave → hora de fin */
+function momentosDe(bloques: string[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const b of bloques) {
+    const r = b.match(/^\s*(\d{2}:\d{2})-(\d{2}:\d{2}).*\[(\d{2}:\d{2}\|[^\]]+)\]\s*$/);
+    if (r) m.set(r[3].trim(), r[2]);
+  }
+  return m;
+}
+const DENTRO =
+  "Si un momento de su día encaja con la meta (una meta de trabajo en un momento de trabajo; una personal en un momento personal, libre o del tema), métela DENTRO de ese momento: " +
+  "devuelve \"momento\" con la clave exacta que va entre corchetes al final de ese momento, y sin s ni e (se apunta como algo para hacer en ese momento, igual que tomar una pastilla en el desayuno). " +
+  "Solo si ningún momento encaja, propón un bloque propio con s y e (HH:MM, normalmente de 45 a 120 minutos) en un hueco libre. ";
+
 export async function horasMetas(
   ai: AI,
   o: { fecha: string; ahora: string; metas: { id: string; t: string; lado: string }[]; bloques: string[]; reglas: string; memoria?: string[]; reciente?: string },
-): Promise<{ id: string; s: string; e: string }[]> {
+): Promise<{ id: string; s?: string; e?: string; momento?: string }[]> {
   const dia = DIAS[new Date(o.fecha + "T12:00:00Z").getUTCDay()];
   const r = await ai.run(LLM, {
     messages: [
@@ -784,11 +798,12 @@ export async function horasMetas(
         role: "system",
         content:
           "Ayudas a una persona a decidir cuándo trabajar hoy en sus metas. Tienes su itinerario del día y sus reglas. " +
-          "Para cada meta propone UN bloque realista (s y e en HH:MM, normalmente de 45 a 120 minutos) que empiece después de la hora actual. " +
-          "Las metas de trabajo van en bloques de trabajo o huecos libres de horario laboral; las personales en huecos personales. " +
+          "Para cada meta, un solo sitio, después de la hora actual. " +
+          DENTRO +
+          "Las metas de trabajo van en momentos de trabajo o huecos de horario laboral; las personales en momentos o huecos personales. " +
           "Nunca encima de compromisos fijos (iglesia, turnos, citas), comidas, pastillas ni de otras tareas o metas ya puestas; puede ir dentro de bloques genéricos como «trabajo», «bloque de mañana» o «libre». " +
           "Respeta sus reglas y ten en cuenta lo que recuerdas de ella y sus últimos 14 días (a qué hora rinde mejor, qué momentos suele cumplir y cuáles no). Si una meta no cabe hoy, no la incluyas. No solapes las propuestas entre sí. " +
-          'Responde SOLO con JSON: {"propuestas":[{"id":"…","s":"HH:MM","e":"HH:MM"}]}',
+          'Responde SOLO con JSON: {"propuestas":[{"id":"…","momento":"HH:MM|nombre"} o {"id":"…","s":"HH:MM","e":"HH:MM"}]}',
       },
       {
         role: "user",
@@ -797,7 +812,7 @@ export async function horasMetas(
     ],
     response_format: {
       type: "json_schema",
-      json_schema: { type: "object", properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id", "s", "e"] } } }, required: ["propuestas"] },
+      json_schema: { type: "object", properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, momento: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id"] } } }, required: ["propuestas"] },
     },
     max_tokens: 600,
     temperature: 0.2,
@@ -807,15 +822,26 @@ export async function horasMetas(
   const hm = /^([01]\d|2[0-3]):[0-5]\d$/;
   const ids = new Set(o.metas.map((m) => m.id));
   const usados: [string, string][] = [];
-  return xs
-    .map((x: Record<string, unknown>) => ({ id: String(x?.id ?? ""), s: String(x?.s ?? ""), e: String(x?.e ?? "") }))
-    .filter((x) => {
-      if (!ids.has(x.id) || !hm.test(x.s) || !hm.test(x.e) || x.e <= x.s || x.s < o.ahora) return false;
-      if (usados.some(([s, e]) => x.s < e && s < x.e)) return false;
-      ids.delete(x.id);
-      usados.push([x.s, x.e]);
-      return true;
-    });
+  const momentos = momentosDe(o.bloques);
+  const out: { id: string; s?: string; e?: string; momento?: string }[] = [];
+  for (const x of xs as Record<string, unknown>[]) {
+    const id = String(x?.id ?? "");
+    if (!ids.has(id)) continue;
+    const k = String(x?.momento ?? "").trim();
+    /* Dentro de un momento que existe y que aún no terminó */
+    if (k && momentos.has(k) && momentos.get(k)! > o.ahora) {
+      out.push({ id, momento: k });
+      ids.delete(id);
+      continue;
+    }
+    const s = String(x?.s ?? ""),
+      e = String(x?.e ?? "");
+    if (!hm.test(s) || !hm.test(e) || e <= s || s < o.ahora || usados.some(([a, b]) => s < b && a < e)) continue;
+    out.push({ id, s, e });
+    ids.delete(id);
+    usados.push([s, e]);
+  }
+  return out;
 }
 
 /**
@@ -825,7 +851,7 @@ export async function horasMetas(
 export async function sesionesMetas(
   ai: AI,
   o: { hoy: string; ahora: string; metas: { id: string; t: string; lado: string }[]; dias: { fecha: string; bloques: string[] }[]; reglas: string; memoria?: string[]; reciente?: string },
-): Promise<{ id: string; fecha: string; s: string; e: string }[]> {
+): Promise<{ id: string; fecha: string; s?: string; e?: string; momento?: string }[]> {
   const nombre = (f: string) => `${DIAS[new Date(f + "T12:00:00Z").getUTCDay()]} ${f}`;
   const r = await ai.run(LLM, {
     messages: [
@@ -833,12 +859,13 @@ export async function sesionesMetas(
         role: "system",
         content:
           "Ayudas a una persona a planear su semana. Te da sus metas de la semana (en lo que quiere avanzar, no tareas sueltas) y el horario de cada día. " +
-          "Para cada meta decide cuántos días trabajarla (normalmente de 1 a 5, según lo grande que sea y el tiempo libre que tenga) y en qué horas: bloques realistas (s y e en HH:MM, normalmente de 45 a 120 minutos). " +
+          "Para cada meta decide cuántos días trabajarla (normalmente de 1 a 5, según lo grande que sea y el tiempo libre que tenga) y dónde, cada día: " +
+          DENTRO +
           "Las metas de trabajo van en bloques de trabajo o en huecos libres de horario laboral; las personales en huecos personales. " +
           "Nunca encima de compromisos fijos (iglesia, turnos, citas), comidas, pastillas, descanso ni de tareas o metas que ya tienen hora; sí puede ir dentro de bloques genéricos como «trabajo», «bloque de mañana» o «libre». " +
           "Reparte bien la semana: no lo amontones todo en un día, deja aire y respeta los días de descanso. No solapes los bloques entre sí. Hoy, solo después de la hora actual. " +
           "Respeta sus reglas y ten en cuenta lo que recuerdas de ella y sus últimos 14 días (a qué hora rinde mejor, qué suele cumplir y qué no). " +
-          'Responde SOLO con JSON: {"propuestas":[{"id":"…","fecha":"AAAA-MM-DD","s":"HH:MM","e":"HH:MM"}]}',
+          'Responde SOLO con JSON: {"propuestas":[{"id":"…","fecha":"AAAA-MM-DD","momento":"HH:MM|nombre"} o {"id":"…","fecha":"AAAA-MM-DD","s":"HH:MM","e":"HH:MM"}]}',
       },
       {
         role: "user",
@@ -849,7 +876,7 @@ export async function sesionesMetas(
       type: "json_schema",
       json_schema: {
         type: "object",
-        properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, fecha: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id", "fecha", "s", "e"] } } },
+        properties: { propuestas: { type: "array", items: { type: "object", properties: { id: { type: "string" }, fecha: { type: "string" }, momento: { type: "string" }, s: { type: "string" }, e: { type: "string" } }, required: ["id", "fecha"] } } },
         required: ["propuestas"],
       },
     },
@@ -862,15 +889,30 @@ export async function sesionesMetas(
   const ids = new Set(o.metas.map((m) => m.id));
   const fechas = new Set(o.dias.map((d) => d.fecha));
   const usados: Record<string, [string, string][]> = {};
-  return xs
-    .map((x: Record<string, unknown>) => ({ id: String(x?.id ?? ""), fecha: String(x?.fecha ?? ""), s: String(x?.s ?? ""), e: String(x?.e ?? "") }))
-    .filter((x) => {
-      if (!ids.has(x.id) || !fechas.has(x.fecha) || !hm.test(x.s) || !hm.test(x.e) || x.e <= x.s) return false;
-      if (x.fecha === o.hoy && x.s < o.ahora) return false;
-      const u = (usados[x.fecha] ??= []);
-      if (u.some(([s, e]) => x.s < e && s < x.e)) return false;
-      u.push([x.s, x.e]);
-      return true;
-    })
-    .slice(0, 40);
+  const momentos = new Map(o.dias.map((d) => [d.fecha, momentosDe(d.bloques)]));
+  const vistos = new Set<string>();
+  const out: { id: string; fecha: string; s?: string; e?: string; momento?: string }[] = [];
+  for (const x of xs as Record<string, unknown>[]) {
+    const id = String(x?.id ?? ""),
+      fecha = String(x?.fecha ?? "");
+    if (!ids.has(id) || !fechas.has(fecha)) continue;
+    const k = String(x?.momento ?? "").trim();
+    const ms = momentos.get(fecha);
+    if (k && ms?.has(k)) {
+      /* Dentro de un momento de ese día (hoy, solo si aún no terminó). Cada meta, un sitio por día */
+      if ((fecha === o.hoy && ms.get(k)! <= o.ahora) || vistos.has(`${id}|${fecha}`)) continue;
+      vistos.add(`${id}|${fecha}`);
+      out.push({ id, fecha, momento: k });
+      continue;
+    }
+    const s = String(x?.s ?? ""),
+      e = String(x?.e ?? "");
+    if (!hm.test(s) || !hm.test(e) || e <= s || (fecha === o.hoy && s < o.ahora) || vistos.has(`${id}|${fecha}`)) continue;
+    const u = (usados[fecha] ??= []);
+    if (u.some(([a, b]) => s < b && a < e)) continue;
+    u.push([s, e]);
+    vistos.add(`${id}|${fecha}`);
+    out.push({ id, fecha, s, e });
+  }
+  return out.slice(0, 40);
 }

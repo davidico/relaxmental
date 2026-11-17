@@ -6,7 +6,7 @@ import { useNow } from "@/lib/hooks";
 import { esMeta } from "@/lib/types";
 import { bloqueDeSub } from "@/lib/momentos";
 
-type Propuesta = { id: string; s: string; e: string };
+type Propuesta = { id: string; s?: string; e?: string; momento?: string };
 const KEY = (d: string) => `mi-semana-horas-${d}`;
 
 /**
@@ -50,7 +50,7 @@ export default function HorasMetas({ day, hoy }: { day: string; hoy: string }) {
           fecha: day,
           ahora: day === hoy ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` : "00:00",
           metas: sinHora.map((x) => ({ id: x.id, t: x.title, lado: x.lado === "trabajo" ? "trabajo" : "personal" })),
-          bloques: bloques.map((b) => `${b.s}-${b.e} ${b.t}${b.tarea ? " (tarea/meta ya puesta)" : ""}`),
+          bloques: bloques.map((b) => `${b.s}-${b.e} ${b.t}${b.tarea ? " (tarea/meta ya puesta)" : ` [${b.s}|${b.t}]`}`),
           reglas: perfil.reglas?.text ?? "",
         }),
       });
@@ -64,7 +64,10 @@ export default function HorasMetas({ day, hoy }: { day: string; hoy: string }) {
   };
   const aceptar = (p: Propuesta) => {
     const x = sinHora.find((m) => m.id === p.id);
-    if (x) save("tareas", { ...x, hora: p.s, fin: p.e });
+    if (!x) return;
+    const { hora: _h, fin: _f, momento: _m, ...resto } = x;
+    /* Dentro de un momento del día (sale debajo de él en la línea) o con su hora */
+    save("tareas", p.momento ? { ...resto, momento: p.momento } : { ...resto, hora: p.s, fin: p.e });
   };
   const titulo = (id: string) => sinHora.find((x) => x.id === id)?.title ?? "";
 
@@ -81,10 +84,10 @@ export default function HorasMetas({ day, hoy }: { day: string; hoy: string }) {
               {vivas.map((p) => (
                 <li key={p.id}>
                   <span className="hm-t">
-                    <b>{p.s}–{p.e}</b> {titulo(p.id)}
+                    <b>{p.momento ? `En «${p.momento.slice(p.momento.indexOf("|") + 1)}»` : `${p.s}–${p.e}`}</b> {titulo(p.id)}
                   </span>
                   <span className="hm-b">
-                    <button className="btn sm" onClick={() => aceptar(p)} aria-label={`Sí, poner ${titulo(p.id)} de ${p.s} a ${p.e}`}>Sí</button>
+                    <button className="btn sm" onClick={() => aceptar(p)} aria-label={`Sí, poner ${titulo(p.id)} ${p.momento ? `dentro de ${p.momento.slice(p.momento.indexOf("|") + 1)}` : `de ${p.s} a ${p.e}`}`}>Sí</button>
                     <button className="btn ghost sm" onClick={() => setProps((xs) => xs.filter((y) => y.id !== p.id))} aria-label={`No: ${titulo(p.id)}`}>No</button>
                   </span>
                 </li>

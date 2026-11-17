@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "11.0";
+export const VERSION = "11.1";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Al planear tus metas, la IA las mete dentro del momento de tu día que les toca (las de trabajo, dentro de «Trabajo»), como la vitamina D dentro del desayuno; solo si ninguno encaja les busca una hora libre",
   "En el Planner, las metas van con un punto delante, como en un planner de papel: ya no llevan el círculo de tachar de las tareas",
   "Hábitos: el círculo de marcar tiene una zona de toque más grande, para que un toque un poco desviado no abra el mes por error",
   "El Planner, como uno de papel: cada día en una tarjeta con su parte de Trabajo y su parte Personal (sin pestañas)",

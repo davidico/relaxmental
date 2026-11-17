@@ -11,7 +11,13 @@ export type Lado = "personal" | "trabajo";
 export type MetaSemana = { id: string; t: string; lado: Lado };
 /** Cómo se planeó cada semana (lunes → modo). `null` = la persona quiere volver a elegir */
 export type ModoSemana = "metas" | "dias";
-type Sesion = { id: string; fecha: string; s: string; e: string };
+/** Un sitio para una meta: dentro de un momento del día (su clave «HH:MM|nombre») o con hora propia */
+type Sesion = { id: string; fecha: string; s?: string; e?: string; momento?: string };
+const nombreMomento = (k: string) => k.slice(k.indexOf("|") + 1);
+const dondeTexto = (p: { s?: string; e?: string; momento?: string }) => (p.momento ? `dentro de «${nombreMomento(p.momento)}»` : `${p.s}–${p.e}`);
+const ordenSesion = (a: Sesion, b: Sesion) => (a.fecha + (a.s ?? a.momento ?? "")).localeCompare(b.fecha + (b.s ?? b.momento ?? ""));
+/** Cómo queda la meta en su día: dentro del momento (sin hora) o con su hora */
+const donde = (p: Sesion) => (p.momento ? { momento: p.momento } : { hora: p.s!, fin: p.e! });
 
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 export const minutos = (s: string, e: string) => {
@@ -35,8 +41,12 @@ export function useMetasSemana(lunes: string) {
   return { metas, poner };
 }
 /** Los bloques ya puestos de una meta de la semana */
-export const sesionesDe = (tareas: Tarea[], id: string) => tareas.filter((x) => x.metaSemana === id && x.hora && x.fin);
-const resumen = (ses: Tarea[]) => (ses.length ? `${ses.length === 1 ? "1 día" : `${ses.length} días`} · ${textoHoras(ses.reduce((a, x) => a + minutos(x.hora!, x.fin!), 0))}` : "sin planear");
+export const sesionesDe = (tareas: Tarea[], id: string) => tareas.filter((x) => x.metaSemana === id && ((x.hora && x.fin) || x.momento));
+const resumen = (ses: { hora?: string; fin?: string }[]) => {
+  if (!ses.length) return "sin planear";
+  const min = ses.reduce((a, x) => a + (x.hora && x.fin ? minutos(x.hora, x.fin) : 0), 0);
+  return `${ses.length === 1 ? "1 día" : `${ses.length} días`}${min ? ` · ${textoHoras(min)}` : ""}`;
+};
 
 /** El selector Trabajo | Personal (un punto con el color de cada lado) */
 function Lados({ valor, onCambiar, etiqueta }: { valor: Lado; onCambiar: (l: Lado) => void; etiqueta: string }) {
@@ -92,7 +102,8 @@ function Propuesta({ props, agrupar, titulo, linea, onAplicar, onDescartar }: { 
 function useDatosIA() {
   const { planFor, perfil } = useData();
   return {
-    bloques: (f: string) => planFor(f).map((b) => `${b.s}-${b.e} ${b.t}${b.tarea ? " (tarea o meta ya puesta)" : ""}`),
+    /* Los momentos van con su clave al final, para que la IA pueda meter una meta dentro de uno */
+    bloques: (f: string) => planFor(f).map((b) => `${b.s}-${b.e} ${b.t}${b.tarea ? " (tarea o meta ya puesta)" : ` [${b.s}|${b.t}]`}`),
     reglas: perfil.reglas?.text ?? "",
   };
 }
@@ -148,7 +159,7 @@ export function PorMetas({ lunes, onListo, onVolver }: { lunes: string; onListo:
         body: JSON.stringify({ hoy, ahora: hhmm(new Date()), metas: sinPlanear.map((m) => ({ id: m.id, t: m.t, lado: m.lado })), dias: fechas.map((f) => ({ fecha: f, bloques: ia.bloques(f) })), reglas: ia.reglas }),
       });
       if (!r.ok) throw new Error();
-      const xs = (((await r.json()) as { propuestas?: Sesion[] }).propuestas ?? []).sort((a, b) => (a.fecha + a.s).localeCompare(b.fecha + b.s));
+      const xs = (((await r.json()) as { propuestas?: Sesion[] }).propuestas ?? []).sort(ordenSesion);
       setProps(xs);
       setEstado("");
     } catch {
@@ -158,7 +169,7 @@ export function PorMetas({ lunes, onListo, onVolver }: { lunes: string; onListo:
   const aplicar = (xs: Sesion[]) => {
     for (const p of xs) {
       const m = metas.find((x) => x.id === p.id);
-      if (m) save("tareas", { id: newId(), title: m.t, step: "", due: p.fecha, hora: p.s, fin: p.e, done: false, created: new Date().toISOString(), meta: true, lado: m.lado, metaSemana: m.id });
+      if (m) save("tareas", { id: newId(), title: m.t, step: "", due: p.fecha, ...donde(p), done: false, created: new Date().toISOString(), meta: true, lado: m.lado, metaSemana: m.id });
     }
     setProps(null);
     onListo();
@@ -213,10 +224,10 @@ export function PorMetas({ lunes, onListo, onVolver }: { lunes: string; onListo:
           titulo={(k) => (
             <>
               <p className="ps-grupo-h"><span className={`ps-punto ${meta(k)?.lado ?? "personal"}`} aria-hidden="true" /><span>{meta(k)?.t}</span></p>
-              <p className="ps-grupo-sub">{resumen(props.filter((p) => p.id === k).map((p) => ({ hora: p.s, fin: p.e }) as Tarea))}</p>
+              <p className="ps-grupo-sub">{resumen(props.filter((p) => p.id === k).map((p) => ({ hora: p.s, fin: p.e })))}</p>
             </>
           )}
-          linea={(p) => `${nombreDia(p.fecha)} · ${p.s}–${p.e}`}
+          linea={(p) => `${nombreDia(p.fecha)} · ${dondeTexto(p)}`}
           onAplicar={aplicar}
           onDescartar={() => setProps(null)}
         />
@@ -285,7 +296,7 @@ export function HorasDias({ days, onOtra }: { days: string[]; onOtra: () => void
         if (!r.ok) throw new Error();
         out = out.concat((((await r.json()) as { propuestas?: Omit<Sesion, "fecha">[] }).propuestas ?? []).map((p) => ({ ...p, fecha: f })));
       }
-      setProps(out.sort((a, b) => (a.fecha + a.s).localeCompare(b.fecha + b.s)));
+      setProps(out.sort(ordenSesion));
       setEstado("");
     } catch {
       setEstado("error");
@@ -294,7 +305,9 @@ export function HorasDias({ days, onOtra }: { days: string[]; onOtra: () => void
   const aplicar = (xs: Sesion[]) => {
     for (const p of xs) {
       const x = tareas.find((t) => t.id === p.id);
-      if (x && !x.done) save("tareas", { ...x, hora: p.s, fin: p.e });
+      if (!x || x.done) continue;
+      const { hora: _h, fin: _f, momento: _m, ...resto } = x;
+      save("tareas", { ...resto, ...donde(p) });
     }
     setProps(null);
   };
@@ -303,7 +316,7 @@ export function HorasDias({ days, onOtra }: { days: string[]; onOtra: () => void
     <section className="pl-msem pl-hdias" aria-label="Horas para tus metas">
       {props ? (
         props.length ? (
-          <Propuesta props={props} agrupar={(p) => p.fecha} titulo={(f) => <p className="ps-grupo-h">{nombreDia(f)}</p>} linea={(p) => `${p.s}–${p.e} · ${titulo(p.id)}`} onAplicar={aplicar} onDescartar={() => setProps(null)} />
+          <Propuesta props={props} agrupar={(p) => p.fecha} titulo={(f) => <p className="ps-grupo-h">{nombreDia(f)}</p>} linea={(p) => `${dondeTexto(p)} · ${titulo(p.id)}`} onAplicar={aplicar} onDescartar={() => setProps(null)} />
         ) : (
           <p role="status" className="ps-nota">No encontré huecos que encajen. Puedes ponerles hora tocándolas.</p>
         )

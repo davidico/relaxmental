@@ -156,6 +156,7 @@ function Lista({ titulo, tipo, lado, due, items, days, soloVer = false }: { titu
               )}
               <button className="pl-txt" onClick={() => setAbierto(x.id)} aria-label={`Cambiar: ${x.title}`}>
                 {x.hora && <b>{x.hora}{x.fin ? `–${x.fin}` : ""}</b>} {x.title}
+                {!x.hora && x.momento && <small className="pl-en">en {x.momento.slice(x.momento.indexOf("|") + 1)}</small>}
               </button>
               {abierto === x.id && <Editar x={x} days={days} onClose={() => setAbierto(null)} />}
             </li>
