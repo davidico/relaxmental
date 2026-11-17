@@ -2689,3 +2689,11 @@ textarea.ms-nombre{padding:12px 14px;border:1px solid var(--field);border-radius
 textarea.ms-sub{padding:8px 12px;font-size:16px;line-height:1.35;min-height:44px;color:var(--muted)}
 textarea.ms-sub:focus{color:var(--ink)}
 
+
+/* ---------- Versión 11.4: la barra de grabación no se sale de la pantalla ---------- */
+/* En una fila de botones (.row.actions, donde nada se encoge) el dictado puede encogerse y, al grabar, ocupa todo el ancho:
+   arriba «Grabando · 1:26» y debajo, si no cabe, «Cancelar» y «Detener y pasar a texto» */
+.row.actions>.voice{flex:0 1 auto;min-width:0}
+.row.actions>.voice.rec,.row.actions>.voice:has(.verr),.row.actions>.voice:has(.vwarn-txt),.row.actions>.voice:has(.vwork){flex:1 1 100%}
+.voice.rec{min-width:0;max-width:100%;box-sizing:border-box}
+.voice .verr,.voice .vok,.voice .vwarn-txt{min-width:0;overflow-wrap:anywhere}
