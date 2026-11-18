@@ -1,7 +1,9 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "11.5";
+export const VERSION = "11.6";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "Aviso de buenos días al empezar tu día: con qué empiezas y cuántas tareas y metas tienes hoy (en Avisos lo apagas o le pones otra hora)",
+  "Los avisos de cada momento dicen solo lo que toca ahora: su nombre en grande, lo que hay que hacer dentro y hasta qué hora (ya no lo que viene después)",
   "«Pregúntale a la IA» ya puede cambiar los momentos de tus días (por ejemplo «el martes no hay iglesia»): quita, cambia o añade un momento ese día, y tú lo aplicas. Tu semana tipo es solo un modelo",
   "Al dictar el diario, la barra de grabación ya no se sale de la pantalla: se acomoda en dos líneas",
   "«Cambiar este momento»: el nombre va en un cuadro, para que se vea que se puede cambiar, y la descripción, debajo, en más pequeño",

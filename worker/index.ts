@@ -10,7 +10,7 @@
 
 import { planDe, baseDe, type Bloque, type Eventos, type Plantilla } from "../lib/plan";
 import { TIPOS } from "../lib/tipos";
-import { leerAvisos, semanaPorPlanificar } from "../lib/avisos";
+import { BUENOS_DIAS, leerAvisos, semanaPorPlanificar } from "../lib/avisos";
 import { DIAS_ORGANIZAR, leerCambios, masDias, paraOrganizar } from "../lib/cambios";
 import type { Tarea } from "../lib/types";
 import { subtareasQueQuedaron } from "./avisos";
@@ -712,25 +712,10 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
   const saved: unknown = own[0] ? JSON.parse(own[0].data) : null;
   const blocks: Bloque[] = Array.isArray(saved) ? saved.filter(isBloque) : planDe(date, await perfilDe(env, user_email));
   const due = blocks.filter((b) => toMin(b.s) <= min && min - toMin(b.s) < 10);
-  for (const b of due) {
-    // La marca se pone de forma atómica: si dos ejecuciones coinciden, solo una avisa
-    const key = `${date} ${b.s}`;
-    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
-    if (ins.meta?.changes === 0) continue;
-    const next = blocks.find((x) => toMin(x.s) > toMin(b.s));
-    const { sent, failed } = await notifyUser(env, user_email, {
-      title: `${b.s} · ${b.t}`,
-      body: [b.sub, next ? `Hasta las ${b.e}. Luego: ${next.t}` : `Hasta las ${b.e}`].filter(Boolean).join("\n"),
-      tag: "bloque",
-      url: /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(b.t) ? "/hoy#entreno" : "/hoy",
-    });
-    // Si no llegó a ningún teléfono por un fallo pasajero, se quita la marca y se reintenta el minuto siguiente
-    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
-  }
 
-  /* Tareas con hora: aviso a esa hora (una sola vez) */
+  /* Las tareas (para los avisos de cada momento, los de las tareas con hora y el de buenos días) */
   const { results: ts } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'tareas'").bind(user_email).all<{ data: string }>();
-  type T = { id?: string; title?: string; step?: string; due?: string; hora?: string; done?: boolean; momento?: string };
+  type T = { id?: string; title?: string; step?: string; due?: string; hora?: string; done?: boolean; momento?: string; meta?: boolean; lado?: string };
   const tareas: T[] = [];
   for (const r of ts) {
     try {
@@ -740,6 +725,66 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
       /* una tarea rara no deja sin avisos a las demás */
     }
   }
+  /* Los ajustes de los recordatorios (Perfil › Avisos) */
+  const { results: av } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id = 'avisos'").bind(user_email).all<{ data: string }>();
+  let guardado: unknown = null;
+  try {
+    guardado = av[0] ? JSON.parse(av[0].data) : null;
+  } catch {
+    /* si lo guardado está raro, valen los de fábrica */
+  }
+  const cfg = leerAvisos(guardado);
+  const toca = (hora: string) => toMin(hora) <= min && min - toMin(hora) < 10;
+
+  /* Buenos días: al empezar el día (con el primer momento) o a la hora elegida. Si va con el primer momento, ese momento
+     no manda su propio aviso: el de buenos días ya dice con qué empiezas */
+  const primero = [...blocks].sort((x, y) => toMin(x.s) - toMin(y.s))[0];
+  const conPrimero = cfg.manana.on && !cfg.manana.hora && !!primero;
+  const horaManana = cfg.manana.hora || primero?.s || "";
+  if (cfg.manana.on && horaManana && toca(horaManana)) {
+    const key = `manana ${date}`;
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes !== 0) {
+      const delDia = tareas.filter((x) => x && !x.done && x.due === date && typeof x.title === "string");
+      const metas = delDia.filter((x) => x.meta ?? !!x.lado).length;
+      const sueltas = delDia.length - metas;
+      const cuenta = [sueltas ? `${sueltas} ${sueltas === 1 ? "tarea" : "tareas"}` : "", metas ? `${metas} ${metas === 1 ? "meta" : "metas"}` : ""].filter(Boolean).join(" y ");
+      const dow = new Date(date + "T12:00:00Z").getUTCDay();
+      const { sent, failed } = await notifyUser(env, user_email, {
+        title: BUENOS_DIAS[dow],
+        body: [
+          conPrimero && primero ? `Empiezas con ${primero.t}.` : "",
+          cuenta ? `Hoy tienes ${cuenta}.` : "",
+          "Organiza tus bloques: esta noche te lo agradecerás.",
+        ]
+          .filter(Boolean)
+          .join(" "),
+        tag: "manana",
+        url: "/hoy",
+      });
+      if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+    }
+  }
+
+  /* Al empezar cada momento: solo lo que toca ahora (su nombre, en grande, y debajo su descripción, lo que hay que hacer dentro y hasta qué hora) */
+  for (const b of due) {
+    // La marca se pone de forma atómica: si dos ejecuciones coinciden, solo una avisa
+    const key = `${date} ${b.s}`;
+    const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
+    if (ins.meta?.changes === 0) continue;
+    if (conPrimero && b === primero) continue;
+    const dentro = tareas.filter((x) => x && !x.done && x.due === date && !x.hora && typeof x.title === "string" && (x.momento === `${b.s}|${b.t}` || (x.momento && x.momento.slice(x.momento.indexOf("|") + 1) === b.t))).map((x) => String(x.title).slice(0, 60));
+    const { sent, failed } = await notifyUser(env, user_email, {
+      title: b.t,
+      body: [b.sub && b.sub.trim() !== b.t.trim() ? b.sub : "", dentro.length ? `Ahora: ${dentro.slice(0, 3).join(", ")}${dentro.length > 3 ? ` y ${dentro.length - 3} más` : ""}` : "", `Hasta las ${b.e}`].filter(Boolean).join("\n"),
+      tag: "bloque",
+      url: /ejercicio|entren|deporte|gym|gimnasio|correr|workout/i.test(b.t) ? "/hoy#entreno" : "/hoy",
+    });
+    // Si no llegó a ningún teléfono por un fallo pasajero, se quita la marca y se reintenta el minuto siguiente
+    if (!sent && failed) await env.DB.prepare("DELETE FROM push_sent WHERE user_email = ? AND k = ?").bind(user_email, key).run();
+  }
+
+  /* Tareas con hora: aviso a esa hora (una sola vez) */
   for (const x of tareas) {
     if (!x || x.done || x.due !== date || typeof x.hora !== "string" || !/^\d{2}:\d{2}$/.test(x.hora) || typeof x.title !== "string") continue;
     const m = toMin(x.hora);
@@ -776,15 +821,6 @@ async function tickUser(env: Env, user_email: string, date: string, min: number)
 
   /* Recordatorios del día, cada uno a su hora (se encienden, apagan y cambian en Perfil › Avisos):
      los hábitos que siguen sin marcar y el diario si aún no está escrito. Si no falta nada, no se avisa. */
-  const { results: av } = await env.DB.prepare("SELECT data FROM items WHERE user_email = ? AND tabla = 'perfil' AND id = 'avisos'").bind(user_email).all<{ data: string }>();
-  let guardado: unknown = null;
-  try {
-    guardado = av[0] ? JSON.parse(av[0].data) : null;
-  } catch {
-    /* si lo guardado está raro, valen los de fábrica */
-  }
-  const cfg = leerAvisos(guardado);
-  const toca = (hora: string) => toMin(hora) <= min && min - toMin(hora) < 10;
   const recordar = async (key: string, aviso: Parameters<typeof notifyUser>[2]) => {
     const ins = await env.DB.prepare("INSERT OR IGNORE INTO push_sent (user_email, k) VALUES (?, ?)").bind(user_email, key).run();
     if (ins.meta?.changes === 0) return;
