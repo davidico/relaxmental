@@ -60,7 +60,7 @@ export const tipoPorNombre = (t: string) => {
 
 /**
  * El tipo de un bloque. Primero por las palabras de su nombre; si no se reconoce, lo que dijo la IA
- * (`memo`: nombre en llano → tipo, guardado en `perfil/tipos`); y si aún no hay respuesta, por su descripción.
+ * (`memo`: nombre en llano → tipo, guardado en `perfil/tipos`); si aún no hay respuesta, «otro». Nunca por la descripción.
  * Las metas y tareas con hora que no se reconocen llevan su propio ícono.
  */
 export function tipoDe(b: Pick<Bloque, "t" | "tarea" | "sub">, memo?: Record<string, string>): string {
@@ -70,5 +70,6 @@ export function tipoDe(b: Pick<Bloque, "t" | "tarea" | "sub">, memo?: Record<str
   const ia = memo?.[llano(b.t)];
   if (ia && ia in TIPOS) return ia;
   if (/tarea|pendiente/.test(llano(b.t))) return "tarea";
-  return tipoPorNombre(b.sub ?? "") ?? "otro";
+  /* La descripción no decide el tipo: si el momento cambió de nombre, puede ser la del nombre viejo */
+  return "otro";
 }

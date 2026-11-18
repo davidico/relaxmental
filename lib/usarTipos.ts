@@ -23,7 +23,8 @@ export function useTipos(blocks: Bloque[]): Record<string, string> {
       if (b.tarea || tipoPorNombre(b.t)) continue;
       const k = llano(b.t);
       if (!k || k in memo || pedidos.has(k) || vistos.has(k)) continue;
-      vistos.set(k, { t: b.t, ...(b.sub ? { sub: b.sub } : {}) });
+      /* Solo el nombre: la descripción puede haberse quedado vieja (de cuando el momento se llamaba de otra forma) */
+      vistos.set(k, { t: b.t });
     }
     return [...vistos.entries()].slice(0, 40);
   }, [blocks, perfil.plantilla, memo]);

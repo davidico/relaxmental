@@ -46,6 +46,8 @@ export default function SemanaTipo() {
   }, [guardada]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filas = p[dia] ?? [];
+  /* Cómo estaba guardado este momento (para saber si se le está cambiando el nombre) */
+  const guardadoDe = (i: number) => (guardada[dia] ?? [])[i];
   const cambiado = !igual(p, guardada);
   const nombreDia = DIAS.find((d) => d.k === dia)!.nombre;
   const poner = (rows: Bloque[]) => {
@@ -153,7 +155,9 @@ export default function SemanaTipo() {
                   <HoraInput id={`st-e-${dia}-${i}`} label="Termina" value={b.e} onChange={(v) => set(i, { e: v })} invalid={mal} desde={b.s} />
                 </div>
                 <label htmlFor={`st-t-${dia}-${i}`} className="sr-only">Qué haces</label>
-                <TextoCrece id={`st-t-${dia}-${i}`} className="st-nombre" placeholder="Qué haces" autoComplete="off" value={b.t} onTexto={(t) => set(i, { t })} />
+                <TextoCrece id={`st-t-${dia}-${i}`} className="st-nombre" placeholder="Qué haces" autoComplete="off" value={b.t} onTexto={(t) => set(i, { t, ...(b.sub && guardadoDe(i)?.t === b.t && t !== b.t ? { sub: undefined } : {}) })} />
+                <label htmlFor={`st-d-${dia}-${i}`} className="sr-only">Descripción de {b.t || "este momento"}</label>
+                <TextoCrece id={`st-d-${dia}-${i}`} className="st-desc" placeholder="Descripción (opcional)" autoComplete="off" value={b.sub ?? ""} onTexto={(sub) => set(i, { sub: sub || undefined })} />
                 <button type="button" className="st-x" aria-label={`Quitar ${b.t || "este momento"}`} onClick={() => poner(filas.filter((_, j) => j !== i))}>
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>

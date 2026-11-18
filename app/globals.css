@@ -2697,3 +2697,12 @@ textarea.ms-sub:focus{color:var(--ink)}
 .row.actions>.voice.rec,.row.actions>.voice:has(.verr),.row.actions>.voice:has(.vwarn-txt),.row.actions>.voice:has(.vwork){flex:1 1 100%}
 .voice.rec{min-width:0;max-width:100%;box-sizing:border-box}
 .voice .verr,.voice .vok,.voice .vwarn-txt{min-width:0;overflow-wrap:anywhere}
+
+/* ---------- Versión 11.7: en «Mi semana tipo» se ve y se cambia la descripción de cada momento ---------- */
+.st-fila{grid-template-areas:"horas x" "nombre nombre" "desc desc"}
+textarea.st-desc{grid-area:desc;width:100%;margin:0;padding:4px 10px 6px;border:1px solid transparent;border-radius:8px;background:transparent;font-size:16px;line-height:1.35;color:var(--muted);resize:none}
+textarea.st-desc:hover{border-color:var(--line)}
+textarea.st-desc:focus{border-color:var(--primary);background:var(--surface);color:var(--ink);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 20%,transparent)}
+textarea.st-desc::placeholder{color:var(--muted);opacity:.7}
+@media (min-width:700px){.st-fila{grid-template-areas:"horas nombre x" ". desc ."}}
+
