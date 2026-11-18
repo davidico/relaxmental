@@ -2706,3 +2706,12 @@ textarea.st-desc:focus{border-color:var(--primary);background:var(--surface);col
 textarea.st-desc::placeholder{color:var(--muted);opacity:.7}
 @media (min-width:700px){.st-fila{grid-template-areas:"horas nombre x" ". desc ."}}
 
+/* ---------- Versión 11.8: los hábitos de antes preguntan cuántos días por semana ---------- */
+.hb-preg{padding:var(--e4);margin-bottom:var(--e4);display:flex;flex-direction:column;gap:var(--e3)}
+.hb-preg h2{margin:0;font-size:17px;font-weight:600;color:var(--ink)}
+.hb-preg-p{margin:0;font-size:15px;color:var(--muted)}
+.hb-dias{display:flex;flex-direction:column;gap:var(--e2)}
+.hb-preg .hb-dias+.hb-dias{padding-top:var(--e3);border-top:1px solid var(--line)}
+.hb-dias-t{margin:0;font-size:16px;font-weight:500;color:var(--ink)}
+.hd .hb-dias{margin-bottom:var(--e4);padding:var(--e3) var(--e4) var(--e4);border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+

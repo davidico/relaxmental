@@ -136,7 +136,7 @@ export function habitoDeMomento(nombre: string, habitos: Habito[], mapa?: Record
   return habitoDeNombre(nombre, habitos);
 }
 
-/** Cuántas veces por semana quiere hacerlo (7 = todos los días). Un mal hábito para dejar es siempre de todos los días */
+/** Cuántos días por semana quiere hacerlo (7 = todos los días; sin responder, también). Un mal hábito para dejar es siempre de todos los días */
 export const vecesDe = (h: Habito) => (h.tipo !== "dejar" && h.veces && h.veces >= 1 && h.veces < 7 ? h.veces : 7);
 /** Cuántas veces lo hizo esta semana (de lunes a hoy) */
 export function enLaSemana(h: Habito, t = today()) {
@@ -145,4 +145,6 @@ export function enLaSemana(h: Habito, t = today()) {
   for (let d = lunes; d <= t; d = addD(d, 1)) if (h.hechos[d]) n++;
   return n;
 }
-export const textoVeces = (n: number) => (n >= 7 ? "Todos los días" : n === 1 ? "1 vez por semana" : `${n} veces por semana`);
+export const textoVeces = (n: number) => (n >= 7 ? "Todos los días" : n === 1 ? "1 día por semana" : `${n} días por semana`);
+/** Un hábito al que aún no se le preguntó cuántos días por semana (los creados antes de esta pregunta). Uno para dejar no se pregunta */
+export const sinDias = (h: Habito) => h.tipo !== "dejar" && !(typeof h.veces === "number" && h.veces >= 1 && h.veces <= 7);

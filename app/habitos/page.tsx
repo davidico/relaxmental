@@ -4,11 +4,11 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useData, newId } from "@/lib/data";
 import { addD, fdate, today } from "@/lib/dates";
-import { bestStreak, cantidad, conUnidad, enLaSemana, sortHabits, streak, textoVeces, tipoDe, vecesDe, type TipoHabito } from "@/lib/habits";
+import { bestStreak, cantidad, conUnidad, enLaSemana, sinDias, sortHabits, streak, textoVeces, tipoDe, vecesDe, type TipoHabito } from "@/lib/habits";
 import type { Habito } from "@/lib/types";
 import { toggleHecho } from "@/components/ui";
 import HabitoAnotar from "@/components/HabitoAnotar";
-import HabitoDetalle, { CamposHabito, leerCampos } from "@/components/HabitoDetalle";
+import HabitoDetalle, { CamposHabito, PreguntaDias, leerCampos } from "@/components/HabitoDetalle";
 import HabitosSemana from "@/components/HabitosSemana";
 
 /** Los últimos 30 días, de izquierda (hace 29 días) a derecha (hoy) */
@@ -27,11 +27,12 @@ function Mes({ h, t }: { h: Habito; t: string }) {
 /** La frase de cada tarjeta: anima, nunca regaña (en «dejar» no se habla de recaídas) */
 function frase(h: Habito, t: string) {
   const tipo = tipoDe(h);
-  /* Unas veces por semana: se cuenta la semana, no los días seguidos */
+  /* Unos días por semana: se cuenta la semana, no los días seguidos */
   const v = vecesDe(h);
   if (v < 7 && tipo !== "medible") {
     const n = enLaSemana(h, t);
-    return n >= v ? "Esta semana ya está" : h.hechos[t] ? `Hoy ya está · te ${v - n === 1 ? "falta 1 vez" : `faltan ${v - n} veces`} esta semana` : `Esta semana te ${v - n === 1 ? "falta 1 vez" : `faltan ${v - n} veces`}`;
+    const falta = v - n === 1 ? "falta 1 día" : `faltan ${v - n} días`;
+    return n >= v ? "Esta semana ya está" : h.hechos[t] ? `Hoy ya está · te ${falta} esta semana` : `Esta semana te ${falta}`;
   }
   const on = !!h.hechos[t];
   const s = streak(h, t);
@@ -74,6 +75,14 @@ export default function Habitos() {
         <HabitosSemana onAbrir={setAbierto} />
       ) : (
         <>
+          {/* Los hábitos de antes de esta pregunta: cuántos días por semana quiere hacer cada uno (se va quitando al responder) */}
+          {list.some(sinDias) && (
+            <section className="card hb-preg" aria-labelledby="hb-preg-h">
+              <h2 id="hb-preg-h">¿Cuántos días por semana quieres hacer cada uno?</h2>
+              <p className="hb-preg-p">Así te cuento la semana («2 de 3») y no te aviso los días que no toca.</p>
+              {list.filter(sinDias).map((h) => <PreguntaDias key={h.id} h={h} conNombre />)}
+            </section>
+          )}
           <div className="habgrid">
             {list.length ? (
               list.map((h) => {

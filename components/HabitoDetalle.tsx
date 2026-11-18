@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useData } from "@/lib/data";
 import { DOW, MES, addD, ds, pd } from "@/lib/dates";
-import { anotar, bestStreak, cantidad, conUnidad, streak, tipoDe, total, type TipoHabito, textoVeces } from "@/lib/habits";
+import { anotar, bestStreak, cantidad, conUnidad, sinDias, streak, tipoDe, total, type TipoHabito, textoVeces } from "@/lib/habits";
 import type { Habito } from "@/lib/types";
 import { toggleHecho } from "./ui";
 import HabitoAnotar from "./HabitoAnotar";
@@ -45,11 +45,11 @@ export function CamposHabito({
           <option value="dejar">Para dejar: marco los días que lo logro</option>
         </select>
       </div>
-      {/* Cuándo prefiere hacerlo y cuántas veces por semana (un mal hábito para dejar es de todos los días) */}
+      {/* Cuándo prefiere hacerlo y cuántos días por semana (un mal hábito para dejar es de todos los días) */}
       {v.tipo !== "dejar" && (
         <>
           <div className="hf-campo" role="group" aria-labelledby={`${idp}-v`}>
-            <p id={`${idp}-v`} className="hf-lbl">¿Cuántas veces por semana?</p>
+            <p id={`${idp}-v`} className="hf-lbl">¿Cuántos días por semana?</p>
             <div className="rd-chips hf-veces">
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <button key={n} type="button" aria-pressed={v.veces === n} aria-label={textoVeces(n)} onClick={() => onChange({ veces: n })}>
@@ -91,7 +91,8 @@ export const leerCampos = (v: CamposV) => {
     unidad: v.tipo === "medible" ? v.unidad.trim() || undefined : undefined,
     objetivo: v.tipo === "medible" && objetivo > 0 ? objetivo : undefined,
     hora: v.tipo !== "dejar" && /^\d{2}:\d{2}$/.test(v.hora) ? v.hora : undefined,
-    veces: v.tipo !== "dejar" && v.veces >= 1 && v.veces < 7 ? v.veces : undefined,
+    /* 7 también se guarda: así se sabe que ya se respondió */
+    veces: v.tipo !== "dejar" && v.veces >= 1 && v.veces <= 7 ? v.veces : undefined,
   };
 };
 /** Lo que se escribe al crear o ajustar un hábito */
@@ -100,7 +101,7 @@ export type CamposV = { name: string; tipo: TipoHabito; unidad: string; objetivo
 /**
  * Un hábito a pantalla completa: su mes en un calendario (tocas un día para marcarlo, también los pasados),
  * y sus rachas. El nombre se cambia arriba (se toca y se escribe; se guarda solo). Los tres puntitos abren el menú:
- * cambiar nombre, «Hora, veces y tipo» y borrar; estas dos últimas en una ventanita.
+ * cambiar nombre, «Hora, días y tipo» y borrar; estas dos últimas en una ventanita.
  */
 export default function HabitoDetalle({ id, onClose }: { id: string; onClose: () => void }) {
   const { habitos, save, remove, hoy } = useData();
@@ -213,7 +214,7 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
                     setVentana("ajustes");
                   }}
                 >
-                  Hora, veces y tipo
+                  Hora, días y tipo
                 </button>
                 <button role="menuitem" className="danger" onClick={() => { setMenu(false); setVentana("borrar"); }}>Borrar hábito</button>
               </div>
@@ -223,6 +224,7 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
       </div>
       <div className="nv-body">
         <div className="nv-paper hd">
+          {sinDias(h) && <PreguntaDias h={h} />}
           <div className="hd-datos">
             <p>
               <b>{s}</b>
@@ -290,7 +292,7 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
               setVentana("");
             }}
           >
-            <h2 id="hd-aj" className="hd-hoja-h">Hora, veces y tipo</h2>
+            <h2 id="hd-aj" className="hd-hoja-h">Hora, días y tipo</h2>
             <CamposHabito v={campos} idp="hd" sinNombre onChange={(p) => setCampos((v) => ({ ...v, ...p }))} />
             <div className="hd-hoja-pie">
               <button type="button" className="btn ghost" onClick={() => setVentana("")}>Cancelar</button>
@@ -313,6 +315,23 @@ export default function HabitoDetalle({ id, onClose }: { id: string; onClose: ()
         </div>,
         document.body,
       )}
+    </div>
+  );
+}
+
+/** «¿Cuántos días por semana?» para un hábito que aún no lo dijo: se guarda al tocar */
+export function PreguntaDias({ h, conNombre }: { h: Habito; conNombre?: boolean }) {
+  const { save } = useData();
+  return (
+    <div className="hb-dias" role="group" aria-label={`¿Cuántos días por semana quieres hacer ${h.name}?`}>
+      <p className="hb-dias-t">{conNombre ? h.name : `¿Cuántos días por semana quieres hacer «${h.name}»?`}</p>
+      <div className="rd-chips hf-veces">
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+          <button key={n} type="button" aria-label={textoVeces(n)} onClick={() => save("habitos", { ...h, veces: n })}>
+            {n === 7 ? "Todos los días" : n}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

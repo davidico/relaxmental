@@ -88,7 +88,7 @@ export interface Habito {
   objetivo?: number;
   /** A qué hora prefiere hacerlo (HH:MM); a esa hora le llega un aviso si aún no lo marcó */
   hora?: string;
-  /** Cuántas veces por semana quiere hacerlo (1 a 6); sin el campo, todos los días */
+  /** Cuántos días por semana quiere hacerlo (1 a 7; 7 = todos los días). Sin el campo: aún no lo dijo (cuenta como todos los días y se le pregunta) */
   veces?: number;
 }
 
