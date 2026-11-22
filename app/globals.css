@@ -2715,3 +2715,9 @@ textarea.st-desc::placeholder{color:var(--muted);opacity:.7}
 .hb-dias-t{margin:0;font-size:16px;font-weight:500;color:var(--ink)}
 .hd .hb-dias{margin-bottom:var(--e4);padding:var(--e3) var(--e4) var(--e4);border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 
+
+/* ---------- Versión 11.9: el resumen de la semana se guarda para el Planner ---------- */
+.rs-guardado{margin-bottom:var(--e4)}
+.rs-guardado summary{min-height:44px;display:flex;align-items:center;font-size:16px;font-weight:600;color:var(--ink);cursor:pointer}
+.rs-guardado summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.rs-guardado .rs-txt{margin:var(--e2) 0 0}

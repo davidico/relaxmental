@@ -4,6 +4,7 @@ import CuandoPendientes from "./CuandoPendientes";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import TaskSheet from "./TaskSheet";
+import { ResumenGuardado } from "./ResumenSemana";
 import { ElegirPlan, HorasDias, PorMetas, ResumenMetas, useMetasSemana, type ModoSemana } from "./PlanearSemana";
 import { newId, useData } from "@/lib/data";
 import { DOW, pd } from "@/lib/dates";
@@ -64,11 +65,12 @@ export default function Planner({ days, hoy }: { days: string[]; hoy: string }) 
     return () => m.removeEventListener("change", on);
   }, []);
 
-  if (escribiendoMetas) return <PorMetas lunes={lunes} onListo={() => { poner("metas"); setEscribiendoMetas(false); }} onVolver={() => setEscribiendoMetas(false)} />;
-  if (!modo) return <ElegirPlan onMetas={() => setEscribiendoMetas(true)} onDias={() => poner("dias")} />;
+  if (escribiendoMetas) return <><ResumenGuardado lunes={lunes} abierto /><PorMetas lunes={lunes} onListo={() => { poner("metas"); setEscribiendoMetas(false); }} onVolver={() => setEscribiendoMetas(false)} /></>;
+  if (!modo) return <><ResumenGuardado lunes={lunes} abierto /><ElegirPlan onMetas={() => setEscribiendoMetas(true)} onDias={() => poner("dias")} /></>;
 
   return (
     <>
+      {!pasada && <ResumenGuardado lunes={lunes} />}
       {!pasada && (modo === "metas" ? <ResumenMetas lunes={lunes} onCambiar={() => setEscribiendoMetas(true)} onOtra={() => poner(null)} /> : <HorasDias days={days} onOtra={() => poner(null)} />)}
       <div className="pl">
         {/* Pendientes va primero: en el móvil plegado arriba; en pantallas anchas, fijo a la derecha */}

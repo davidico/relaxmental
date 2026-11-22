@@ -1,7 +1,8 @@
 /** Versión de Mi Semana. Súbela con cada entrega: 2.0, 2.1… 2.10, y después de la .10 pasa a la siguiente (3.0). */
-export const VERSION = "11.8";
+export const VERSION = "11.9";
 export const VERSION_FECHA = "15 de noviembre de 2026";
 export const NOVEDADES = [
+  "El resumen de tu semana se guarda («Guardar para mi semana») y lo tienes en el Planner, arriba, al poner las metas de la semana que viene",
   "Los hábitos que ya tenías te preguntan cuántos días por semana quieres hacerlos (en Hábitos y al abrir cada uno). Ahora se dice «días por semana» en vez de «veces»",
   "El ícono de cada momento sale de su nombre, no de su descripción (si cambiabas el nombre, se quedaba con el ícono viejo). En «Mi semana tipo» ahora ves y cambias la descripción de cada momento, y al cambiar el nombre se quita la vieja",
   "Aviso de buenos días al empezar tu día: con qué empiezas y cuántas tareas y metas tienes hoy (en Avisos lo apagas o le pones otra hora)",

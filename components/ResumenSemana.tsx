@@ -36,10 +36,11 @@ export default function ResumenSemana() {
       {hecho ? (
         <>
           <p className="rs-txt">{hecho.texto}</p>
+          <p className="hint">Se queda guardado en el Planner, para cuando pongas tus metas de la semana.</p>
           {nuevas !== null && nuevas > 0 && <p role="status">Te dejé {nuevas === 1 ? "1 recomendación" : `${nuevas} recomendaciones`} en «Mis propuestas para ti».</p>}
           <div className="row actions">
             <button className="btn sm" onClick={() => { try { localStorage.setItem("mi-semana-hoy-vista", "semana"); } catch {} dispatchEvent(new Event("mi-semana:ver-semana")); }}>Armar la semana que viene</button>
-            <button className="btn ghost sm" onClick={() => { savePerfil("semanaVista", semana); setNuevas(null); }}>Ocultar</button>
+            <button className="btn ghost sm" onClick={() => { savePerfil("semanaVista", semana); setNuevas(null); }}>Guardar para mi semana</button>
           </div>
         </>
       ) : (
@@ -53,5 +54,21 @@ export default function ResumenSemana() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * El resumen guardado, para tenerlo delante en el Planner al poner las metas de la semana que viene:
+ * sale si el resumen es de la semana anterior a la que estás planeando.
+ */
+export function ResumenGuardado({ lunes, abierto }: { lunes: string; abierto?: boolean }) {
+  const { perfil } = useData();
+  const r = perfil.resumenSemana;
+  if (!r || addD(r.semana, 7) !== lunes) return null;
+  return (
+    <details className="card pad rs rs-guardado" open={abierto}>
+      <summary>Cómo fue tu semana pasada</summary>
+      <p className="rs-txt">{r.texto}</p>
+    </details>
   );
 }
